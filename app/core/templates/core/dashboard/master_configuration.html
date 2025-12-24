@@ -1,0 +1,783 @@
+{% extends 'fragments/dashboard/base.html' %} 
+{% load static %}
+
+{% block master %}
+<div class="header-page">
+  <h1>मास्टर डाटा कन्फिगरेसन</h1>
+  <a href="{% url "dashboard:master_configuration" %}" class="btn btn-icon-only btn-sm"
+    >
+  </a>
+</div>
+{% endblock master %}
+
+{% block content %}
+
+{% block backbtn %}{% endblock backbtn %}
+
+<Fragment>
+  <div class="inner screen-user-setup">
+    <div class="container">
+      <ul class="tab-01 nav nav-pills" id="pills-tab" role="tablist">
+        <li class="nav-item">
+          <a
+            class="nav-link {% if not active_tab or active_tab == 'province' %}active{% endif %}"
+            id="pills-masterDataOne-tab"
+            data-toggle="pill"
+            href="#pills-masterDataOne"
+            role="tab"
+            aria-controls="pills-masterDataOne"
+            aria-selected="{% if not active_tab or active_tab == 'province' %}true{% else %}false{% endif %}"
+            >प्रदेश</a
+          >
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link {% if active_tab == 'local' %}active{% endif %}"
+            id="pills-masterDataTwo-tab"
+            data-toggle="pill"
+            href="#pills-masterDataTwo"
+            role="tab"
+            aria-controls="pills-masterDataTwo"
+            aria-selected="{% if active_tab == 'local' %}true{% else %}false{% endif %}"
+            >स्थानीय तह</a
+          >
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link {% if active_tab == 'district' %}active{% endif %}"
+            id="pills-masterDataThree-tab"
+            data-toggle="pill"
+            href="#pills-masterDataThree"
+            role="tab"
+            aria-controls="pills-masterDataThree"
+            aria-selected="{% if active_tab == 'district' %}true{% else %}false{% endif %}"
+            >जिल्ला</a
+          >
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link {% if active_tab == 'department' %}active{% endif %}"
+            id="pills-masterDataFour-tab"
+            data-toggle="pill"
+            href="#pills-masterDataFour"
+            role="tab"
+            aria-controls="pills-masterDataFour"
+            aria-selected="{% if active_tab == 'department' %}true{% else %}false{% endif %}"
+            >विभाग/संस्था/मन्त्रालय</a
+          >
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link {% if active_tab == 'position' %}active{% endif %}"
+            id="pills-masterDataFive-tab"
+            data-toggle="pill"
+            href="#pills-masterDataFive"
+            role="tab"
+            aria-controls="pills-masterDataFive"
+            aria-selected="{% if active_tab == 'position' %}true{% else %}false{% endif %}"
+            >पद</a
+          >
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link {% if active_tab == 'fiscalyear' %}active{% endif %}"
+            id="pills-masterDataSix-tab"
+            data-toggle="pill"
+            href="#pills-masterDataSix"
+            role="tab"
+            aria-controls="pills-masterDataSix"
+            aria-selected="{% if active_tab == 'fiscalyear' %}true{% else %}false{% endif %}"
+            >आर्थिक बर्ष</a
+          >
+        </li>
+      </ul>
+      <div class="card card-body radius-top-0">
+        <div class="tab-content" id="pills-tabContent">
+          <div
+            class="tab-pane fade {% if not active_tab or active_tab == 'province' %}show active{% endif %}"
+            id="pills-masterDataOne"
+            role="tabpanel"
+            aria-labelledby="pills-masterDataOne-tab"
+          >
+          <form action="{% url 'dashboard:province_create' %}?filter=province" id="provinceName" method="post">
+          {% csrf_token %}
+            <h6 class="mb-2">प्रदेशको डाटा सेटअप</h6>
+            <div class="row">
+              <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                  <label>प्रदेशको नाम</label>
+                  <input
+                    name="name"
+                    class="form-control"
+                    type="text"
+                    id="name"
+                    placeholder="यहाँ प्रदेशको नाम टाइप गर्नुहोस्"/>
+                </div>
+
+              </div>
+              <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                  <label> &nbsp;</label>
+                  <button
+                    type="submit"
+                    class="btn btn-success btn-icon d-block"
+                  >
+                    <i class="ic-add"></i> डाटा थप्नुहोस
+                  </button>
+                </div>
+              </div>
+            </div>
+            </form>
+          
+            <div class="table-responsive">
+              <table class="table table-02" id="provience_id" >
+                <thead>
+                  <tr>
+                    <th>क्रम संख्या</th>
+                    <th>प्रदेशको नाम</th>
+                    {% comment %} <th>स्थिति</th> {% endcomment %}
+                    <th class="text-right">कार्य</th>
+                  </tr>
+                </thead>
+                <tbody>
+                {% for province in province_list %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ province.name }}</td>
+                    {% comment %} <td>
+                      <div class="custom-control custom-switch">
+                        <input
+                          type="checkbox"
+                          class="custom-control-input"
+                          id="customSwitches"
+                          checked
+                        />
+                        <label
+                          class="custom-control-label"
+                          for="customSwitches"
+                        ></label>
+                      </div>
+                    </td> {% endcomment %}
+                    <td class="text-right">
+                      <a
+                        href="{% url 'dashboard:province_update' province.id %}"
+                        title="Edit"
+                        class="mr-2 text-coolGray600"
+                      >
+                        <i class="ic-edit"></i
+                      ></a>      
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div
+            class="tab-pane fade {% if active_tab == 'local' %}show active{% endif %}"
+            id="pills-masterDataTwo"
+            role="tabpanel"
+            aria-labelledby="pills-masterDataTwo-tab"
+          >
+
+            <form action="{% url 'dashboard:province_create' %}?filter=local" id="localNameForm" method="post" >
+            {% csrf_token %}
+              <h6 class="mb-2">स्थानीय तहको डाटा सेटअप</h6>
+
+              <div class="row">
+                <div class="col-lg-3 col-md-6">
+                  <div class="form-group">
+                    <label>प्रदेशको नाम</label>
+                    <select name="province_level" id="province_name" class="form-control level-types">
+                      <option value="">छान्नुहोस्...</option>
+                      {% for level in province_list %}
+                      <option value="{{level.pk}}">{{ level.name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                  <div class="form-group">
+                    <label>स्थानीय तहको कोड</label>
+                    <input
+                      name="level_code"
+                      class="form-control"
+                      type="number"
+                      id="level_code"
+                      placeholder="यहाँ स्थानीय तहको कोड टाइप गर्नुहोस्"
+                    />
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                  <div class="form-group">
+                    <label>स्थानीय तहको नाम</label>
+                    <input
+                      name="name"
+                      class="form-control"
+                      type="text"
+                      id="localName"
+                      placeholder="यहाँ स्थानीय तहको नाम टाइप गर्नुहोस्"
+                    />
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                  <div class="form-group">
+                    <label>जिल्ला</label>
+                    <select name="district" id="district" class="form-control">
+                      <option value="">छान्नुहोस्...</option>
+                      {% for district in districts %}
+                      <option value="{{district.pk}}">{{ district.name_np }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                  <div class="form-group">
+                    <label> &nbsp;</label>
+                    <button
+                      type="submit"
+                      class="btn btn-success btn-icon d-block"
+                    >
+                      <i class="ic-add"></i> डाटा थप्नुहोस
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+            
+            <div class="table-responsive">
+              <table class="table table-02" id="local_id" >
+                <thead>
+                  <tr>
+                    <th>क्रम संख्या</th>
+                    <th>प्रदेशको नाम</th>
+                    <th>स्थानीय तहको कोड</th>
+                    <th>स्थानीय तहको नाम</th>
+                    <th>जिल्ला</th>
+                    {% comment %} <th>स्थिति</th> {% endcomment %}
+                    <th class="text-right">कार्य</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for local in local_list %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ local.province_level }}</td>
+                    <td>{{ local.level_code }}</td>
+                    <td>{{ local.name }}</td>
+                    <td>{{ local.district }}</td>
+                    {% comment %} <td>
+                      <div class="custom-control custom-switch">
+                        <input
+                          type="checkbox"
+                          class="custom-control-input"
+                          id="customSwitches"
+                          checked
+                        />
+                        <label
+                          class="custom-control-label"
+                          for="customSwitches"
+                        ></label>
+                      </div>
+                    </td> {% endcomment %}
+                    <td class="text-right">
+                      <a
+                        href="{% url 'dashboard:local_update' local.id %}"
+                        type="button"
+                        title="Edit"
+                        class="mr-2 text-coolGray600"
+                      >
+                        <i class="ic-edit"></i
+                      ></a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div
+            class="tab-pane fade {% if active_tab == 'district' %}show active{% endif %}"
+            id="pills-masterDataThree"
+            role="tabpanel"
+            aria-labelledby="pills-masterDataThree-tab"
+          >
+
+            <form action="{% url 'dashboard:province_create' %}?filter=district" id="DistrictNameForm" method="post" >
+            {% csrf_token %}
+              <h6 class="mb-2">जिल्लाको डाटा सेटअप</h6>
+
+              <div class="row">
+                <div class="col-lg-3 col-md-6">
+                  <div class="form-group">
+                    <label>जिल्लाको नाम अंग्रेजीमा</label>
+                    <input
+                    name="name_eng"
+                    class="form-control"
+                    type="text"
+                    id="name_eng"
+                    placeholder="यहाँ जिल्लाको नाम अंग्रेजीमा टाइप गर्नुहोस्"/>
+                  </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                  <div class="form-group">
+                    <label>जिल्लाको नाम नेपालीमा</label>
+                    <input
+                    name="name_np"
+                    class="form-control"
+                    type="text"
+                    id="name_np"
+                    placeholder="यहाँ जिल्लाको नाम नेपालीमा टाइप गर्नुहोस्"/>
+                  </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6">
+                  <div class="form-group">
+                    <label> &nbsp;</label>
+                    <button
+                      type="submit"
+                      class="btn btn-success btn-icon d-block"
+                    >
+                      <i class="ic-add"></i> डाटा थप्नुहोस
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+            
+            <div class="table-responsive">
+              <table class="table table-02" id="district_id" >
+                <thead>
+                  <tr>
+                    <th>क्रम संख्या</th>
+                    <th>जिल्लाको नाम अंग्रेजीमा</th>
+                    <th>जिल्लाको नाम नेपालीमा</th>
+                    <th class="text-right">कार्य</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for district in districts %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ district.name_eng }}</td>
+                    <td>{{ district.name_np }}</td>
+                    <td class="text-right">
+                      <a
+                        href="{% url 'dashboard:district_update' district.id %}"
+                        type="button"
+                        title="Edit"
+                        class="mr-2 text-coolGray600"
+                      >
+                        <i class="ic-edit"></i
+                      ></a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div
+            class="tab-pane fade {% if active_tab == 'department' %}show active{% endif %}"
+            id="pills-masterDataFour"
+            role="tabpanel"
+            aria-labelledby="pills-masterDataFour-tab"
+          >
+          <form action="{% url 'dashboard:province_create' %}?filter=department" method="post" id="depart">
+          {% csrf_token %}
+            <h6 class="mb-2">विभाग/संस्था/मन्त्रालय को डाटा सेटअप</h6>
+
+            <div class="row">
+              <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                  <label>विभाग/संस्था/मन्त्रालय को नाम</label>
+                  <input
+                    name="name"
+                    class="form-control"
+                    type="text"
+                    id="depart_name"
+                    placeholder="यहाँ विभागको नाम टाइप गर्नुहोस्"
+                  />
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                  <label> &nbsp;</label>
+                  <button
+                    type="submit"
+                    class="btn btn-success btn-icon d-block"
+                  >
+                    <i class="ic-add"></i> डाटा थप्नुहोस
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+            <div class="table-responsive">
+              <table class="table table-02" id="department_id">
+                <thead>
+                  <tr>
+                    <th>क्रम संख्या</th>
+                    <th>विभाग / संस्था / मन्त्रालय</th>
+                    {% comment %} <th>स्थिति</th> {% endcomment %}
+                    <th class="text-right">कार्य</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for department in department_list %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ department.name }}</td>
+                    {% comment %} <td>
+                      <div class="custom-control custom-switch">
+                        <input
+                          type="checkbox"
+                          class="custom-control-input"
+                          id="customSwitches"
+                          checked
+                        />
+                        <label
+                          class="custom-control-label"
+                          for="customSwitches"
+                        ></label>
+                      </div>
+                    </td> {% endcomment %}
+                    <td class="text-right">
+                      <a
+                        href="{% url 'dashboard:department_update' department.id %}"
+                        title="Edit"
+                        class="mr-2 text-coolGray600"
+                      >
+                        <i class="ic-edit"></i
+                      ></a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div
+            class="tab-pane fade {% if active_tab == 'position' %}show active{% endif %}"
+            id="pills-masterDataFive"
+            role="tabpanel"
+            aria-labelledby="pills-masterDataFive-tab"
+          >
+          <form action="{% url 'dashboard:province_create' %}?filter=position" method="post" id="userPost">
+          {% csrf_token %}
+            <h6 class="mb-2">पदको डाटा सेटअप</h6>
+
+            <div class="row">
+              <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                  <label>प्रयोगकर्ताको पदको नाम</label>
+                  <input
+                    name="name"
+                    class="form-control"
+                    type="text"
+                    id="userspost_name"
+                    placeholder="यहाँ पदको नाम टाइप गर्नुहोस्"
+                  />
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                  <label> &nbsp;</label>
+                  <button
+                    type="submit"
+                    class="btn btn-success btn-icon d-block"
+                  >
+                    <i class="ic-add"></i> डाटा थप्नुहोस
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+            <div class="table-responsive">
+              <table class="table table-02" id="userpost_id">
+                <thead>
+                  <tr>
+                    <th>क्रम संख्या</th>
+                    <th>पद / तह</th>
+                    <th class="text-right">कार्य</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for usersPost in usersPost_list %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ usersPost.name }}</td>
+                    
+                    <td class="text-right">
+                      <a
+                        href="{% url 'dashboard:post_update' usersPost.id %}"
+                        title="Edit"
+                        class="mr-2 text-coolGray600"
+                      >
+                        <i class="ic-edit"></i
+                      ></a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+
+          <div
+            class="tab-pane fade {% if active_tab == 'fiscalyear' %}show active{% endif %}"
+            id="pills-masterDataSix"
+            role="tabpanel"
+            aria-labelledby="pills-masterDataSix-tab"
+          >
+          <form action="{% url 'dashboard:province_create' %}?filter=fiscalyear" method="post" id="fiscals">
+          {% csrf_token %}
+            <h6 class="mb-2">आर्थिक बर्षको डाटा सेटअप</h6>
+
+            <div class="row">
+              <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                  <label>आर्थिक बर्ष</label>
+                  <input
+                    name="name"
+                    class="form-control"
+                    type="text"
+                    id="fiscal_year"
+                  />
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                  <label>सुरू मिति</label>
+                  <input
+                    name="date1"
+                    class="date-picker form-control" 
+                    type="text"
+                    id="start_date_bs" 
+                    placeholder="Select Nepali Date"
+                    data-single="1"
+                  />
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                  <label>अन्त्य मिति </label>
+                  <input
+                    name="date2"
+                    class="date-picker form-control" 
+                    type="text"
+                    id="end_date_bs" 
+                    placeholder="Select Nepali Date"
+                    data-single="true" 
+                  />
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                  <label> &nbsp;</label>
+                  <button
+                    type="submit"
+                    class="btn btn-success btn-icon d-block"
+                  >
+                    <i class="ic-add"></i> डाटा थप्नुहोस
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+            <div class="table-responsive">
+              <table class="table table-02" id="fiscal_id">
+                <thead>
+                  <tr>
+                    <th>क्रम संख्या</th>
+                    <th>आर्थिक बर्ष</th>
+                    <th>सुरू मिति</th>
+                    <th>अन्त्य मिति</th>
+                    <th>स्थिति</th>
+                    <th class="text-right">कार्य</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for fiscal in fiscal_year %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ fiscal.name }}</td>
+                    <td>{{ fiscal.start_date_bs }}</td>
+                    <td>{{ fiscal.end_date_bs }}</td>
+                    <td>
+                      <div class="custom-control custom custom-switch">
+                        <input 
+                        name="active_fy" 
+                        class="custom-control-input" 
+                        type="checkbox" 
+                        id="customSwitch1 {{ forloop.counter }}"  
+                        {% if fiscal.active_fy %}
+                        checked="checked"
+                        {% endif %}/>
+                        <label 
+                        class="custom-control-label" 
+                        for="customSwitch1 {{ forloop.counter }}">
+                        </label>
+                      </div>
+                    </td>
+                    <td class="text-right">
+                      <a
+                        href="{% url 'dashboard:fiscal_update' fiscal.id %}"
+                        title="Edit"
+                        class="mr-2 text-coolGray600"
+                      >
+                        <i class="ic-edit"></i
+                      ></a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Fragment>
+
+
+{% endblock content %}
+
+{% block extra_scripts %} 
+<script>
+  $("#provinceName").submit(function (e) {
+    e.preventDefault();
+
+    $.ajax({
+      type: "POST",
+      url: '{% url "dashboard:province_create" %}?filter=province',
+      data: {
+        'name': $("#name").val(),
+        csrfmiddlewaretoken: "{{ csrf_token }}",
+      },
+      success: function (response) {
+        window.location.href = "{% url 'dashboard:master_configuration' %}?filter=province";
+        setInterval('refreshPage()', 10000);
+      },
+    });
+  });
+
+  $("#localNameForm").submit(function (e) {
+    e.preventDefault();
+    $.ajax({
+      type: "POST",
+      url: "{% url 'dashboard:province_create' %}?filter=local",
+      data: {
+        'name': $("#province_name").val(),
+        'level_code': $("#level_code").val(),
+        'localName': $("#localName").val(),
+        'district': $("#district").val(),
+        csrfmiddlewaretoken: "{{ csrf_token }}",
+      }, 
+      success: function (response) {
+        console.log(response)
+        window.location.href = "{% url 'dashboard:master_configuration' %}?filter=local";
+        setInterval('refreshPage()', 10000);
+      },
+    });
+  });
+
+  $("#DistrictNameForm").submit(function (e) {
+    e.preventDefault();
+    $.ajax({
+      type: "POST",
+      url: "{% url 'dashboard:province_create' %}?filter=district",
+      data: {
+        'name_eng': $("#name_eng").val(),
+        'name_np': $("#name_np").val(),
+        csrfmiddlewaretoken: "{{ csrf_token }}",
+      }, 
+      success: function (response) {
+        console.log(response)
+        window.location.href = "{% url 'dashboard:master_configuration' %}?filter=district";
+        setInterval('refreshPage()', 10000);
+      },
+    });
+  });
+
+  $("#depart").submit(function (e) {
+    e.preventDefault();
+    
+    $.ajax({
+      type: "POST",
+      url: "{% url 'dashboard:province_create' %}?filter=department",
+      data: {
+        'depart_name': $("#depart_name").val(),
+        csrfmiddlewaretoken: "{{ csrf_token }}",
+      },
+      success: function (response) {
+        window.location.href = "{% url 'dashboard:master_configuration' %}?filter=department";
+        setInterval('refreshPage()', 10000);
+      },
+    });
+  });
+
+  $("#userPost").submit(function (e) {
+    e.preventDefault();
+    $.ajax({
+      type: "POST",
+      url: "{% url 'dashboard:province_create' %}?filter=position",
+      data: {
+        'name': $("#userspost_name").val(),
+        csrfmiddlewaretoken: "{{ csrf_token }}",
+      }, 
+      success: function (response) {
+        console.log(response)
+        window.location.href = "{% url 'dashboard:master_configuration' %}?filter=position";
+        setInterval('refreshPage()', 10000);
+      },
+    });
+  });
+
+  $("#fiscals").submit(function (e) {
+    e.preventDefault();
+
+    $.ajax({
+      type: "POST",
+      url: '{% url "dashboard:province_create" %}?filter=fiscalyear',
+      data: {
+        'name': $("#fiscal_year").val(),
+        'start_date_bs': $("#start_date_bs").val(),
+        'end_date_bs': $("#end_date_bs").val(),
+        csrfmiddlewaretoken: "{{ csrf_token }}",
+      },
+      success: function (response) {
+        window.location.href = "{% url 'dashboard:master_configuration' %}?filter=fiscalyear";
+        setInterval('refreshPage()', 10000);
+      },
+    });
+  });
+</script>
+
+<script>
+  function refreshPage(){
+    location.reload(true);
+  }
+</script>
+<script>
+  $('#provience_id').DataTable();
+  $('#local_id').DataTable();
+  $('#district_id').DataTable();
+  $('#department_id').DataTable();
+  $('#userpost_id').DataTable();
+  $('#fiscal_id').DataTable();
+</script>
+
+<script>
+jQuery(document).ready(function () {
+  $('.date-picker').nepaliDatePicker();
+})
+</script>
+
+{% endblock extra_scripts %} 

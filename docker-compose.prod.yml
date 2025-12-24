@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  web:
+    container_name: nnrfc
+    restart: always
+    build:
+      context: ./app
+      dockerfile: Dockerfile.prod
+    command: gunicorn nnrfc.wsgi:application --bind 0.0.0.0:8000 --timeout 120
+    volumes:
+      - static_volume:/home/app/web/static
+      - media_volume:/home/app/web/media
+    expose:
+      - 8000
+    env_file:
+      - /var/lib/jenkins/env/nnrfc/.env.prod
+    depends_on:
+      - db
+    networks:
+      - nnrfc
+
+  db:
+    container_name: nnrfc-db
+    image: postgres:13.0-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - /var/lib/jenkins/env/nnrfc/.env.prod.db
+    networks:
+      - nnrfc
+
+  nginx:
+    container_name: nnrfc-nginx
+    build: ./nginx
+    restart: always
+    volumes:
+      - static_volume:/home/app/web/static
+      - media_volume:/home/app/web/media
+    ports:
+      - 3000:80
+    depends_on:
+      - web
+    networks:
+      - nnrfc
+
+  rabbit:
+    container_name: nnrfc-rabbit
+    image: rabbitmq:3-management
+    restart: always
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbit_data:/var/lib/rabbitmq
+    env_file: 
+      - /var/lib/jenkins/env/nnrfc/.env.prod
+    networks:
+      - nnrfc
+
+  worker:
+    container_name: nnrfc-worker
+    restart: always
+    build:
+      context: ./app
+      dockerfile: Dockerfile.prod
+    command: "celery -A nnrfc worker -l INFO"
+    depends_on:
+      - web
+      - rabbit
+    env_file:
+      - /var/lib/jenkins/env/nnrfc/.env.prod
+    networks:
+      - nnrfc
+      
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+  rabbit_data:
+
+networks:
+  nnrfc:
+    external: true

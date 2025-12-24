@@ -1,0 +1,60 @@
+{% extends 'fragments/dashboard/base.html' %} {% load static %}
+ {% block title-bar %}
+<div class="header-page">
+  <h1>{{a_level}} को गतिविधि लगहरु</h1>
+  <a href="{% url 'dashboard:activity_log' %}"
+    ><button class="btn btn-icon-only">
+      <i class="ic-close-circular-filled text-danger"></i>
+    </button>
+  </a>
+</div>
+{% endblock title-bar %} {% block content %}
+ <Fragment>
+          <div class="inner">
+            <div class="container">
+
+              <div class="table-responsive">
+                <table class="table table-02 mb-3 d-xl-table"id="logs_id">
+                  <thead>
+                    <tr>
+                      <th>क्रम संख्या</th>
+                      <th>गतिविधि</th>
+                      <th>प्रयोगकर्ता</th>
+                      <th>प्रयोगकर्ताको ईमेल</th>
+                      {% comment %} <th>User Level</th> {% endcomment %}
+                      <th>पुरानो विवरण</th>
+                      <th>परिवर्तन विवरण</th>
+                      <th>विकल्प</th>
+                      <th>मिति समय</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  {% for log in logs %}
+                    <tr>
+                      <td>{{forloop.counter}}</td>
+                      <td>{{log.activity}}</td>
+                      <td>{{log.user_name}}</td>
+                      <td>{{log.user_email}}</td>
+                      {% comment %} <td>{{log.user_level}}</td> {% endcomment %}
+                      <td>{{log.old_value}}</td>
+                      <td>{{log.changed_value}}</td>
+                      <td>{{log.option}}</td>
+                      <td>{{log.created_at}}</td>
+                    </tr>
+                {% endfor %}
+                    
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </Fragment>
+{% endblock content %}
+{% block extra_scripts %}
+<script>
+  $(document).ready( function () {
+    $('#logs_id').DataTable();
+  
+  } );
+  </script>
+  {% endblock %}

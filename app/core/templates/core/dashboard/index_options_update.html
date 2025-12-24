@@ -1,0 +1,663 @@
+{% extends 'fragments/dashboard/base.html' %} {% load static %} 
+
+ {% block title-bar %}
+  <div class="header-page">
+    <h1>कार्य सम्पादन सूचक</h1>
+     <a href="{% url 'dashboard:home' %}"><button class="btn btn-icon-only">
+        <i class="ic-close-circular-filled text-danger"></i>
+      </button>
+    </a>
+  </div>
+{% endblock title-bar %}
+{% block content %}
+<Fragment>
+ <div class="inner">
+    <div class="container">
+      <div
+        class="modal mymodal modal-01"
+        id="exampleModal2"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header align-items-center">
+              <h5 class="modal-title">नयाँ सूचक थप्नुहोस</h5>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span
+                  aria-hidden="true"
+                  class="ic-close-circular-filled text-danger h5"
+                ></span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label>सूचकको शीर्षक</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  placeholder="टाइप गर्नुहोस्"
+                />
+              </div>
+              <div class="form-row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label for="" class="d-block">सूचकको स्तर</label>
+                    <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        name="inlineRadioOptions"
+                        id="inlineRadio1"
+                        value="option1"
+                        checked
+                      />
+                      <label class="form-check-label" for="inlineRadio1"
+                        >Default</label
+                      >
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        name="inlineRadioOptions"
+                        id="inlineRadio2"
+                        value="option2"
+                      />
+                      <label class="form-check-label" for="inlineRadio2"
+                        >With custom field</label
+                      >
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-4">
+                  <div class="form-group">
+                    <label>Select custom field type</label
+                    ><select class="form-control">
+                      छान्नुहोस्
+                      <option>Month</option>
+                      <option>OptionsA</option>
+                      <option>OptionsB</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-light" data-dismiss="modal">
+                रद्द गर्नुहोस्  
+              </button>
+              <button type="button" class="btn btn-primary">सिर्जना गर्नुहोस्</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="modal mymodal modal-02"
+        id="exampleModal11"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header align-items-center">
+              <h5 class="modal-title">Percentage Field Settings</h5>
+              <button
+                type="button"
+                class="close cper"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span
+                  aria-hidden="true"
+                  class="ic-close-circular-filled text-danger h5"
+                ></span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="form-row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label>Choose Numerator</label
+                    ><select class="form-control n">
+                      छान्नुहोस्
+                      <option>OptionsA</option>
+                      <option>OptionsB</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label>Choose Denominator</label
+                    ><select class="form-control d">
+                      छान्नुहोस्
+                      <option>छान्नुहोस्...</option>
+                      <option>OptionsA</option>
+                      <option>OptionsB</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+          <div class="error p-error" style="display: none;">Numerator and Denominator can not be same.</div>
+
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-light cper" data-dismiss="modal">
+                रद्द गर्नुहोस्
+              </button>
+              <button type="button" class="btn btn-primary save-p">शेभ गर्नुहोस्</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row flex-center">
+        <div class="col-lg-8">
+               <div class="form-row">
+                    <div class="col-lg-5">
+                      <div class="form-group">
+                        <label>सूचकको नाम</label>
+                        <input
+                          class="form-control"
+                          type="text"
+                          placeholder="टाइप गर्नुहोस्"
+                          value = {{ques.survey.name}}
+                          readonly
+                        />
+                      </div>
+                    </div>
+                    <div class="col-lg-4">
+                      <div class="form-group">
+                        <label for="" class="d-block">सूचकको स्तर</label>
+                        <div class="form-check form-check-inline">
+                          <input
+                            class="form-check-input"
+                            type="radio"
+                            name="inlineRadioOptions"
+                            id="inlineRadio1"
+                            value="option1"
+                            disabled
+                            {% if ques.survey.level == 'P' %}checked{% endif %}
+                          />
+                          <label class="form-check-label" for="inlineRadio1"
+                            >प्रदेश तह</label
+                          >
+                        </div>
+                        <div class="form-check form-check-inline">
+                          <input
+                            class="form-check-input"
+                            type="radio"
+                            name="inlineRadioOptions"
+                            id="inlineRadio2"
+                            value="option2"
+                            disabled
+                             {% if ques.survey.level == 'L' %}checked{% endif %}
+                          />
+                          <label class="form-check-label" for="inlineRadio2"
+                            >स्थानीय तह</label
+                          >
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+        
+          <div class="card-index">
+            <div class="option-group">
+              <p>
+                {{ques.title}}
+              </p>
+                <a href="{% url 'dashboard:survey_detail' ques.survey.id %}"><button class="btn btn-icon-only">
+                    <i class="ic-close-circular-filled text-danger"></i>
+              </button></a>
+            </div>
+           
+            <div class="option-group-added all-groups">         
+             <form action="{% url 'dashboard:index_option_update' ques.id %}" class="group-form" method="post"> {% csrf_token %}
+                {% for q in childs %}
+                
+              <div class="option-group-new">
+            
+                <p class="untitled q-name">
+                  {{q}}
+                <i class="ic-edit-outline ml-1"></i>
+                </p>
+                <input
+                  type="text"
+                  name="ques"
+                  hidden
+                  value="{{q.id}}"
+                  placeholder="टाइप गर्नुहोस्"
+                  class="form-control"
+                /> 
+                 <input
+                  type="text"
+                  name="ques_title"
+                  hidden
+                  value="{{q.title}}"
+                  placeholder="टाइप गर्नुहोस्"
+                  class="form-control q-title"
+                  required
+                /> 
+                {% comment %} <button class="btn btn-icon-only close-t" style="display:none;" type="button">
+                  <i class="ic-close-circular-filled text-danger"></i>
+                </button> {% endcomment %}
+                <button class="btn btn-icon-only cancel-ques" group-id="{{q.id}}" type="button">
+                  <i class="ic-close-circular-filled text-danger"></i>
+                </button> 
+             
+              </div>
+
+
+              <div class="card-option-group options">
+               <div class="opt">
+               {% for option in q.options.all  %}
+                <div class="item">
+                  <div>
+                    <input
+                      class="form-control custom-error otitle"
+                      type="text"
+                      name="title"
+                      placeholder="New Option"
+                      required
+                      value = "{{option.title}}"
+                    />
+                  </div>
+                    {% comment %} <input
+                      class="form-control"
+                      type="text"
+                      name="q_id"
+                      value="{{q.id}}"
+                      hidden
+                    /> {% endcomment %}
+                     <input
+                      class="form-control"
+                      type="text"
+                      name="o_id"
+                      value="{{option.id}}"
+                      hidden
+                    />
+                   
+                  <div>
+                    <select name="field_type" class="form-control">
+                      छान्नुहोस्
+                      <option disabled>Select field type</option>
+                      {% for field, value in field_type_choices %}
+                      <option value="{{field}}"
+                       {% if field == option.field_type %}selected{% endif %}
+                       >{{value}}</option>
+                      {% endfor %}
+                    </select>
+
+                  </div>
+                  
+                  <button type="button" option-id="{{option.id}}" class="btn btn-icon-only d-option">
+                    <i class="ic-delete"></i>
+                  </button>
+
+                </div>
+                {% endfor %}
+                </div>
+
+              
+                <div class="item last">
+                  <button type="button" q-id="{{q.id}}" class="btn btn-icon-only addOption">
+                    <i class="ic-add" style="color: #8f8f8f"></i>
+                  </button>
+                  <div>
+                    <div class="error o-error" style="display:none;">
+                        <span class="ic-warning">Please enter option first.</span>
+                     </div>   
+
+                    <div class="custom-control custom-switch">
+                      <input
+                        name="is_document_required"
+                        type="checkbox"
+                        class="custom-control-input check-file"
+                        id="customSwitche{{forloop.counter}}"
+                        value="{{q.id}}"
+                        {% if q.is_document_required %}checked{% endif %}
+                      />
+                       
+                      <label class="custom-control-label" for="customSwitche{{forloop.counter}}"
+                        >फाइल अपलोड गर्नुहोस्</label
+                      >
+                    </div>
+                      <div class="custom-control custom-switch">
+                      <input
+                        name="is_calc_field"
+                        type="checkbox"
+                        class="custom-control-input perc-check"
+                        id="customSwitchh{{forloop.counter}}"
+                        value="{{q.id}}"
+                        data-url="{% url 'dashboard:q_options' q.id %}"
+                        {% if q.has_calculations %}checked{% endif %}
+                      />
+                       
+                      <label class="custom-control-label" for="customSwitchh{{forloop.counter}}"
+                        >प्रतिशत गणना इनेबल गर्नुहोस्</label
+                      >
+                      {% if q.has_calculations %}
+                      <small><button type="button" data-id="{{q.id}}" data-url="{% url 'dashboard:q_options' q.id %}"
+                       class="btn btn-outline-info btn-sm view-perc">view</button></small>
+                      {% endif %}
+                    </div>
+                  </div>
+
+
+                  <div></div>
+                </div>
+              
+              </div>
+              {% empty %}
+               <div class="option-group-new">
+            
+                <p class="untitled q-name">
+                  {{ques.title}}
+                  <i class="ic-edit-outline ml-1"></i> 
+                </p>
+                <input
+                  type="text"
+                  name="ques"
+                  hidden
+                  value="{{ques.id}}"
+                  placeholder="टाइप गर्नुहोस्"
+                  class="form-control"
+                /> 
+                  <input
+                  type="text"
+                  name="ques_title"
+                  hidden
+                  value="{{ques.title}}"
+                  placeholder="टाइप गर्नुहोस्"
+                  class="form-control q-title"
+                  required
+                /> 
+                 <button class="btn btn-icon-only cancel-ques" group-id="{{ques.id}}" type="button">
+                  <i class="ic-close-circular-filled text-danger"></i>
+                </button> 
+              
+              </div>
+
+              <div class="card-option-group options">
+              <div class="opt">
+              {% for option in ques.options.all  %}
+                <div class="item">
+                  <div>
+                    <input
+                      class="form-control custom-error otitle"
+                      type="text"
+                      name="title"
+                      placeholder="New Option"
+                      required
+                      value = "{{option.title}}"
+                    />
+                   
+                  </div>
+                    {% comment %} <input
+                      class="form-control"
+                      type="text"
+                      name="q_id"
+                      value="{{ques.id}}"
+                      hidden
+                    /> {% endcomment %}
+                     <input
+                      class="form-control"
+                      type="text"
+                      name="o_id"
+                      value="{{option.id}}"
+                      hidden
+                    />
+                  <div>
+                    <select name="field_type" class="form-control">
+                      छान्नुहोस्
+                      <option disabled>Select field type</option>
+                      {% for field, value in field_type_choices %}
+                       <option value="{{field}}"
+                       {% if field == option.field_type %}selected{% endif %}
+                       >{{value}}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                <button type="button" option-id="{{option.id}}" class="btn btn-icon-only d-option">
+                    <i class="ic-delete"></i>
+                  </button>
+
+                </div>
+                
+                {% endfor %}
+              </div>
+               
+                <div class="item last">
+                  <button type="button" q-id="{{ques.id}}" class="btn btn-icon-only addOption">
+                    <i class="ic-add" style="color: #8f8f8f"></i>
+                  </button>
+                  <div>
+                   <div class="error o-error" style="display:none;">
+                      <span class="ic-warning">Please enter option first.</span>
+                    </div>
+
+                    <div class="custom-control custom-switch">
+
+                      <input
+                        name="is_document_required"
+                        type="checkbox"
+                        class="custom-control-input check-file"
+                        id="customSwitche"
+                        value="{{ques.id}}"
+                        {% if ques.is_document_required %}checked{% endif %}
+                      />
+                       
+                      <label class="custom-control-label" for="customSwitche"
+                        >फाइल अपलोड इनेबल गर्नुहोस्</label
+                      >
+                    </div>
+                      <div class="custom-control custom-switch">
+                      <input
+                        name="is_calc_field"
+                        type="checkbox"
+                        class="custom-control-input perc-check"
+                        id="customSwitchm{{forloop.counter}}"
+                        value="{{ques.id}}"
+                        data-url="{% url 'dashboard:q_options' ques.id %}"
+                        {% if ques.has_calculations %}checked{% endif %}
+                      />
+                       
+                      <label class="custom-control-label" for="customSwitchm{{forloop.counter}}"
+                        >प्रतिशत गणना इनेबल गर्नुहोस्</label
+                      >
+                      {% if ques.has_calculations %}
+                      <small><button type="button" data-id="{{q.id}}" data-url="{% url 'dashboard:q_options' ques.id %}"
+                       class="btn btn-outline-info btn-sm view-perc">view</button></small>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+              {% endfor %}
+
+            </div>
+            {% comment %} <div class="option-group-new newOptionGroup">
+              <p><i class="ic-add mr-1"></i> New option group</p>
+            </div> {% endcomment %}
+          </div>
+
+          <div class="text-right mt-4">
+            <button type="submit" class="btn btn-blue mr-2 publish">पेश गर्नुहोस्</button>
+          </div>
+        </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</Fragment>
+{% endblock content %} {% block extra_scripts %}
+<script>
+  $(document).on("click", ".q-name", function () {
+    $(this).closest(".untitled").hide();
+    $(this).siblings('.q-title').prop('hidden', false);
+    $(this).siblings('.close-t').show();
+  });
+  $(document).on("click", ".close-t", function () {
+     $(this).siblings('.q-title').prop('hidden', true);
+     $(this).siblings(".untitled").show();
+     $(this).hide();
+  });
+
+$(document).on("click", ".view-perc", function () {
+    var url = $(this).attr('data-url');
+
+    $.ajax({
+      url:url,
+      type:"GET",
+      dataType:"json",
+      success:function(data){
+        $('.n').empty();
+        $('.d').empty();
+        for(var i = 0; i < data['options'].length; i++){
+          id = data['options'][i]['id']
+          title = data['options'][i]['title']
+          type = data['options'][i]['option_type']
+          n_id = data['n_id']
+          d_id = data['d_id']
+          q_id = data['q_id']
+          $('.n').append(`<option value="${id}">${title}</option>`)
+          $('.d').append(`<option value="${id}">${title}</option>`)
+          $('.n').find($(`option[value="${n_id}"`)).prop("selected", true)
+          $('.d').find($(`option[value="${d_id}"`)).prop("selected", true)
+          $('.n').append(`<option value="${q_id}" hidden></option>`)
+        }
+       
+      }
+
+    })
+
+    $('#exampleModal11').modal('show');
+  });
+
+
+  $(document).on("click", ".perc-check", function () {
+    var checked = $(this).is(":checked");
+    var url =$(this).attr('data-url');
+    if(checked){
+
+    $.ajax({
+      url:url,
+      type:"GET",
+      dataType:"json",
+      success:function(data){
+        $('.n').empty();
+        $('.d').empty();
+        for(var i = 0; i < data['options'].length; i++){
+          id = data['options'][i]['id']
+          title = data['options'][i]['title']
+          q_id = data['q_id']
+          $('.n').append(`<option value="${id}">${title}</option>`)
+          $('.d').append(`<option value="${id}">${title}</option>`)
+          $('.n').append(`<option value="${q_id}" hidden></option>`)
+        }
+       
+      }
+
+    })
+    $('#exampleModal11').modal('show');
+    }
+  
+  });
+
+//$(document).on("click", ".cper", function () {
+    //$('.perc-check').prop('checked', false);
+    
+ // });
+
+
+  $(document).on("click", ".save-p", function () {
+    var nume = $('.n :selected').val();
+    var d = $('.d :selected').val();
+    var q = $('.n').find('option:hidden').val();
+    if(nume != d){
+      $('.group-form').find(`input[class="${q}"]`).remove();
+      $('.group-form').append(`<input name="n" class="${q}" hidden value="${nume}"/>`);
+      $('.group-form').append(`<input name="d" class="${q}" hidden value="${d}"/>`);
+
+      $('#exampleModal11').modal('hide');
+
+    }
+    else{
+      $('.p-error').show().delay(1300).fadeOut('slow');
+    }
+    
+  });
+
+
+
+
+</script>
+<script>
+  $(document).on("click", ".addOption", function () {
+    var qId = $(this).attr('q-id');
+    option = `<div class="item">
+                    <option value="{{field}}">{{value}}</option>
+                    <div>
+                    <input
+                      class="form-control custom-error"
+                      type="text"
+                      name="n_title"
+                      placeholder="New Option"
+                      required
+                    />
+                  </div>
+                    <input
+                      class="form-control"
+                      type="text"
+                      name="q_id"
+                      hidden
+                      value="${qId}"
+                    />                   
+                  <div>
+                    <select name="n_field_type" class="form-control">
+                      Select
+                      <option disabled>Select field type</option>
+                      {% for field, value in field_type_choices %}
+                      <option value="{{field}}">{{value}}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <button type="button" class="btn btn-icon-only d-option">
+                    <i class="ic-delete"></i>
+                  </button>
+                </div>`;
+
+    var title = $(this).closest(".options").find("input[name='n_title']")    
+    if (title.val() != ""){
+        $(this).closest(".options").find('.opt').append(option);
+    }
+    else
+    {
+       var error = $(this).closest(".options").find('.o-error');
+       error.show();
+       error.delay(1300).fadeOut('slow');
+    }
+  });
+
+  $(document).on("click", ".d-option", function () {
+        optionID = $(this).attr('option-id')
+        $(".group-form").append(`<input value=${optionID} name="delete_option_id" hidden />`)
+        $(this).closest('.item').remove();
+  });
+
+ $(document).on("click", ".cancel-ques", function () {
+        groupId = $(this).attr('group-id');
+        $(this).parent().next('div').remove();
+        $(this).parent().remove();
+        $('.group-form').append(`<input name="delete_group_ids" value="${groupId}" hidden/>`)
+  });
+</script>
+
+{% endblock extra_scripts %}

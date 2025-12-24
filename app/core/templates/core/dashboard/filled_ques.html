@@ -1,0 +1,55 @@
+{% extends 'fragments/dashboard/base.html' %} {% load static %}
+ {% block title-bar %}
+<div class="header-page">
+  <h1>भरिएका सूचकहरु</h1>
+  <a href="{% url 'dashboard:fill_surveys' survey_id %}"
+    ><button class="btn btn-icon-only">
+      <i class="ic-close-circular-filled text-danger"></i>
+    </button>
+  </a>
+</div>
+{% endblock title-bar %} {% block content %}
+
+<Fragment>
+  <div class="inner">
+    <div class="container">
+ 
+          
+          <div class="table-responsive">
+            <table class="table table-02 mb-3 d-xl-table">
+              <thead>
+                <tr>
+                  <th>क्रम संख्या</th>
+                  <th>सूचकहरु</th>
+                  <th class="text-right">कार्य</th>
+                </tr>
+              </thead>
+              <tbody>
+              {% for q in questions  %}
+                <tr>
+                  <td>{{forloop.counter}}</td>
+                  <td>{{q.title}}</td>
+                  <td class="text-right">
+                    <a
+                      href="{% url 'dashboard:view_ans' q.id level_id %}"
+                      title="View"
+                      class="mr-2 text-coolGray600"
+                    >
+                      <i class="ic-visible"></i
+                    ></a>
+                  </td>
+                </tr>
+              {% endfor %}
+               
+              </tbody>
+            </table>
+          </div>
+        </div>
+      
+        </div>
+      </div>
+    </div>
+  </div>
+</Fragment>
+
+{% endblock content %}

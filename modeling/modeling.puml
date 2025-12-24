@@ -1,0 +1,101 @@
+@startuml(id=survey)
+    class Survey {
+        *id : int
+        *{field} name : char (20)
+        *{field} level : char (100)
+        *{field} approval_state : char (20)
+        *{field} start_date_bs : date
+        *{field} end_date_bs : date
+        *{field} start_date_ad : char
+        *{field} end_date_ad : char
+        *{field} created_date : date
+        {field} is_active : boolean
+        *{field} fiscal_year : ForeighKey (FiscalYear)
+        {field} question : OnetoMany (Question)
+    }
+    note right of Survey: values for level: Central, Province, Local
+    note left of Survey: values for approval_state: Draft, Sent for Approval, Approved, Rejected, Cancelled
+
+
+    class FiscalYear {
+        *id : int
+        *{field} name : char (50)
+        *{field} start_date_bs : date
+        *{field} end_date_bs : date
+        *{field} start_date_ad : char
+        *{field} end_date_ad : char
+    }
+
+    FiscalYear ||--|{ Survey
+
+
+    class Question {
+        *id : int
+        *{field} title : text
+        {field} parent_question : Question
+    }
+
+    Survey ||--|{ Question
+
+    class FillSurvey {
+        *id : int
+        *survery_id : Survey
+        {field} budget_period : char
+        {field} created_by : char
+        {field} approval_state : char
+    }
+    Survey ||--|{ FillSurvey
+
+    class Option {
+        *id : int
+        *question_id : Question
+        *{field} title : text
+        *{field} field_type : choice
+        *{field} created_by : char (100)
+        {field} is_document_required : boolean
+        {field} is_calc_field : boolean
+    }
+    note right of Option: values for field_type: char, boolean, date, float, file
+
+    class Answer {
+        *id : int
+        *option : Option
+        *fill_survey_id : FillSurvey
+        {field} month : char (50)
+        {field} value : jsonfield
+    }
+    FillSurvey ||--|{ Answer
+    Question ||--|{ Option
+    Option ||--|{ Answer
+    Question ||--|{ Question
+    Answer ||--|{ Document
+
+    class Document {
+        *id : int
+        {field} file : file
+        {field} answer_id : Answer
+    }
+
+    class CentralBody {
+        *id : int
+        *{field} name : char (50)
+        *{field} name_np : char (50)
+    }
+
+    class ProvinceBody {
+        *id : int
+        *central_id : CentralBody
+        *{field} name : char (50)
+        *{field} name_np : char (50)
+    }
+    CentralBody ||--|{ ProvinceBody
+
+    class LocalBody {
+        *id : int
+        *central_id : ProvinceBody
+        *{field} name : char (50)
+        *{field} name_np : char (50)
+    }
+    ProvinceBody ||--|{ LocalBody
+@enduml
+

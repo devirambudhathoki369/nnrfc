@@ -1,0 +1,341 @@
+{% extends 'fragments/base.html' %} {% load static %} 
+
+{% block registerComplaint %}
+<button
+  id="complaintBtn"
+  class="btn btn-danger"
+  data-toggle="modal"
+  data-target="#complaintModalCenter"
+  {% comment %} href="{% url 'core:register_complaint' %}" {% endcomment %}
+>
+  गुनासो दर्ता गर्नुहोस्
+</button>
+<div
+  class="modal fade modal-01"
+  id="complaintModalCenter"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="complaintModalCenterTitle"
+  aria-hidden="true">
+    
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="complaintModalLongTitle">
+         तपाईंको गुनासो दर्ता गर्नुहोस्
+        </h3>
+        <button
+          class="close"
+          type="button"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <p class="text-dark mb-1">गुनासोको प्रकार? </p>
+          <div class="form-check form-check-inline">
+            <input
+              class="form-check-input"
+              id="simpleComplaintInput"
+              type="radio"
+              name="complaint_type"
+              value="simpleComplaintValue"
+              checked="checked"
+            /><label class="form-check-label" for="simpleComplaintInput"
+              >सामान्य गुनासो</label
+            >
+          </div>
+          <div class="form-check form-check-inline">
+            <input
+              class="form-check-input"
+              id="evaluationComplaintInput"
+              type="radio"
+              name="complaint_type"
+              value="evaluationComplaintValue"
+            /><label class="form-check-label" for="evaluationComplaintInput"
+              >मूल्याङ्कन पुनरावलोकनको लागि अनुरोध 
+            </label>
+          </div>
+        </div>
+
+
+        <form
+          class="form-inline-block align-items-center justify-content-center" method="POST" action="{% url 'core:register_SimpleComplaintForm' %}" id="simpleComplaintForm" enctype="multipart/form-data" name="complaintForm"
+        >
+        {% csrf_token %}
+          <div class="form-group">
+            <label for="">विषय</label>
+            <input
+              type="text"
+              id="sub"
+              name="sub"
+              class="form-control"
+              aria-describedby="passwordHelpBlock"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="">तपाईंको गुनासो</label>
+            <textarea
+              class="form-control"
+              rows="3"
+              id="msg"
+              name="msg"
+              placeholder="कृपया गुनासो यहाँ उल्लेख गर्नुहोस..."
+              required
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="customFile" class="d-block"
+              >गुनासोसँग सम्बन्धित प्रमाण अपलोड गर्नुहोस्</label
+            >
+            <div class="custom-file custom-file-upload invalid-feedback">
+              <input
+                class="custom-file-input"
+                type="file"
+                id="customFile"
+                name="document"
+              /><label class="custom-file-label" for="customFile"> </label>
+            </div>
+          </div>
+          <div class="d-flex">
+            <button class="btn btn-danger flex-grow-1 mr-3" type="button" data-dismiss="modal">
+              रद्द गर्नुहोस्</button
+            ><button class="btn btn-primary flex-grow-1" type="submit" id="btnClick">
+              पेश गर्नुहोस्
+            </button>
+          </div>
+        </form>
+
+        
+        <form
+          class="form-inline-block align-items-center justify-content-center" method="POST" action="{% url 'core:register_EvaluationComplaintForm' %}" id="evaluationComplaintForm" enctype="multipart/form-data" name="complaintEvaluation" style="display:none"
+        >
+        {% csrf_token %}
+          <div class="form-group">
+            <label for="">विषय</label>
+            <input
+              type="text"
+              id="subject"
+              name="subject"
+              class="form-control"
+              aria-describedby="passwordHelpBlock"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>सूचक </label>
+            <select class="form-control" style="width:510px;" name="questions" id="questions" required>
+              <option value="">छान्नुहोस्..</option>
+              {% for question in questions %}
+              <option value="{{question.pk}}">{{ question.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group mt-2">
+            <label for="">प्राप्त अंक</label>
+            <input
+              type="number"
+              id="score_obtained"
+              name="score_obtained"
+              class="form-control"
+              aria-describedby="passwordHelpBlock"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="">तपाईंको गुनासो</label>
+            <textarea
+              class="form-control"
+              rows="3"
+              id="reason"
+              name="reason"
+              placeholder="कृपया गुनासो यहाँ उल्लेख गर्नुहोस..."
+              required
+            ></textarea>
+          </div>
+          <div class="form-group mt-2">
+            <label for=""
+              >मूल्याङ्कन पछि अपेक्षित अंक </label
+            >
+            <input
+              type="number"
+              id="expected_score"
+              name="expected_score"
+              class="form-control"
+              aria-describedby="passwordHelpBlock"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="customFile" class="d-block"
+              >गुनासोसँग सम्बन्धित प्रमाण अपलोड गर्नुहोस्</label
+            >
+            <div class="custom-file custom-file-upload invalid-feedback">
+              <input
+                class="custom-file-input"
+                type="file"
+                id="customFile"
+                name="document"
+                required
+              /><label class="custom-file-label" for="customFile"> </label>
+            </div>
+          </div>
+          <div class="d-flex">
+            <button class="btn btn-danger flex-grow-1 mr-3" type="button" data-dismiss="modal">
+              रद्द गर्नुहोस्</button
+            ><button class="btn btn-primary flex-grow-1" type="submit" id="btnClick">
+              पेश गर्नुहोस्
+            </button>
+          </div>
+        </form>
+
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock registerComplaint %}
+
+{% block content %}
+
+<section class="section--topic">
+  <div class="container">
+  <h3 class="text-primary mb-3">सूचक</h3>
+    <div class="row">
+    
+    {% for survey in survey_list %}
+    <div class="col-lg-4 mb-3 col-md-6 col-sm-12">
+      <a class="card no-underline hover-shadow card-body" href="{% url 'core:homepage' survey.pk %}">
+        <span class="clamp">
+        {{ survey.name }}
+        </span></a
+      >
+    </div>
+    {% endfor %}
+    
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock content %}
+
+
+{% block extra_scripts %}
+<script>
+$('#simpleComplaintForm').on('submit', function(e){
+  event.preventDefault();
+ 
+  formdata = new FormData($('#simpleComplaintForm')[0]);
+
+  var csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value;
+  
+  $.ajax({
+    type: "POST",
+    url: '{% url "core:register_SimpleComplaintForm" %}',
+    data: formdata,
+    beforeSend: function(xhr, settings){
+                          xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                      },
+    cache: false,
+    contentType: false,
+    processData: false,
+    enctype: 'multipart/form-data',
+
+    success: function(response){
+      $("#sub").val("");
+      $("#msg").val("");
+      $("#document").val("");
+      if (response.success === true){
+        statusMsg = "Your Simple Complaint Has Been Registered Successfully."
+        $("#successMsg ").text(statusMsg );
+        window.location.href = "{% url 'core:survey_list' %}"
+      }
+      else if(response.invalid_file){
+        alert(response.message);
+      }
+    }
+  });
+});
+</script>
+
+
+<script>
+$('#evaluationComplaintForm').on('submit', function(e){
+  event.preventDefault();
+ 
+  formdata = new FormData($('#evaluationComplaintForm')[0]);
+
+  var csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value;
+  
+  $.ajax({
+    type: "POST",
+    url: '{% url "core:register_EvaluationComplaintForm" %}',
+    data: formdata,
+    beforeSend: function(xhr, settings){
+                          xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                      },
+    cache: false,
+    contentType: false,
+    processData: false,
+    enctype: 'multipart/form-data',
+
+    success: function(response){
+      $("#subject").val("");
+      $("#questions").val("");
+      $("#score_obtained").val("");
+      $("#reason").val("");
+      $("#expected_score").val("");
+      $("#document").val("");
+      if (response.success === true){
+        statusMsg = "Your Evaluation Complaint Has Been Registered Successfully."
+        $("#successMsg ").text(statusMsg );
+        window.location.href = "{% url 'core:survey_list' %}"
+      }
+      else if(response.invalid_file){
+        alert(response.message);
+      }
+    }
+  });
+});
+</script>
+
+
+
+<script>
+// Add the following code if you want the name of the file appear on select
+$(".custom-file-input").on("change", function() {
+  var fileName = $(this).val().split("\\").pop();
+  $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+});
+</script>
+
+
+
+
+<script>
+$(':radio[name="complaint_type"]').change(function() {
+    var choosenForm = $(this).filter(':checked').val();
+
+    if(choosenForm === "simpleComplaintValue"){
+        $("#simpleComplaintForm").show();
+        $("#evaluationComplaintForm").hide();
+        
+    }else{
+        $("#simpleComplaintForm").hide();
+        $("#evaluationComplaintForm").show();
+    }
+});
+</script>
+
+<script>
+$('#questions option').each(function() {
+  var optionText = this.text;
+  var newOption = optionText.substring(0,60);
+  $(this).text(newOption + '..');
+  });
+</script>
+{% endblock extra_scripts %}

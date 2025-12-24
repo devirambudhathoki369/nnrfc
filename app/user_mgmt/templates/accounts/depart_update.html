@@ -1,0 +1,71 @@
+    <form action="{% url 'user_mgmt:depart_update' form.instance.id %}" method="post">
+          {% csrf_token %}
+          <div class="row">
+
+            <div class="col-lg-3 col-md-6 form-group">
+              <label>विभाग/संस्था/मन्त्रालय नाम *</label>
+              <input
+                class="form-control"
+                value="{{form.instance.name|default_if_none:''}}"
+                name="name"
+                type="text"
+                placeholder="टाइप गर्नुहोस्"
+              />
+              <span class="error">{{form.name.errors.as_text}}</span>
+            </div>
+
+            <div class="col-lg-3 col-md-6 form-group">
+              <label>विभाग/संस्था/मन्त्रालय ईमेल </label>
+              <input
+                class="form-control"
+                type="email"
+                value="{{form.instance.email|default_if_none:''}}"
+                name="email"
+                placeholder="टाइप गर्नुहोस्"
+              />
+              <span class="error">{{form.email.errors.as_text}}</span>
+            </div>
+            <div class="col-lg-3 col-md-6 form-group">
+              <label>विभाग/संस्था/मन्त्रालय ठेगाना</label>
+              <input
+                class="form-control"
+                type="text"
+                value="{{form.instance.address|default_if_none:''}}"
+                name="address"
+                placeholder="टाइप गर्नुहोस्"
+              />
+              <span class="error">{{form.address.errors.as_text}}</span>
+            </div>
+         </div>
+          <div class="text-right">
+            <button type="submit" class="btn btn-success btn-icon">
+              <i class="ic-add"></i>
+              सेभ गर्नुहोस
+            </button>
+          </div>
+        </form>
+
+
+<script>
+  $("#updateForm").submit(function (e) {
+    e.preventDefault();
+    url = $(this).attr("action");
+    $.ajax({
+        url: url,
+        type: "POST",
+        data: new FormData(this),
+        processData: false,
+        contentType: false,
+        success: function (data) {
+          if (data["success"]) {
+            location.href = data["url"];
+          } else if ($("input").next("p").length)
+            $("input").nextAll("p").remove();
+          for (var error in data) {
+            let input = $("input[name='" + error + "']");
+            input.after('<p class="error" id=' + error + "-error for=" + error +"><span>" + data[error] +"</span></p>");
+          }
+        },
+      });
+  });
+</script>

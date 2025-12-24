@@ -1,0 +1,58 @@
+###########
+# BUILDER #
+###########
+
+FROM python:3.8-slim as builder
+
+# set work directory
+WORKDIR /usr/src/app
+
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# lint
+RUN pip install --upgrade pip
+
+# install dependencies
+COPY requirements .
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r production.txt
+
+#########
+# FINAL #
+#########
+
+FROM python:3.8-slim
+
+RUN mkdir -p /home/app
+
+# create app user
+RUN groupadd --system app && useradd --system --gid app app
+
+# create appropriate directories
+ENV HOME=/home/app
+ENV APP_HOME=/home/app/web
+RUN mkdir $APP_HOME
+RUN mkdir $APP_HOME/static
+RUN mkdir $APP_HOME/media
+WORKDIR $APP_HOME
+
+# install dependencies
+RUN apt-get update && apt-get -y install libpangocairo-1.0-0 libpq-dev gcc 
+
+COPY --from=builder /usr/src/app/wheels /wheels
+COPY --from=builder /usr/src/app/production.txt .
+RUN pip install --no-cache /wheels/*
+
+COPY . $APP_HOME
+RUN chown -R app:app $APP_HOME
+
+# copy entrypoint.prod.sh
+#COPY ./entrypoint.sh $APP_HOME/
+#RUN chmod +x ./entrypoint.prod.sh
+
+# change user
+USER app
+
+# run entrypoint.sh
+#ENTRYPOINT ["/home/app/web/entrypoint.prod.sh"]

@@ -1,0 +1,414 @@
+{% extends 'fragments/dashboard/base.html' %} {% load static %} 
+
+ {% block title-bar %}
+  <div class="header-page">
+    <h1>सुधारको लागि अनुरोध गरिएको कार्य सम्पादन सूचक</h1>
+    <a href="{% url 'dashboard:correction_detail' correction.level_id  %}" class="btn btn-icon-only btn-sm">
+    </a>
+     <a href="{% url 'dashboard:correction_detail' correction.level_id %}"><button class="btn btn-icon-only">
+        <i class="ic-close-circular-filled text-danger"></i>
+      </button>
+    </a>
+  </div>
+{% endblock title-bar %}
+{% block content %}
+<Fragment>
+  <div class="inner">
+    <div class="container">
+      <div
+        class="modal mymodal modal-01"
+        id="exampleModal22"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header align-items-center">
+              <h5 class="modal-title">नयाँ सूचक थप्नुहोस</h5>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span
+                  aria-hidden="true"
+                  class="ic-close-circular-filled text-danger h5"
+                ></span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label>सूचकको शीर्षक</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  placeholder="enter text"
+                />
+              </div>
+              <div class="form-row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label for="" class="d-block">सूचकको तह</label>
+                    <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        name="inlineRadioOptions"
+                        id="inlineRadio1"
+                        value="option1"
+                        checked
+                      />
+                      <label class="form-check-label" for="inlineRadio1"
+                        >Default</label
+                      >
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        name="inlineRadioOptions"
+                        id="inlineRadio2"
+                        value="option2"
+                      />
+                      <label class="form-check-label" for="inlineRadio2"
+                        >With custom field</label
+                      >
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-4">
+                  <div class="form-group">
+                    <label>Select custom field type</label
+                    ><select class="form-control">
+                      छान्नुहोस्
+                      <option>महिना</option>
+                      <option>OptionsA</option>
+                      <option>OptionsB</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-light" data-dismiss="modal">
+                रद्द गर्नुहोस्
+              </button>
+              <button type="button" class="btn btn-primary">सिर्जना गर्नुहोस्</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="modal mymodal modal-02"
+        id="exampleModal2"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header align-items-center">
+              <h5 class="modal-title">Percentage Field Settings</h5>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span
+                  aria-hidden="true"
+                  class="ic-close-circular-filled text-danger h5"
+                ></span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="form-row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label>Choose Numerator</label
+                    ><select class="form-control n">
+                      छान्नुहोस्
+                      <option>छान्नुहोस्...</option>
+                     
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label>Choose Denominator</label
+                    ><select class="form-control d">
+                      छान्नुहोस्
+                      <option>छान्नुहोस्...</option>
+                    
+                    </select>
+                  </div>
+                </div>
+               
+
+              </div>
+               <div class="error p-error" style="display: none;">
+                Numerator and Denominator can not be same.</div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-light" data-dismiss="modal">
+                रद्द गर्नुहोस्
+              </button>
+              <button type="button" class="btn btn-primary save-p">शेभ गर्नुहोस्</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row flex-center">
+        <div class="col-lg-8">
+          <div class="option-group mb-3 bg-white">
+             <p>
+              {{correction.sub}}
+              <br/>
+              <small>{{correction.msg}}</small>
+              <br>
+              {% if correction.level %}
+                <small>{{correction.level}} को सुधार अनुरोध   </small>
+              {% endif %}
+            </p>
+          </div>
+         
+
+          <div class="card-index">
+         
+            <div class="option-group text-primary">
+              <p>
+               {% if ques.parent %} 
+                {{ques.parent.title}}  
+                
+                {% endif %}
+              </p>
+              {% if correction.month %}
+              <div class="form-row">
+                <div class="col-md-5">
+                <div class="form-group">
+                <select name="month" class="form-control" disabled>
+                  महिना
+                  <option value="{{correction.month}}">{{correction.get_month_display}}</option>
+                </select>
+                </div>
+                </div>
+                </div>
+                </div>
+            {% endif %}
+         
+            <div class="option-group-actual">
+              <div class="option-group-new">
+                <p>{{ques.title}}</p>
+              </div>
+              <form action="{% url 'dashboard:correction_fix' correction.id ques.id %}"
+               method="post" class="c-form" enctype="multipart/form-data">
+               {% csrf_token %}
+               
+              
+              <div class="card-option-group">
+                <div id="optionContainer">
+                {% for option in options_data %}
+                  <div class="item">
+                    <div>
+                      <input
+                        class="form-control custom-error otitle"
+                        type="text"
+                        placeholder="New Option"
+                        value="{{option.option}}"
+                        name="title"
+                        style="background:none;"
+                        readonly 
+                      />
+                    <input
+                      class="form-control"
+                      type="text"
+                      name="o_id"
+                      value="{{option.option.id}}"
+                      hidden
+                    />
+                    </div>
+                    <div>
+                     {% if option.input_type == "fiscal_year" %}
+                        <select class="custom-select" name="ans">
+                          {% for fy in option.fy_data %}
+                            <option value="{{ fy.name }}"
+                             {% if option.answer.value == fy.name %}selected{% endif %}
+                             >{{ fy.name }}</option>
+                          {% endfor %}
+                        </select>
+                      {% elif option.input_type == "checkbox" %}
+                          <div class="custom-control custom-checkbox check">
+                          <input
+                          class="custom-control-input"
+                          type="checkbox"
+                          id = "check{{ option.option.id }}"
+                          {% if option.answer.value == "True" %}checked{% endif %}
+                          did="{{option.answer.id}}"
+                          /><label
+                          class="custom-control-label ml-3"
+                          for="check{{ option.option.id }}"
+                          ></label
+                          >
+                        
+                        </div>
+                        <input type="text" hidden class="{{option.answer.id}}" name="ans" 
+                       value="{{option.answer.value}}"/>
+                      {% elif option.input_type == "file" %}
+                       <div class="custom-file">
+                      <a href="{{option.document.document.url}}" class="text-primary text-label">
+                      {{option.document.get_document_name}}</a>
+                      </div>
+                      <input
+                        class="form-control custom-error otitle"
+                        type="text"
+                        hidden
+                        placeholder="Answer"
+                        value="{{option.document.get_document_name}}"
+                        name="ans"
+                      />
+                       {% comment %} <label>Change File:</label> {% endcomment %}
+                        <input
+                       class="form-control custom-error otitle" name="new_file" type="file"/>
+                       <input name="anss" hidden value="{{option.answer.id}}"/>
+                      {% else %}
+                     <input
+                        class="form-control custom-error otitle"
+                        type="{{option.input_type}}"
+                        placeholder="Answer"
+                        value="{{option.answer.value}}"
+                        name="ans"
+                      />
+                    {% endif %}
+                       <input
+                        class="form-control custom-error otitle"
+                        type="text"
+                        value="{{option.answer.id}}"
+                        name="ans_id"
+                        hidden
+                      />
+                      {% comment %} <select name="field_type" class="form-control ftypes">
+                        Select
+                        <option disabled>Select field type</option>
+                        {% for val, field in field_type_choices %}
+                        <option value="{{val}}" {% if val == option.field_type %}selected{% endif %}>{{field}}</option>
+                        {% endfor %}
+                      </select> {% endcomment %}
+                    </div>
+                  </div>
+                {% endfor %}
+                 
+                </div>
+                {% if correction.document %}
+                <div class="item last">
+                  <div>
+                  
+                    <div class="custom-file">
+                      <ol class="text-primary text-label">
+                      
+                <a href="{{correction.document.url}}" target="_blank">{{correction.document}}</a>
+                      
+                      </ol>
+                    </div>
+                  </div>
+                  <div></div>
+                </div>
+                {% endif %}
+              </div>
+
+            </div>
+            {% comment %} {% if correction.status == "P" %} {% endcomment %}
+             {% user_can_change request 'correction_req' as add %}
+              {% if add %}
+            <div class="flex-end mt-3">   
+              <button type="submit" class="btn btn-success">अपडेट गर्नुहोस्</button>
+            </div>
+            {% endif %}
+            {% comment %} {% endif %} {% endcomment %}
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Fragment>
+
+{% endblock content %}
+
+{% block extra_scripts %}
+<script>
+$(document).on("change", ".ftypes", function () {
+    var selected = $(this).find(":selected").val();
+    if(selected === 'P'){
+    var url = "{% url 'dashboard:q_options' ques.id %}";
+
+    $.ajax({
+      url:url,
+      type:"GET",
+      dataType:"json",
+      success:function(data){
+        $('.n').empty();
+        $('.d').empty();
+        for(var i = 0; i < data['options'].length; i++){
+          id = data['options'][i]['id']
+          title = data['options'][i]['title']
+          type = data['options'][i]['option_type']
+          n_id = data['n_id']
+          d_id = data['d_id']
+          q_id = data['q_id']
+          $('.n').append(`<option value="${id}">${title}</option>`)
+          $('.d').append(`<option value="${id}">${title}</option>`)
+          $('.n').find($(`option[value="${n_id}"`)).prop("selected", true)
+          $('.d').find($(`option[value="${d_id}"`)).prop("selected", true)
+          $('.n').append(`<option value="${q_id}" hidden></option>`)
+        }
+       
+      }
+
+    })
+
+    $('#exampleModal2').modal('show');
+    }
+
+  });
+
+$(document).on("click", ".save-p", function () {
+    var n = $('.n :selected').val();
+    var d = $('.d :selected').val();
+    var q = $('.n').find('option:hidden').val();
+    if(n != d){
+      $('.c-form').find(`input[class="${q}"]`).remove();
+      $('.c-form').append(`<input name="n" hidden class="${q}" value="${n}"/>`);
+      $('.c-form').append(`<input name="d" hidden class="${q}" value="${d}"/>`);
+
+      $('#exampleModal2').modal('hide');
+
+    }
+    else{
+      $('.p-error').show().delay(1300).fadeOut('slow');;
+    }
+    
+  });
+
+{% comment %} $(".check").on('change', function() {  
+  if ($("input[type='checkbox']").is(':checked')) {
+   $(".check-val").val("True");
+  }
+  else{
+    $(".check-val").val("False");
+  }
+  
+}); {% endcomment %}
+
+ $('input[type="checkbox"]').each(function() {
+    $(this).change(function() {
+       let did = $(this).attr("did")
+       if(!$(this).is(":checked")){
+          $('.c-form').find(`.${did}`).val("False");
+       }
+       else{
+          $('.c-form').find(`.${did}`).val("True");
+       }
+    })
+});
+</script>
+{% endblock extra_scripts %}

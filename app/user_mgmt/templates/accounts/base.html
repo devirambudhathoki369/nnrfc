@@ -1,0 +1,42 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css"
+      rel="stylesheet"
+    />
+    <title>NNRFC</title>
+    <link href="{% static 'front/style.css' %}" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="login-container">
+      {% block content %} {% endblock content %}
+    </div>
+    <script
+      type="text/javascript"
+      src="{% static 'front/assets/vendors.js' %}"
+    ></script>
+    <script
+      type="text/javascript"
+      src="{% static 'front/assets/home.js' %}"
+    ></script>
+
+    <script>
+      const togglePassword = document.querySelector('#togglePassword');
+      const password = document.querySelector('#password');
+
+      togglePassword.addEventListener('click', function (e) {
+          // toggle the type attribute
+          const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+          password.setAttribute('type', type);
+          // toggle the eye / eye slash icon
+          this.classList.toggle('ic-visible');
+      });
+    </script>
+
+  </body>
+</html>

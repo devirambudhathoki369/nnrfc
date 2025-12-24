@@ -1,0 +1,315 @@
+{% extends 'fragments/dashboard/base.html' %}
+{% load static %}
+
+{% load role_menus_check %}
+
+{% block role-setup %}
+<div class="header-page">
+  <h1>भूमिका सेटअप</h1>
+  <a href="{% url "user_mgmt:role_list" %}" class="btn btn-icon-only btn-sm"
+    >
+    <i class="ic-close-circular-filled text-danger"></i
+  ></a>
+</div>
+{% endblock role-setup %}
+
+
+{% block content %}
+
+<!-- Main section -->
+<Fragment>
+  <div class="inner screen-user-setup">
+    <div class="container">
+    <form action="" method="post" id="roleForm">
+    {% csrf_token %}
+      <div class="card card-body mb-3">
+        <h6 class="mb-2 font-bold">भूमिकाको विवरण</h6>
+        <div class="row">
+          <div class="col-lg-3 form-group">
+            <label>भूमिका नाम *</label>
+            <input class="form-control" value="{{form.name.value|default_if_none:''}}" name="name" type="text" />
+            {% if form.name.errors %}
+            <span class="error">{{form.name.errors.as_text}}</span>
+            {% endif %}
+          </div>
+        
+          <div class="col-lg-7 form-group">
+            <label>विवरण</label>
+            <input class="form-control" value="{{form.desc.value|default_if_none:''}}" name="desc" type="text" />
+            {% if form.desc.errors %}
+            <span class="error">{{form.desc.errors.as_text}}</span>
+            {% endif %}
+          </div>
+        </div>
+           {% for error in form.non_field_errors %}
+            <span class="error">{{error}}</span>
+        {% endfor %}
+      </div>
+      <div class="card card-body">
+        <h6 class="mb-2 font-bold">भूमिका विशेषाधिकार</h6>
+          
+
+        <div class="row">
+          <div class="col-lg-3 col-md-6 form-group">
+            <label>मेनु</label
+            ><select class="form-control menu-list">
+              छान्नुहोस्
+              {% comment %} <option selected disabled>Select...</option> {% endcomment %}
+              {% for menu in menus %}
+              {% if not menu in role_menus %}
+              <option value="{{menu.pk}}">{{menu.name}}</option>
+              {% endif %}
+              {% empty %}
+              <option disabled selected>मेनु छैन</option>
+              {% endfor %}
+            </select>
+            <span class="error menu-error" style="display:none;"><strong>यो मेनु पहिले नै सूची मा थपिएको छ।</strong></span>
+          </div>
+          
+          <div class="col-lg-3 col-md-6 form-group">
+            <label>&nbsp;</label>
+            <button type="button" {% if not menus %}disabled{% endif %} class="btn btn-icon btn-success d-block add-menu">
+              <i class="ic-add"></i> मेनु थप्नुहोस 
+            </button>
+          </div>
+        </div>
+           
+
+        <div class="table-responsive">
+          <table class="table table-02">
+            <thead>
+              <tr class="each-menu">
+                <th>मेनु</th>
+                <th>सबै</th>
+                <th>पढ्नु</th>
+                <th>सिर्जना</th>
+                <th>अपडेट</th>
+                <th>डलिट</th>
+                <th class="text-right">कार्य</th>
+              </tr>
+            </thead>
+            <tbody class="menu-details">
+            {% for m in role_menus  %}
+             <tr class="each-menu">
+                <td>{{m.name}}
+                 <input hidden value="{{m.id}}" name="m_id"/>
+                </td>
+                <td>
+                  <div class="custom-control custom-checkbox all-check">
+                    <input
+                      type="checkbox"
+                      class="custom-control-input"
+                      id="customControlValidation1"
+                    />
+                    <label
+                      class="custom-control-label"
+                      for="customControlValidation1"
+                    ></label>
+                  </div>
+                </td>
+                <td>
+                  <div class="custom-control custom-switch">
+                    <input
+                      type="checkbox"
+                      class="custom-control-input"
+                      id="uncheckedCustomSwitches1{{m.id}}"
+                      value="{{m.id}}"
+                      name="can_view"
+                      {% role_can_view m role %}
+                    />
+                    <label
+                      class="custom-control-label"
+                      for="uncheckedCustomSwitches1{{m.id}}"
+                    ></label>
+                  </div>
+                </td>
+                <td>
+                  <div class="custom-control custom-switch">
+                    <input
+                      type="checkbox"
+                      class="custom-control-input"
+                      id="uncheckedCustomSwitches2{{m.id}}"
+                      value="{{m.id}}"
+                      name="can_add"
+                      {% role_can_add m role %}
+                    />
+                    <label
+                      class="custom-control-label"
+                      for="uncheckedCustomSwitches2{{m.id}}"
+                    ></label>
+                  </div>
+                </td>
+                <td>
+                  <div class="custom-control custom-switch">
+                    <input
+                      type="checkbox"
+                      class="custom-control-input"
+                      id="uncheckedCustomSwitches3{{m.id}}"
+                      value="{{m.id}}"
+                      name="can_change"
+                      {% role_can_change m role %}
+                    />
+                    <label
+                      class="custom-control-label"
+                      for="uncheckedCustomSwitches3{{m.id}}"
+                    ></label>
+                  </div>
+                </td>
+                <td>
+                  <div class="custom-control custom-switch">
+                    <input
+                      type="checkbox"
+                      class="custom-control-input"
+                      id="uncheckedCustomSwitches4{{m.id}}"
+                      value="{{m.id}}"
+                      name="can_delete"
+                      {% role_can_delete m role %}
+                    />
+                    <label
+                      class="custom-control-label"
+                      for="uncheckedCustomSwitches4{{m.id}}"
+                    ></label>
+                  </div>
+                </td>
+
+                <td data-id="{{m.id}}" class="text-right m-remove">
+                  <i class="ic-delete text-coolGray600" />
+                </td>
+              </tr> 
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="text-right mt-3">
+        <button type="submit" class="btn btn-primary">सेभ गर्नुहोस</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</Fragment>
+
+{% endblock content %}
+
+{% block extra_scripts %}
+
+<script>
+$(document).on("click", ".add-menu", function(){
+  let m_id = $('.menu-list').find(':selected:not([disabled])').val();
+  let m_name = $('.menu-list').find(':selected:not([disabled])').text();
+  let tr = `<tr class="each-menu">
+                  <td>
+                  ${m_name}
+                  <input hidden value="${m_id}" name="m_id"/>
+                  </td>
+                  <td>
+                    <div class="custom-control custom-checkbox">
+                      <input
+                        type="checkbox"
+                        class="custom-control-input all-check"
+                        id="customControlValidation${m_id}"
+                      />
+                      <label
+                        class="custom-control-label"
+                        for="customControlValidation${m_id}"
+                      ></label>
+                    
+                    </div>
+                  </td>
+                  <td>
+                    <div class="custom-control custom-switch">
+                      <input
+                        type="checkbox"
+                        class="custom-control-input"
+                        id="uncheckedCustomSwitches1${m_id}"
+                        value="${m_id}"
+                        name="can_view"
+                      />
+                      <label
+                        class="custom-control-label"
+                        for="uncheckedCustomSwitches1${m_id}"
+                      ></label>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="custom-control custom-switch">
+                      <input
+                        type="checkbox"
+                        class="custom-control-input"
+                        id="uncheckedCustomSwitches2${m_id}"
+                        value="${m_id}"
+                        name="can_add"
+                      />
+                      <label
+                        class="custom-control-label"
+                        for="uncheckedCustomSwitches2${m_id}"
+                      ></label>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="custom-control custom-switch">
+                      <input
+                        type="checkbox"
+                        class="custom-control-input"
+                        id="uncheckedCustomSwitches3${m_id}"
+                        value="${m_id}"
+                        name="can_change"
+                      />
+                      <label
+                        class="custom-control-label"
+                        for="uncheckedCustomSwitches3${m_id}"
+                      ></label>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="custom-control custom-switch">
+                      <input
+                        type="checkbox"
+                        class="custom-control-input"
+                        id="uncheckedCustomSwitches4${m_id}"
+                        value="${m_id}"
+                        name="can_delete"
+                      />
+                      <label
+                        class="custom-control-label"
+                        for="uncheckedCustomSwitches4${m_id}"
+                      ></label>
+                    </div>
+                  </td>
+
+                  <td class="text-right m-remove">
+                    <i class="ic-delete text-coolGray600" />
+                  </td>
+                </tr>`
+    m_length = $(`.menu-details td:contains("${m_name}")`).length;
+    if(m_length >=1 ){
+      $('.menu-error').show().delay(1200).fadeOut('slow');
+    }
+    else{
+      $(".menu-details").prepend(tr);
+    }
+    
+  })
+
+$(document).on("click", ".m-remove", function(){
+  $(this).closest('.each-menu').remove();
+})
+
+$(document).on("click", ".all-check", function(){
+    if($(this).is(":checked")){
+     $(this).closest(".each-menu").find(':checkbox').prop("checked", true).not(this);
+    }
+    else{
+       $(this).closest(".each-menu").find(':checkbox').prop("checked", false).not(this);
+    }
+})
+
+$(document).on("click", ".menu-remove", function(){
+  let id = $(this).attr('data-id');
+  $("#roleForm").append(`<input name="remove_m_id" hidden value="${id}"`)
+  $(this).closest('.each-menu').remove();
+})
+</script>
+{% endblock extra_scripts %}
+
+

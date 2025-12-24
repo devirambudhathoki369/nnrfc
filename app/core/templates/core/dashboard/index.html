@@ -1,0 +1,344 @@
+{% extends 'fragments/dashboard/base.html' %} 
+
+{% block title-bar %}
+  <div class="header-page">
+    <h1>सुचकको सिर्जना </h1>
+    <a href="{% url 'dashboard:home' %}" class="btn btn-icon-only btn-sm">
+      <i class="ic-close-circular-filled text-danger"></i>
+    </a>
+  </div>
+{% endblock title-bar %}
+
+{% block content %}
+<Fragment>
+  <div class="inner">
+    <div class="container">
+      <div
+        class="modal mymodal modal-01"
+        id="exampleModal2"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header align-items-center">
+              <h5 class="modal-title">नयाँ सूचक थप्नुहोस</h5>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span
+                  aria-hidden="true"
+                  class="ic-close-circular-filled text-danger h5"
+                ></span>
+              </button>
+            </div>
+            <form action="{% url 'dashboard:index_create' %}" id="qForm" method="POST">
+            {% csrf_token %}
+            <div class="modal-body">
+               <input  name="s_name" hidden />
+             <input  name="f_year"  hidden />
+              <input  name="s_level"  hidden />
+              <div class="form-group">
+                <label>सूचकको शीर्षक</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  name="title"
+                  placeholder="टाइप गर्नुहोस्"
+                />
+              </div>
+              <div class="form-row">
+                <div class="col-lg-12">
+                 <div class="form-group">
+                      <label>Sequence ID</label>
+
+                      <input
+                        class="form-control"
+                        type="number"
+                        name="sequence_id"
+                        placeholder="जस्तै १"
+                      />
+              
+                    </div>
+                  <div class="form-group">
+           
+                    <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        name="month_requires"
+                        id="inlineRadio22"
+                        value="1"
+                      />
+                      <label class="form-check-label" for="inlineRadio22"
+                        >महिना आवश्यक</label
+                      >
+                    </div>
+                     
+                    
+                    
+                      {% comment %} <div class="form-group">
+                      <div class="form-check form-check-inline has-child">
+                              <input
+                                class="form-check-input"
+                                type="checkbox"
+                                name="has_child"
+                                id="inlineRadio3"
+                                value="2"
+                              />
+                              <label class="form-check-label" for="inlineRadio3"
+                                >Has Child Index</label
+                              >
+                            </div>
+                    </div> {% endcomment %}
+                  <div class="form-row childs" style="display:none;">
+                    <div class="col-lg-12">
+                    <div class="error q-error" style="display:none;" >
+                          <span class="ic-warning">कृपया पहिले सूचकका शीर्षक प्रविष्ट गर्नुहोस्।</span>
+                        </div>
+                    <div class="form-group">
+                      <div class="form-group">
+                      <label>बाल सूचक</label>
+
+                      <input
+                        class="form-control child-title"
+                        type="text"
+                        name="child_title"
+                        placeholder="टाइप गर्नुहोस्"
+                      />
+              
+                    </div>
+                    </div>
+                    </div>
+                    
+                    </div>
+                  </div>
+                   <div class="form-group add-another" style="display:none;">
+                    <button type="button" class="btn btn-sm btn-outline-info child-add">Add another child question</button>
+                    </div>
+                 </div>
+
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-light" data-dismiss="modal">
+                रद्द गर्नुहोस्
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+              >
+                सिर्जना गर्नुहोस्
+              </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row flex-center">
+        <div class="col-lg-8">
+           <form id="sForm">
+          <div class="form-row">
+            <div class="col-lg-5">
+              <div class="form-group">
+                <label>सूचकको नाम *</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  name="name"
+                  id="name"
+                  placeholder="टाइप गर्नुहोस्"
+                />
+                
+              </div>
+            
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <div class="form-group">
+                <label>आर्थिक बर्षको लागि *</label
+                ><select name="fiscal_year" id="fYears" class="form-control">
+                  छान्नुहोस्
+                 
+                  {% for year in f_years %}
+                  <option value="{{year.pk}}">{{year}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              
+            </div>
+            <div class="col-lg-4">
+              <div class="form-group">
+                <label for="" class="d-block">सूचक स्तर *</label>
+
+                <div class="form-check form-check-inline">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="level"
+                    id="inlineRadio1"
+                    value="P"
+                    checked
+                  />
+                  <label class="form-check-label" for="inlineRadio1"
+                    >प्रदेश तह</label
+                  >
+                </div>
+                <div class="form-check form-check-inline">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="level"
+                    id="inlineRadio2"
+                    value="L"
+                  />
+                  <label class="form-check-label" for="inlineRadio2"
+                    >स्थानीय तह</label
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          </form>
+              <div class="error" style="display:none">
+                <span class="ic-warning"> </span><strong>* क्षेत्रहरु आवश्यक छ</strong>
+              </div>
+
+          <div class="card-index">
+        
+          
+            <div class="text-center">
+              <button
+                class="btn btn-primary btn-icon add-index"
+                data-toggle="modal"
+                data-target="#exampleModal2"
+              >
+                <i class="ic-add"></i> थप सूचक
+              </button>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Fragment>
+{% endblock content %}
+
+ {% block extra_scripts %} 
+ <script>
+$(document).ready(function() {    
+    $('.add-index').prop('disabled', true);
+
+    $('#name').on('input', function(){
+
+        if ($('#name').val() != '')
+        {
+            $('.add-index').prop('disabled', false);
+        }
+        else
+        {
+            $('.add-index').prop('disabled', true);
+        }
+    });
+});
+ </script>
+ <script>
+ $(document).on('click', '.add-index', function(){
+      var name = $("input[name='name']").val()
+      var fiscalYear = $('#fYears').find(":selected").val();
+      var level = $('input[name="level"]:checked').val();
+      $("input[name='s_name']").val(name);
+      $("input[name='f_year']").val(fiscalYear);
+      $("input[name='s_level']").val(level);
+    })
+
+
+    $("input[name='has_child']").on("click", function(){
+         if($(this).is(":checked")) {
+          $('.childs').show();
+          $(".add-another").show();
+        }
+        else{
+          $('.childs').hide();
+          $(".add-another").hide();
+
+        }
+      });
+
+     $(document).on('click', '.cancel-title', function(){
+       $(this).closest('.childd').remove();
+    })
+
+   
+    $(document).on("click", '.child-add', function(){
+      var ques = ` <div class="col-lg-12 childd">
+                    <div class="form-group">
+                     <div class="form-group">
+                      <label>Child Index</label>
+                       <button class="btn btn-icon-only cancel-title" type="button">
+                        <i class="ic-close-circular-filled text-danger"></i>
+                      </button>
+                      <input
+                        class="form-control child-title"
+                        type="text"
+                        name="child_title"
+                        placeholder="टाइप गर्नुहोस्"
+                        required
+                      />
+                      
+                    </div>
+                    </div>
+                    </div>
+                    `
+         var valid = true;
+         $("input[name='child_title']").each(function() {
+            var element = $(this);
+            if (element.val() == "") {
+                valid = false;
+            }
+          });
+
+        if (valid)
+        {
+          $('.childs').append(ques);
+          $(".add-another").show();
+        }
+        else{
+          $('.q-error').show();
+          $('.q-error').delay(1300).fadeOut('slow');
+        }
+  
+      
+    })
+ </script>
+ <script>
+  $("body").on("submit", "#qForm", function(e) {
+        e.preventDefault();
+        url=$(this).attr('action')          
+        $.ajax({
+        url: url,
+        type: 'POST',           
+        data: new FormData(this),
+        processData: false,
+        contentType: false,
+        success: function (data) {
+        if(data['success']){
+          location.href = data['url']
+        }
+        else if($("input").next('p').length) $("input").nextAll('p').remove();
+          for (var error in data) {
+            var input = $("input[name='"+ error +"']");
+            input.after('<p class="error" id='+error +'-error for='+ error +'><span>'+ data[error] +'</span></p>');
+          }
+              
+            },
+          });
+         
+      });
+</script>
+
+ </script>
+ {% endblock extra_scripts %}

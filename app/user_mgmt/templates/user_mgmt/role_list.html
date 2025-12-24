@@ -1,0 +1,130 @@
+{% extends 'fragments/dashboard/base.html' %} 
+{% load static %}
+
+{% block role-setup %}
+<div class="header-page">
+  <h1>भूमिका सेटअप</h1>
+  <a class="btn btn-icon-only btn-sm">
+  </a>
+</div>
+{% endblock role-setup %}
+
+{% block content%}
+
+<!-- Main section -->
+<Fragment>
+  <div class="inner screen-user-setup">
+    <div class="container">
+      <div
+        class="modal mymodal modal-01"
+        id="deleteModal"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header align-items-center">
+              <h5 class="modal-title">भूमिका पुष्टिकरण मेटाउनुहोस्</h5>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span
+                  aria-hidden="true"
+                  class="ic-close-circular-filled text-danger h5"
+                ></span>
+              </button>
+            </div>
+            <div class="modal-body">
+            <form action="" method="POST" class="delete-form">
+                {% csrf_token %}
+                <label class="d-block">के तपाईं पक्का डिलिट गर्न चाहानुहुन्छ?</label>               
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-light" data-dismiss="modal">
+                रद्द गर्नुहोस्
+              </button>
+              <button type="submit" class="btn btn-danger">डिलिट गर्नुहोस्</button>
+               </form>
+            </div>
+          </div>
+        </div>
+        
+
+      </div>
+      <div class="card card-body mt-3">
+        <div class="flex-center-between mb-2">
+          <h6>भूमिकाको सूची</h6>
+          {% user_can_add request 'roles' as add %}
+          {% if add %}
+          <a
+            href="{% url 'user_mgmt:role_create' %}"
+            class="btn btn-success btn-icon"
+          >
+            <i class="ic-add"></i> भूमिका सिर्जना गर्नुहोस्
+          </a>
+          {% endif %}
+        </div>
+        <div class="table-responsive">
+          <table class="table table-02">
+            <thead>
+              <tr>
+                <th>क्र.स</th>
+                <th>भूमिका</th>
+                <th>प्रयोगकर्ताहरु</th>
+                <th>विवरण</th>
+
+                <th class="text-right">कार्य</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for role in roles  %}
+              <tr>
+                <td>{{forloop.counter}}</td>
+
+                <td>{{role.name}}</td>
+                 <td>{{role.users.all.count}}</td>
+                <td>
+                 {{role.desc}}
+                </td>
+                <td class="text-right">
+                {% user_can_change request 'roles' as update %}
+                  {% if update %}
+                  <a
+                    href="{% url 'user_mgmt:role_update' role.id %}"
+                    title="Edit"
+                    class="mr-2 text-coolGray600"
+                  >
+                    <i class="ic-edit"></i
+                  ></a>
+                  {% endif %}
+                    {% user_can_delete request 'roles' as delete %}
+                  {% if delete %}
+                  <a href="#" data-toggle="modal" url="{% url 'user_mgmt:role_delete' role.id %}"
+                   data-target="#deleteModal" title="Delete" class="text-coolGray600 d-role">
+                    <i class="ic-delete"></i
+                  ></a>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</Fragment>
+{% endblock content %}
+
+{% block extra_scripts %}
+<script>
+$(document).on("click", ".d-role", function(){
+  let url = $(this).attr('url');
+  $('.delete-form').attr('action', url)
+})
+</script>
+{% endblock extra_scripts %}

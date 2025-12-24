@@ -1,0 +1,60 @@
+{% extends 'fragments/dashboard/base.html' %} {% load static %}
+ {% block title-bar %}
+<div class="header-page">
+  <h1>प्रदेश/स्थानीय द्वारा भरिएको सूचक</h1>
+  <a href="{% url 'dashboard:survey_list' %}"
+    ><button class="btn btn-icon-only">
+      <i class="ic-close-circular-filled text-danger"></i>
+    </button>
+  </a>
+</div>
+{% endblock title-bar %} {% block content %}
+
+<Fragment>
+  <div class="inner">
+    <div class="container">
+ 
+          
+          <div class="table-responsive">
+            <table class="table table-02 mb-3 d-xl-table">
+              <thead>
+                <tr>
+                  <th>क्रम संख्या</th>
+                  {% comment %} <th>Submission Date</th> {% endcomment %}
+                  <th>प्रदेशहरु/स्थानीयहरु</th>
+
+                  {% comment %} <th>कुल सुधार</th> {% endcomment %}
+                  <th class="text-right">कार्य</th>
+                </tr>
+              </thead>
+              <tbody>
+              {% for survey in fill_surveys  %}
+                <tr>
+                  <td>{{forloop.counter}}</td>
+                  <td>{{survey.level_id}}</td>
+                  {% comment %} <td>{{survey.get_correction_requests}}</td> {% endcomment %}
+                  {% comment %} <td>{{survey.}}</td> {% endcomment %}
+                  <td class="text-right">
+                    <a
+                      href="{% url 'dashboard:filled_ques' survey.survey_id survey.level_id_id %}"
+                      title="View"
+                      class="mr-2 text-coolGray600"
+                    >
+                      <i class="ic-visible"></i
+                    ></a>
+                  </td>
+                </tr>
+              {% endfor %}
+               
+              </tbody>
+            </table>
+          </div>
+        </div>
+      
+        </div>
+      </div>
+    </div>
+  </div>
+</Fragment>
+
+{% endblock content %}

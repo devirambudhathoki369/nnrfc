@@ -1,0 +1,280 @@
+{% comment %} <form action="{% url 'user_mgmt:user_edit' form.instance.id %}" id="updateForm" method="post">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-lg-3 col-md-6 form-group">
+      <label>पुरा नाम *</label>
+      <input
+        class="form-control"
+        value="{{form.instance.full_name|default_if_none:''}}"
+        name="full_name"
+        type="text"
+        placeholder="enter text"
+      />
+      <span class="error">{{form.full_name.errors.as_text}}</span>
+    </div>
+  
+    <div class="col-lg-3 col-md-6 form-group">
+      <label>ईमेल ठेगाना *</label>
+      <input
+        class="form-control"
+        type="email"
+        value="{{form.instance.email|default_if_none:''}}"
+        name="email"
+        placeholder="enter text"
+      />
+      <span class="error">{{form.email.errors.as_text}}</span>
+    </div>
+    <div class="col-lg-3 col-md-6 form-group">
+      <label>मोबाइल नम्बर</label>
+      <input
+        class="form-control"
+        type="number"
+        value="{{form.instance.mobile_num|default_if_none:''}}"
+        name="mobile_num"
+        placeholder="enter number"
+      />
+      <span class="error">{{form.mobile_num.errors.as_text}}</span>
+    </div>
+    <div class="col-lg-3 col-md-6 form-group">
+      <label>पद</label>
+      <input
+        class="form-control"
+        type="text"
+        value="{{form.instance.designation|default_if_none:''}}"
+        name="designation"
+        placeholder="enter text"
+      />
+      <span class="error">{{form.designation.errors.as_text}}</span>
+    </div>
+
+    <div class="col-lg-3 col-md-6 form-group">
+      <label>प्रयोगकर्ता भूमिका</label
+      ><select name="roles" class="form-control">
+        Select
+        <option disabled selected>Select...</option>
+        {% for role in roles %}
+        <option value="{{role.pk}}" {% if role in user.roles.all %}selected{% endif %}>
+        {{role}}</option>
+        {% endfor %}
+      </select>
+      <span class="error">{{form.roles.errors.as_text}}</span>
+    </div>
+    <div class="col-lg-3 col-md-6 form-group">
+      <label>स्तर प्रकार</label
+      ><select name="level_type" class="form-control level-types">
+        Select
+        <option  disabled selected>Select...</option>
+        {% for type in level_types %}
+        <option value="{{type.pk}}" {% if type.pk == user.level.type.pk %}selected{% endif %}>{{type.get_type_display}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-lg-3 col-md-6 form-group">
+      <label>स्तर *</label
+      ><select name="level" class="form-control levels">
+        Select
+        {% if user.level %}
+        <option value="{{user.level.pk}}" selected>{{user.level}}</option>
+         {% else %}
+        <option  disabled selected>Select...</option>
+        {% endif %}
+       विभाग
+      </select>
+    </div>
+    <div class="col-lg-3 col-md-6 form-group">
+      <label>विभाग</label
+      ><select name="department" class="form-control departs">
+        Select
+         <option  disabled selected>Select...</option>
+         {% for depart in departments %}
+        <option value="{{depart.pk}}" {% if user.department.pk == depart.pk %}selected{% endif %}>{{depart}}</option>
+         {% endfor %}
+       
+      </select>
+      <span class="error">{{form.department.errors.as_text}}</span>
+    </div>
+  </div>
+  <div class="col-lg-3 col-md-6 form-group">
+   <div class="custom-control custom-switch">
+    <input 
+        type="checkbox"
+        class="custom-control-input"
+        id="uncheckedCustomSwitches1"
+        value="1"
+        name="is_active"
+        {% if user.is_active %}checked{% endif %}
+         />
+     <label class="custom-control-label" for="uncheckedCustomSwitches1">सक्रिय</label>
+     </div>
+  </div>
+  <div class="text-right">
+    <button type="submit" class="btn btn-success btn-icon">
+      <i class="ic-add"></i>
+      सेभ गर्नुहोस
+    </button>
+  </div>
+</form> {% endcomment %}
+
+ <form action="{% url 'user_mgmt:user_edit' user.id %}" id="pUpdateForm" method="post">
+            {% csrf_token %}
+            <h6 class="mb-2">अकाउन्ट विवरण</h6>
+
+            <div class="row">
+            {% if user.level.type.type == "P" %}
+            
+              <div class="col-lg-3 col-md-6 form-group">
+                <label>प्रदेश</label
+                ><select name="level" class="form-control">
+                  छान्नुहोस्
+                  <option value="">छान्नुहोस्...</option>
+                  {% for p in provinces %}
+                  <option value="{{p.pk}}" {% if p.pk == user.level.id %}selected{% endif %}>{{p}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              
+              <div class="col-lg-3 col-md-6 form-group">
+                <label>विभाग</label
+                ><select name="department" class="form-control">
+                  छान्नुहोस्
+                  <option value="">छान्नुहोस्...</option>
+                  {% for depart in departments %}
+                  <option value="{{depart.pk}}" {% if depart.id == user.department.id %}selected{% endif %}>{{depart}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+                <div class="col-lg-3 col-md-6 form-group">
+                <label>प्रयोगकर्ताको भूमिका</label
+                ><select name="user_role" class="form-control">
+                 छान्नुहोस्
+                  <option value="">छान्नुहोस्...</option>
+                  {% for role in roles  %}
+                  <option value="{{role.pk}}" {% if role in user.roles.all %}selected{% endif %}>{{role}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              {% else %}
+                <div class="col-lg-3 col-md-6 form-group">
+                <label>स्थानीय तह</label
+                ><select name="level" class="form-control">
+                  छान्नुहोस्
+                  <option value="">छान्नुहोस्...</option>
+                  {% for l in l_levels %}
+                  <option value="{{l.pk}}" {% if l.pk == user.level.pk %}selected{% endif %}>{{l}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              {% endif %}
+
+              <div class="col-lg-3 col-md-6 form-group">
+                <label>कार्यालय ईमेल</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  name = "email"
+                  placeholder="टाइप गर्नुहोस्"
+                  value = {{user.email}}
+                />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-lg-3 col-md-6 form-group">
+                <label>पुरा नाम</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  name="full_name"
+                  placeholder="टाइप गर्नुहोस्"
+                  value="{{user.full_name}}"
+                />
+              </div>
+
+              <div class="col-lg-3 col-md-6 form-group">
+                <label>व्यक्तिगत ईमेल</label>
+                <input
+                  class="form-control"
+                  type="email"
+                  name="personal_email"
+                  placeholder="टाइप गर्नुहोस्"
+                  value="{{user.personal_email|default_if_none:''}}"
+                />
+              </div>
+              <div class="col-lg-3 col-md-6 form-group">
+                <label>मोबाइल नम्बर</label>
+                <input
+                  class="form-control"
+                  type="number"
+                  name="mobile_num"
+                  placeholder="नम्बर टाइप गर्नुहोस्"
+                  value = "{{user.mobile_num}}"
+                />
+              </div>
+              <div class="col-lg-3 col-md-6 form-group">
+                <label>पद</label
+                ><select name="post" class="form-control">
+                  छान्नुहोस्
+                  <option value="">छान्नुहोस्...</option>
+                  {% for post in posts  %}
+                  <option value="{{post.pk}}" {% if post.pk == user.post_id %}selected{% endif %}>{{post}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+              <div class="col-lg-3 col-md-6 form-group">
+              <div class="custom-control custom-switch">
+                <input 
+                    type="checkbox"
+                    class="custom-control-input"
+                    id="uncheckedCustomSwitches1"
+                    value="1"
+                    name="is_active"
+                    {% if user.is_active %}checked{% endif %}
+                    />
+                <label class="custom-control-label" for="uncheckedCustomSwitches1">सक्रिय</label>
+                </div>
+              </div>
+            <div class="text-right">
+              <button type="submit" class="btn btn-success btn-icon p-submit">
+                <i class="ic-add"></i>
+                प्रयोगकर्ता शेभ गर्नुहोस्
+              </button>
+            </div>
+ </form>
+
+
+<script>
+   
+  $("body").on("submit", "#pUpdateForm", function (e) {
+    e.preventDefault();
+    url = $(this).attr("action");
+    $.ajax({
+        url: url,
+        type: "POST",
+        data: new FormData(this),
+        processData: false,
+        contentType: false,
+        success: function (data) {
+          if (data["success"]) {
+            {% if user.level.type.type == "P" %}
+            $(".p-users").load(location.href + " .p-users");
+            $(".p-table").load(location.href + " .p-table");
+            {% else %}
+            $(".l-users").load(location.href + " .l-users");
+            $(".l-table").load(location.href + " .l-table");
+            {% endif %}
+            showMsg(data['msg']);
+          } else if ($("#pUpdateForm input").next("p").length)
+            $("#pUpdateForm input").nextAll("p").remove();
+            else if ($("#pUpdateForm select").next("p").length)
+            $("#pUpdateForm select").nextAll("p").remove();
+          for (var error in data) {
+            let input = $("#pUpdateForm input[name='" + error + "']");
+            input.after('<p class="error" id=' + error + "-error for=" + error +"><span>" + data[error] +"</span></p>");
+            let select = $("#pUpdateForm select[name='" + error + "']");
+            select.after('<p class="error" id=' + error + "-error for=" + error +"><span>" + data[error] +"</span></p>");
+          }
+        },
+      });
+  });
+</script>

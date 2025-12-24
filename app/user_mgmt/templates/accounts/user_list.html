@@ -1,0 +1,273 @@
+{% extends 'fragments/dashboard/base.html' %} {% load static %} {% block user-list %}
+<div class="header-page">
+  <h1>प्रयोगकर्ता सेटअप</h1>
+  <a href="{% url "user_mgmt:user_list" %}" class="btn btn-icon-only btn-sm"
+    >
+    <i class="ic-close-circular-filled text-danger"></i
+  ></a>
+</div>
+{% endblock user-list %} {% block content %}
+
+<!-- Main section -->
+<Fragment>
+  <div class="inner screen-user-setup">
+    <div class="container">
+       <div
+        class="modal mymodal modal-01"
+        id="deleteModal"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header align-items-center">
+              <h5 class="modal-title">प्रयोगकर्ताको पुष्टिकरण मेटाउनुहोस्</h5>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span
+                  aria-hidden="true"
+                  class="ic-close-circular-filled text-danger h5"
+                ></span>
+              </button>
+            </div>
+            <div class="modal-body">
+            <form action="" method="POST" class="delete-form">
+                {% csrf_token %}
+                <label class="d-block">के तपाईं पक्का डिलिट गर्न चाहानुहुन्छ?</label>               
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-light" data-dismiss="modal">
+                रद्द गर्नुहोस्
+              </button>
+              <button type="submit" class="btn btn-danger">डिलिट गर्नुहोस्</button>
+               </form>
+            </div>
+          </div>
+        </div>
+        
+
+      </div>
+      {% user_can_add request 'users' as create %} {# 'users' is the menu code #}
+      {% if create %}
+      <div class="card card-body user-setup">
+        <form action="{% url 'user_mgmt:staff_create' %}" method="post">
+          {% csrf_token %}
+          <div class="row">
+            <div class="col-lg-3 col-md-6 form-group">
+              <label>पुरा नाम *</label>
+              <input
+                class="form-control"
+                value="{{form.instance.full_name|default_if_none:''}}"
+                name="full_name"
+                type="text"
+                placeholder="enter text"
+              />
+              <span class="error">{{form.full_name.errors.as_text}}</span>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 form-group">
+              <label>ईमेल ठेगाना *</label>
+              <input
+                class="form-control"
+                type="email"
+                value="{{form.instance.email|default_if_none:''}}"
+                name="email"
+                placeholder="enter text"
+              />
+              <span class="error">{{form.email.errors.as_text}}</span>
+            </div>
+            <div class="col-lg-3 col-md-6 form-group">
+              <label>मोबाइल नम्बर</label>
+              <input
+                class="form-control"
+                type="number"
+                value="{{form.instance.mobile_num|default_if_none:''}}"
+                name="mobile_num"
+                placeholder="enter number"
+              />
+              <span class="error">{{form.mobile_num.errors.as_text}}</span>
+            </div>
+            <div class="col-lg-3 col-md-6 form-group">
+              <label>पद</label>
+              <input
+                class="form-control"
+                type="text"
+                value="{{form.instance.designation|default_if_none:''}}"
+                name="designation"
+                placeholder="enter text"
+              />
+              <span class="error">{{form.designation.errors.as_text}}</span>
+            </div>
+
+            <div class="col-lg-3 col-md-6 form-group">
+              <label>प्रयोगकर्ताको भूमिका</label
+              ><select name="roles" class="form-control t-roles">
+                छान्नुहोस्
+                <option val="" disabled selected>छान्नुहोस्...</option>
+                {% for role in roles %}
+                <option value="{{role.pk}}">{{role}}</option>
+                {% endfor %}
+              </select>
+              <span class="error">{{form.roles.errors.as_text}}</span>
+            </div>
+            <div class="col-lg-3 col-md-6 form-group">
+              <label>स्तर प्रकार</label
+              ><select name="level" class="form-control level-types">
+                छान्नुहोस्
+                <option val="" disabled selected>छान्नुहोस्...</option>
+                {% for type in level_types %}
+                <option value="{{type.pk}}">{{type.get_type_display}}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-lg-3 col-md-6 form-group">
+              <label>स्तर *</label
+              ><select name="level" class="form-control levels">
+                छान्नुहोस्
+                <option value="" disabled selected>छान्नुहोस्...</option>
+              </select>
+               <span class="error">{{form.level.errors.as_text}}</span>
+            </div>
+            <div class="col-lg-3 col-md-6 form-group">
+              <label>विभाग/संस्थान/मन्त्रालय</label
+              ><select name="department" class="form-control departs">
+                छान्नुहोस्
+                <option disabled selected value="">छान्नुहोस्...</option>
+                {% for depart in departments %}
+                 <option value="{{depart.pk}}">{{depart}}</option>
+                {% endfor %}
+              </select>
+              <span class="error">{{form.department.errors.as_text}}</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <button type="submit" class="btn btn-success btn-icon">
+              <i class="ic-add"></i>
+              प्रयोगकर्ता सिर्जना गर्नुहोस्
+            </button>
+          </div>
+        </form>
+      </div>
+      {% endif %}
+  
+      <div class="card card-body user-update">
+      </div>
+
+      <div class="card card-body mt-3">
+        <div class="table-responsive">
+          <table class="table table-02">
+            <thead>
+              <tr>
+                <th>क्र.स</th>
+                <th>पुरा नाम</th>
+                <th>स्तर</th>
+                <th>विभाग/संस्थान/मन्त्रालय</th>
+                <th>ईमेल ठेगाना</th>
+                <th>मोबाइल नम्बर</th>
+                <th>पद</th>
+                <th>प्रयोगकर्ता भूमिका</th>
+                <th class="text-right">कार्य</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in users %}
+              <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{ user.full_name }}</td>
+                <td>{{ user.level }}</td>
+                <td>{{ user.department }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.mobile_num }}</td>
+                <td>{{ user.designation }}</td>
+                <td>
+                  {% for role in user.roles.all %} {{role}} {% if not forloop.last %}, {% endif %} {% endfor %}
+                </td>
+                <td class="text-right">
+                  {% user_can_change request 'users' as update %}
+                  {% if update %}
+                  <a
+                    href="#"
+                    data-url="{% url 'user_mgmt:user_edit' user.id %}"
+                    title="Edit"
+                    class="mr-2 text-coolGray600 edit-user"
+                  >
+                    <i class="ic-edit"></i
+                  ></a>
+                  {% endif %}
+                  {% user_can_delete request 'users' as delete %}
+                  {% if delete %}
+                  <a href="#" url="{% url 'user_mgmt:user_delete' user.id %}"
+                  data-toggle="modal"
+                  data-target="#deleteModal"
+                   title="Delete" class="text-coolGray600 d-role">
+                  <i class="ic-delete"></i
+                  ></a>
+                  {% endif %}
+                  
+                </td>
+              </tr>
+
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</Fragment>
+{% endblock content %} {% block extra_scripts %}
+<script>
+
+$(document).on("change", ".level-types", function () {
+    let id = $(this).find(":selected").val();
+    let type = $(this).find(":selected").text();
+    let url = "{% url 'user_mgmt:get_levels' 0 %}".replace(0, id);
+    if(type === "Local Level"){
+      $(".departs").attr("disabled", true);
+      $(".t-roles").attr("disabled", true);
+
+    }
+    else{
+      $(".departs").attr("disabled", false);
+      $(".t-roles").attr("disabled", false);
+    }
+    $.ajax({
+          url: url,
+          type: "GET",
+          dataType: "json",
+          success: function (data) {
+            $(".levels").empty();
+            for (var i = 0; i < data["levels"].length; i++) {
+              id = data["levels"][i]["id"];
+              name = data["levels"][i]["name"];
+              $(".levels").append(
+                `<option value="${id}">${name}</option>`
+              );
+            }
+          },
+      });
+  });
+
+
+$(document).on("click", ".edit-user", function() {
+    url=$(this).attr('data-url');
+    $.ajax({
+    url: url,
+    type: 'GET',
+    success: function (data) {
+      $('.user-setup').hide();
+      $('.user-update').html(data);
+    },
+  });
+  });
+
+$(document).on("click", ".d-role", function(){
+  let url = $(this).attr('url');
+  $('.delete-form').attr('action', url)
+})
+</script>
+{% endblock extra_scripts %}

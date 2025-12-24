@@ -1,0 +1,131 @@
+{% extends 'fragments/dashboard/base.html' %} {% load static %}
+ {% block title-bar %}
+<div class="header-page">
+  <h1>सुधारको लागि प्राप्त अनुरोध</h1>
+  {% comment %} <a href="{% url 'dashboard:home' %}"
+    ><button class="btn btn-icon-only">
+      <i class="ic-close-circular-filled text-danger"></i>
+    </button>
+  </a> {% endcomment %}
+</div>
+{% endblock title-bar %} {% block content %}
+
+<Fragment>
+  <div class="inner">
+    <div class="container">
+      <ul class="tab-01 my-3 nav nav-pills mb-3" id="pills-tab" role="tablist">
+        <li class="nav-item">
+          <a
+            class="nav-link active"
+            id="pills-home-tab"
+            data-toggle="pill"
+            href="#pills-home"
+            role="tab"
+            aria-controls="pills-home"
+            aria-selected="true"
+            >प्रदेश तह</a
+          >
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            id="pills-profile-tab"
+            data-toggle="pill"
+            href="#pills-profile"
+            role="tab"
+            aria-controls="pills-profile"
+            aria-selected="false"
+            >स्थानीय तह</a
+          >
+        </li>
+      </ul>
+      <div class="tab-content" id="pills-tabContent">
+        <div
+          class="tab-pane fade show active"
+          id="pills-home"
+          role="tabpanel"
+          aria-labelledby="pills-home-tab"
+        >
+
+          <div class="table-responsive">
+            <table class="table table-02 mb-3 d-xl-table">
+              <thead>
+                <tr>
+                  <th>क्रम संख्या</th>
+                  <th>अनुरोध गर्ने निकाय</th>
+                  <th>सुधार गर्न बाँकी छ</th>
+                  <th>सुधार जाँच गरियो</th>
+                  <th class="text-right">कार्य</th>
+                </tr>
+              </thead>
+              <tbody>
+              {% for c in p_corrections  %}
+                <tr>
+                  <td>{{forloop.counter}}</td>
+                  <td>{{c.level}}</td>
+                  <td>{{c.get_level_correction_pending}}</td>
+                  <td>{{c.get_level_correction_checked}}</td>
+
+                  <td class="text-right">
+                    <a
+                      href="{% url 'dashboard:correction_detail' c.level_id %}"
+                      title="View"
+                      class="mr-2 text-coolGray600"
+                    >
+                      <i class="ic-visible"></i
+                    ></a>
+                  </td>
+                </tr>
+              {% endfor %}
+               
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div
+          class="tab-pane fade"
+          id="pills-profile"
+          role="tabpanel"
+          aria-labelledby="pills-profile-tab"
+        >
+          
+          <div class="table-responsive">
+            <table class="table table-02 mb-3 d-xl-table">
+              <thead>
+                <tr>
+                  <th>क्रम संख्या</th>
+                  <th>अनुरोध गर्ने निकाय</th>
+                  <th>सुधार गर्न बाँकी छ</th>
+                  <th>सुधार जाँच गरियो</th>
+                  <th class="text-right">कार्य</th>
+                </tr>
+              </thead>
+              <tbody>
+              {% for l in l_corrections  %}
+                <tr>
+                  <td>{{forloop.counter}}</td>
+                  <td>{{l.level}}</td>
+                  <td>{{l.get_level_correction_pending}}</td>
+                  <td>{{l.get_level_correction_checked}}</td>
+
+                  <td class="text-right">
+                    <a
+                      href="{% url 'dashboard:correction_detail' l.level_id %}"
+                      title="View"
+                      class="mr-2 text-coolGray600"
+                    >
+                      <i class="ic-visible"></i
+                    ></a>
+                  </td>
+                </tr>
+              {% endfor %}
+              
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Fragment>
+{% endblock content %}

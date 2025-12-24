@@ -1,0 +1,37 @@
+# Dockerfile for Development
+FROM python:3.9-slim
+
+# Set work directory
+WORKDIR /usr/src/app
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libpq-dev \
+    gcc \
+    libpangocairo-1.0-0 \
+    fonts-devanagari-extra \
+    netcat-traditional && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
+RUN pip install --upgrade pip
+
+# Copy and install Python dependencies
+COPY requirements ./requirements
+RUN pip install --no-cache-dir -r requirements/development.txt
+
+# Copy entrypoint script
+COPY ./entrypoint.sh /usr/src/app/
+RUN chmod +x /usr/src/app/entrypoint.sh
+
+# Copy project files
+COPY . .
+
+# Run entrypoint
+ENTRYPOINT ["/usr/src/app/entrypoint.sh"]

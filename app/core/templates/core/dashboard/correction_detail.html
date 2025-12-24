@@ -1,0 +1,88 @@
+{% extends 'fragments/dashboard/base.html' %} {% load static %}
+ {% block title-bar %}
+<div class="header-page">
+  <h1>{{level}} अनुरोध गर्ने निकाय</h1>
+  <a href="{% url 'dashboard:correction_req' %}"
+    ><button class="btn btn-icon-only">
+      <i class="ic-close-circular-filled text-danger"></i>
+    </button>
+  </a>
+</div>
+{% endblock title-bar %} {% block content %}
+
+<Fragment>
+  <div class="inner">
+    <div class="container">
+ 
+          <div class="table-responsive">
+            <table class="table table-02 mb-3 d-xl-table" id="p_corrections_id">
+              <thead>
+                <tr>
+                  <th>क्रम संख्या</th>
+                  <th>प्रदेश/स्थानीय तहको नाम</th>
+                  <th>मिति</th>
+                  <th>विषय</th>
+                  <th>स्थिति</th>
+                  <th>प्रयोगकर्ता </th>
+                  <th>सन्देश</th>
+                  <th class="text-right">कार्य</th>
+                </tr>
+              </thead>
+              <tbody>
+              {% for c in corrections  %}
+                <tr>
+                  <td>{{forloop.counter}}</td>
+                  <td>{{c.level}}</td>
+                  <td>{{c.created_at|date}}</td>
+                  <td>{{c.sub}}</td>
+                  <td>
+                  {% if c.status == "P" %}
+                  <div class="status text-coolGray600">
+                        <i class="ic-error"></i>
+                         <span class="ml-1">{{c.get_status_display}}</span>
+                  </div>
+                  {% elif c.status == "C" %}
+                   <div class="status text-green">
+                        <i class="ic-checkmark"></i>
+                         <span class="ml-1">{{c.get_status_display}}</span>
+                  </div>
+                 
+                    {% else %}
+                    {{c.get_status_display}}
+                    {% endif %}
+                    </td>
+                    <td>{{c.user.full_name}}</td>
+                  <td>{{c.msg}}</td>
+
+                  <td class="text-right">
+                    <a
+                      href="{% url 'dashboard:correction_fix' c.id c.question_id %}"
+                      title="View"
+                      class="mr-2 text-coolGray600"
+                    >
+                      <i class="ic-visible"></i
+                    ></a>
+                  </td>
+                </tr>
+              {% endfor %}
+               
+              </tbody>
+            </table>
+          </div>
+        </div>
+      
+        </div>
+      </div>
+    </div>
+  </div>
+</Fragment>
+
+{% endblock content %}
+{% block extra_scripts %}
+<script>
+  $(document).ready( function () {
+    $('#p_corrections_id').DataTable();
+  
+  } );
+  </script>
+  {% endblock %}

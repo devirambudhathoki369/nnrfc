@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Powe of Attorney</title>
+  </head>
+
+  <style>
+    @page {
+      size: A4;
+    }
+
+    .border {
+      border-bottom: 1px dashed grey;
+    }
+
+    @media print {
+      .pagebreak {
+        page-break-after: always;
+        clear: both;
+      }
+    }
+  </style>
+
+  <body>
+    <table style="width: 100%;">
+        <tr>
+            <td>
+                <img src="{% static 'back/assets/images/logo.png' %}" alt="" height="80px">
+            </td>
+        </tr>
+        
+        
+
+        <tr>
+            <td>
+                <h2>कार्य सम्पादन सूचक अनलाइन पोर्टल</h2>
+                <h4>प्रदेश सरकारको हकमा</h4>
+            </td>
+        </tr>
+        
+
+        
+
+{% for datum in data %}
+{% if datum.is_parent %}
+
+        <tr>
+            <td>
+                <p style="margin-top: 32px;"><strong>{{forloop.counter}}{{datum.parent_question.title}}</strong></p>
+            </td>
+        </tr>  
+        {% for cq  in datum.child_data %}
+        <tr>
+            <td>
+              <p style="margin-top: 32px">
+                <strong
+                  >{{forloop.counter}}.{{cq.title}}</strong
+                >
+              </p>
+            </td>
+          </tr>
+        <table cellspacing="" style="width: 100%; background-color: #000000;"> 
+            <tr style="background-color: #ebf3ff;">
+              <td colspan="2" style="padding: 8px;">विवरण प्रविष्ट गर्नुहोस्</td>
+              
+              
+              
+            </tr>
+            {% for opt_ans in cq.option_answer %}
+            <tr  style="background-color: #ffffff;">
+              <td style="padding: 8px">
+                {{forloop.counter}}.{{opt_ans.options}}
+              </td>
+              <td style="padding: 8px">{{opt_ans.answers.value}}</td>
+            </tr>
+          {% endfor %}
+
+          </table>
+          {% if cq.files %}
+          <p>अपलोड गरेको फाइलहरु </p>
+          <ul>
+            {% for file in cq.files %}
+              <li>{{file.value}}</li>
+            {% endfor %}
+            {% endif %}
+          </ul>
+          <br />
+          <br />
+          <tr>
+          </tr>     
+          {% endfor %}
+          {% else %}
+          <tr>
+            <td>
+              <p style="margin-top: 32px">
+                <strong
+                  >{{forloop.counter}}.{{datum.title}}</strong
+                >
+              </p>
+            </td>
+          </tr>
+  
+          <table cellspacing="" style="width: 100%; background-color: #000000;">
+            <tr style="background-color: #ebf3ff;">
+              <td colspan="2" style="padding: 8px">विवरण प्रविष्ट गर्नुहोस्</td>
+            </tr>
+  
+            {% for opt_ans in datum.option_answer %}
+  
+            <tr style="background-color:#ffffff;">
+              <td style="padding: 8px">
+                {{forloop.counter}}.{{opt_ans.options}}
+              </td>
+              <td style="padding: 8px">{{opt_ans.answers.value}}</td>
+            </tr>
+            {% endfor %}
+          </table>
+          {% if datum.files %}
+          <p>अपलोड गरेको फाइलहरु     
+          <ul>
+            {% for file in datum.files %}
+              <li>{{file.value}}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          <br />
+          <br />
+  
+          
+          {% endif %}
+          {% endfor %}
+
+          <br>
+          <br>
+
+    </table>
+  </body>
+</html>

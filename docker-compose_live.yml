@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ./app
+      dockerfile: Dockerfile-live
+    image: web
+    container_name: web
+    command: gunicorn nnrfc.wsgi:application --bind 0.0.0.0:8000  --timeout 180
+    volumes:
+      - static_volume:/app/static
+      - media_volume:/app/media
+    expose:
+      - 8000
+    env_file:
+      - '/var/lib/jenkins/env_files/nnrfc/.env.prod'
+    network_mode: mynetwork
+    restart: always
+
+  rabbit:
+    hostname: rabbit
+    image: rabbitmq:3-management
+    command: rabbitmq-server
+    container_name: rabbit
+    env_file: 
+      - '/var/lib/jenkins/env_files/nnrfc/.env.prod'
+    ports:
+        - 5672:5672
+        - 15672:15672
+    volumes:
+      - 'rabbit_data:/data'
+    network_mode: mynetwork
+    restart: always
+  nginx:
+    build: ./nginx
+    image: nginx
+    container_name: nginx
+    ports:
+        - 80:80
+    volumes:
+      - static_volume:/home/app/web/static
+      - media_volume:/home/app/web/media
+    network_mode: mynetwork
+    restart: always
+  celery:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    image: celery
+    container_name: celery
+    command: "celery -A nnrfc worker -l INFO "
+    network_mode: mynetwork
+    restart: always
+    env_file: 
+      - '/var/lib/jenkins/env_files/nnrfc/.env.prod'   
+
+
+
+volumes:
+  static_volume:
+  media_volume:
+  rabbit_data:

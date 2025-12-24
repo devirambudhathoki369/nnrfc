@@ -1,0 +1,84 @@
+{% extends 'fragments/dashboard/base.html' %} 
+{% load static %}
+
+{% block master %}
+<div class="header-page">
+  <h1>मास्टर डाटा कन्फिगरेसन</h1>
+  <a href="{% url "dashboard:master_configuration" %}" class="btn btn-icon-only btn-sm"
+    >
+    <i class="ic-close-circular-filled text-danger"></i
+  ></a>
+</div>
+{% endblock master %} 
+
+
+{% block content %}
+
+  <div class="inner screen-user-setup">
+    <div class="container">
+      <ul class="tab-01 nav nav-pills" id="pills-tab" role="tablist">
+        <li class="nav-item">
+          <a
+            class="nav-link {% if not active_tab or active_tab == 'province' %}active{% endif %}"
+            id="pills-masterDataOne-tab"
+            data-toggle="pill"
+            href="#pills-masterDataOne"
+            data-url="{% url 'dashboard:province_create' %}"
+            role="tab"
+            aria-controls="pills-masterDataOne"
+            aria-selected="{% if not active_tab or active_tab == 'province' %}true{% else %}false{% endif %}"
+            >प्रदेश</a
+          >
+        </li>
+      </ul>
+      <div class="card card-body radius-top-0">
+        <div class="tab-content" id="pills-tabContent">
+          <div
+            class="tab-pane fade {% if not active_tab or active_tab == 'province' %}show active{% endif %}"
+            id="pills-masterDataOne"
+            role="tabpanel"
+            aria-labelledby="pills-masterDataOne-tab"
+          >
+
+            <form action="" id="updateForm" method="post">
+            {% csrf_token %}
+              <h6 class="mb-2">प्रदेशको डाटा सेटअप</h6>
+              <div class="row">
+                <div class="col-lg-3 col-md-6">
+                  <div class="form-group">
+                    <label>प्रदेशको नाम</label>
+                    <input
+                      name="name"
+                      value="{{form.instance.name|default_if_none:''}}"
+                      class="form-control"
+                      type="text"
+                      placeholder="यहाँ प्रदेशको नाम टाइप गर्नुहोस्"/>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                  {% comment %} <div class="form-group">
+                  </div>
+                  <label> &nbsp;</label>
+                    <a href="{% url 'dashboard:master_configuration' %}" data-inline="true" type="submit" class="button btn btn-success">शेभ गर्नुहोस्</a>
+                    <a href="{% url 'dashboard:master_configuration' %}" data-inline="true" type="submit" class="btn btn-danger">रद्द गर्नुहोस्</a> {% endcomment %}
+                  <div class="form-group">
+                    <label> &nbsp;</label>
+                  <div>
+                    <button
+                      type="submit"
+                      data-inline="true"
+                      class="btn btn-success"
+                    >शेभ गर्नुहोस्
+                    </button>
+                    <a class="btn btn-danger" href="{% url 'dashboard:master_configuration' %}?filter=province">रद्द गर्नुहोस्</a>
+                  </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

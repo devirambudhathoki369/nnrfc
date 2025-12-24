@@ -1,0 +1,32 @@
+{% extends 'fragments/dashboard/base.html' %} 
+{% load static %} 
+
+{% block title-bar %}
+  <div class="header-page">
+    <h1>ड्यासबोर्ड</h1>
+    {% comment %} <a href="{% url 'dashboard:home' %}" class="btn btn-icon-only btn-sm">
+    </a> {% endcomment %}
+  </div>
+{% endblock title-bar %}
+
+{% block content%}
+ <div class="card card-body">
+    <h6>Suchak Progress of Different Province</h2>
+   <div class="text-center">{{data}}</div>
+   <div class="text-center">{{question_filled}}</div>
+    {% for q in questions %}
+    <div class="flex-center-between">
+    <p class="mr-3">{{q.data}}</p>
+    <br>
+    <p>{{q.question_filleds}}/{{count}} Suchak Completed</p>
+    </div>
+    <div class="progress">
+      <div class="progress-bar" role="progressbar" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" style="width:{{q.question_filled}}%;">
+        <span class="sr-only"></span>
+      </div>
+    </div>
+    <br>
+    {% endfor %}
+  </div>
+
+{% endblock content %}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link href="{% static 'back/vendors.style.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'back/style.css' %}" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <div class="section-error">
+      <div class="wrapper">
+        <div class="d-flex align-items-center justify-content-center">
+          <div class="left logo">
+            <img
+              class="img-fluid"
+              src="{% static 'back/assets/images/logo.png' %}"
+              alt="NNRFC Logo"
+            />
+          </div>
+        </div>
+        
+        &nbsp;&nbsp;
+
+        <div class="text-center">
+          <h1
+            class="text-huge text-primary"
+            style="margin-top: 0; margin-bottom: 1rem; line-height: 1"
+          >
+          403
+          </h1>
+          <h3 style="margin-bottom: 1rem; margin-top: 0; font-weight: normal">
+            Permission Denied! हामी क्षमाप्रार्थी छौं, तर तपाईंले अनुरोध गर्नुभएको पृष्ठमा अनुमति दिएको छैन।  
+          </h3>
+          {% if request.user.is_staff %}
+            <a href="{% url 'dashboard:dashboard'%}" style="color: rgb(26, 115, 232)">Click Here</a>&nbsp;&nbsp; To Go Back to Dashboard
+          {% else %}
+            <a href="{% url 'core:survey_list'%}" style="color: rgb(26, 115, 232)">Click Here</a>&nbsp;&nbsp; To Go Back to Dashboard
+          {% endif %}
+        </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

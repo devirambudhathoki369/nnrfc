@@ -1,0 +1,154 @@
+{% extends 'fragments/dashboard/base.html' %} {% load static %}
+{% block title-bar %}
+<div class="header-page">
+  <h1>{{level}} को गुनासोहरु</h1>
+  <a href="{% url 'dashboard:list_complaints' %}"><button class="btn btn-icon-only">
+      <i class="ic-close-circular-filled text-danger"></i>
+    </button>
+  </a>
+</div>
+{% endblock title-bar %} {% block content %}
+<Fragment>
+  <div class="inner">
+    <div class="container">
+      <div class="modal mymodal fade modal-01" id="complaintDetailModal" tabindex="-1" role="dialog"
+        aria-labelledby="complaintDetailModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLongTitle">गुनासो विवरण</h5>
+              <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <form class="
+                    form-inline-block
+                    align-items-center
+                    justify-content-center
+                  "></form>
+              <div class="form-group">
+                <label for="subject">विषय</label>
+                <input type="text" id="subject" class="form-control" value="Rechecking" disabled />
+              </div>
+              <h6 class="mb-2">गुनासो विवरण</h6>
+              <p id="msg"></p>
+
+              <h6 class="mb-2">फाइल</h6>
+              <a id="link" href="#"><p id="file_name"></p></a>
+               <h6 class="mb-2">स्तर</h6>
+                  <p id="level">
+              </p>
+              <div class="flex-end mt-3">
+                {% user_can_change request 'complaints' as add %}
+                {% if add %}
+                <form action="" method="post" id="markCheck">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-success check" type="button">
+                    गुनासो सम्बोधन पश्चात यहाँ क्लिक गर्नुहोस् 
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+              
+      <div class="table-responsive">
+        <table class="table table-02 mb-3 d-xl-table" id="c_compliments_id">
+          <thead>
+            <tr>
+              <th>क्रम संख्या</th>
+              <th>मिति</th>
+              <th>विषय</th>
+              <th>स्थिति</th>
+              <th>प्रयोगकर्ताको पुरा नाम</th>
+              <th>कार्य</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for c in complaints %}
+            <tr>
+              <td>{{forloop.counter}}</td>
+              <td>{{c.created_at|date}}</td>
+              <td>{{c.sub}}</td>
+              <td>
+                {% if c.is_checked %}
+                  <div class="status text-green">
+                    <i class="ic-checkmark"></i>
+                    <span class="ml-1">जाँच गरियो</span>
+                  </div>
+                {% else%}
+                  <div class="status text-coolGray600">
+                    <i class="ic-error"></i>
+                    <span class="ml-1">निर्णय गर्न बाँकी रहेको</span>
+                  </div>
+                {% endif %}
+              </td>
+              <td>{{c.user.full_name}}</td>
+                <td>
+                  <a
+                    url = "{% url 'dashboard:complaint_detail' c.id %}"
+                    mark-url="{% url 'dashboard:mark_check' c.id %}"
+                    href="#"
+                    title="Edit"
+                    data-toggle="modal"
+                    data-target="#complaintDetailModal"
+                    class="mr-2 text-coolGray600 view-detail"
+                  >
+                    <i class="ic-visible"></i
+                  ></a>
+                </td>
+            </tr>
+        {% endfor %}
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</Fragment>
+{% endblock content %}
+
+{% block extra_scripts %}
+
+<script>
+  $(document).on("click", ".view-detail", function () {
+    let url = $(this).attr('url');
+    let markUrl = $(this).attr('mark-url');
+
+    $.ajax({
+      url: url,
+      type: "GET",
+      dataType: "json",
+      success: function (data) {
+        console.log(data)
+        file_url=data['file_url']
+        sub = data['sub']
+        msg = data['msg']
+        checked = data["is_checked"]
+        file_name =data["file_name"]
+        level=data["level"]
+
+        $("#subject").val(sub);
+        $("#msg").text(msg);
+        $("#file_name").text(file_name);
+        $("#level").text(level)
+        $("#link").attr("href",file_url)
+        if (checked) {
+          $(".check").prop("disabled", true);
+        }
+        else {
+          $(".check").prop("disabled", false);
+          $("#markCheck").attr("action", markUrl)
+        }
+      }
+
+    })
+
+    $('#exampleModal1').modal('show');
+  });
+  $('#c_compliments_id').DataTable();
+</script>
+{% endblock extra_scripts %}

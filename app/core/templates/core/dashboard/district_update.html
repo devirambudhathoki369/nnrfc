@@ -1,0 +1,119 @@
+{% extends 'fragments/dashboard/base.html' %} 
+{% load static %}
+
+{% block master %}
+<div class="header-page">
+  <h1>मास्टर डाटा कन्फिगरेसन</h1>
+  <a href="{% url "dashboard:master_configuration" %}" class="btn btn-icon-only btn-sm"
+	>
+	<i class="ic-close-circular-filled text-danger"></i
+  ></a>
+</div>
+{% endblock master %} 
+
+{% block content %}
+  <div class="inner screen-user-setup">
+    <div class="container">
+      <ul class="tab-01 nav nav-pills" id="pills-tab" role="tablist">
+        <li class="nav-item">
+          <a
+            class="nav-link {% if not active_tab or active_tab == 'district' %}active{% endif %}"
+            id="pills-masterDataThree-tab"
+            data-toggle="pill"
+            href="#pills-masterDataThree"
+            role="tab"
+            aria-controls="pills-masterDataThree"
+            aria-selected="{% if not active_tab or active_tab == 'district' %}true{% else %}false{% endif %}"
+            >जिल्ला</a
+          >
+        </li>
+      </ul>
+      <div class="card card-body radius-top-0">
+        <div class="tab-content" id="pills-tabContent">
+          <div
+            class="tab-pane fade {% if not active_tab or active_tab == 'district' %}show active{% endif %}"
+            id="pills-masterDataThree"
+            role="tabpanel"
+            aria-labelledby="pills-masterDataThree-tab"
+          >
+          <form action="{% url 'dashboard:district_update' form.instance.pk %}" method="post" id="DistrictNameForm">
+          {% csrf_token %}
+            <h6 class="mb-2">जिल्लाको डाटा सेटअप</h6>
+
+            <div class="row">
+              <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                  <label>जिल्लाको नाम अंग्रेजीमा</label>
+                  <input
+                    name="name_eng"
+                    class="form-control"
+                    value="{{form.instance.name_eng|default_if_none:''}}"
+                    type="text"
+                    id="name_eng"
+                    placeholder="यहाँ जिल्लाको नाम अंग्रेजीमा टाइप गर्नुहोस्"
+                  />
+                </div>
+              </div>
+              <div class="form-group">
+                  <label>जिल्लाको नाम नेपालीमा</label>
+                  <input
+                    name="name_np"
+                    class="form-control"
+                    value="{{form.instance.name_np|default_if_none:''}}"
+                    type="text"
+                    id="name_np"
+                    placeholder="यहाँ जिल्लाको नाम नेपालीमा टाइप गर्नुहोस्"
+                  />
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                  <label> &nbsp;</label>
+                  <div>
+                    <button
+                      type="submit"
+                      data-inline="true"
+                      class="btn btn-success"
+                    >शेभ गर्नुहोस्
+                    </button>
+                    <a class="btn btn-danger" href="{% url 'dashboard:master_configuration' %}?filter=district">रद्द गर्नुहोस्</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock content %}
+
+
+{% block extra_scripts %}
+<script>
+$("#DistrictNameForm").submit(function (e) {
+    e.preventDefault();
+    $.ajax({
+      type: "POST",
+      data: {
+        'name_eng': $("#name_eng").val(),
+        'name_np': $("#name_np").val(),
+        csrfmiddlewaretoken: "{{ csrf_token }}",
+      }, 
+      success: function (response) {
+        console.log(response)
+        window.location.href = "{% url 'dashboard:master_configuration' %}?filter=district";
+        setInterval('refreshPage()', 1000);
+      },
+    });
+  });
+</script>
+
+<script>
+  function refreshPage(){
+    location.reload(true);
+  }
+</script>
+{% endblock extra_scripts %}

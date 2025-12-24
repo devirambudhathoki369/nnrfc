@@ -1,0 +1,45 @@
+[
+    {
+      "model": "user_mgmt.User",
+      "pk": 1,
+      "fields": {
+        "username": "john",
+        "first_name": "John",
+        "last_name": "Lennon",
+        "password": "password",
+        "email": "john@nnrfc.com"
+      }
+    },
+    {
+      "model": "user_mgmt.User",
+      "pk": 2,
+      "fields": {
+        "username": "paul",
+        "first_name": "Paul",
+        "last_name": "McCartney",
+        "password": "password",
+        "email": "paul@nnrfc.com"
+      }
+    },
+    {
+      "model": "user_mgmt.Menu",
+      "pk": 1,
+      "fields": {
+        "name": "Roles",
+        "code": "roles",
+        "order_id": 1,
+        "created_at": "2021-08-05 11:47:13.184089+00:00",
+        "updated_at": "2021-08-05 11:47:13.184089+00:00"
+      }
+    },
+    {
+      "model": "user_mgmt.Menu",
+      "pk": 2,
+      "fields": {
+        "name": "Users",
+        "code": "users",
+        "created_at": "2021-08-05 11:47:13.184089+00:00",
+        "updated_at": "2021-08-05 11:47:13.184089+00:00"
+      }
+    }
+  ]

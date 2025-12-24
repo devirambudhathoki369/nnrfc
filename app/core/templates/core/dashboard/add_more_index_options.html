@@ -1,0 +1,600 @@
+{% extends 'fragments/dashboard/base.html' %} {% load static %} 
+
+ {% block title-bar %}
+  <div class="header-page">
+    <h1>कार्य सम्पादन सूचक</h1>
+     <a href="{% url 'dashboard:home' %}"><button class="btn btn-icon-only">
+        <i class="ic-close-circular-filled text-danger"></i>
+      </button>
+    </a>
+  </div>
+{% endblock title-bar %}
+{% block content %}
+<Fragment>
+ <div class="inner">
+    <div class="container">
+       <div
+        class="modal mymodal modal-01"
+        id="exampleModal2"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header align-items-center">
+              <h5 class="modal-title">नयाँ सूचक थप्नुहोस</h5>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span
+                  aria-hidden="true"
+                  class="ic-close-circular-filled text-danger h5"
+                ></span>
+              </button>
+            </div>
+            <form action="{% url 'dashboard:add_index' ques.survey.id %}" id="qForm" method="POST">
+            {% csrf_token %}
+            <div class="modal-body">
+               <input  name="s_name" hidden />
+             <input  name="f_year"  hidden />
+              <input  name="s_level"  hidden />
+              <div class="form-group">
+                <label>सूचकका शीर्षक</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  name="title"
+                  placeholder="टाइप गर्नुहोस्"
+                />
+              </div>
+              <div class="form-row">
+                <div class="col-lg-12">
+                 <div class="form-group">
+                      <label>Sequence ID</label>
+
+                      <input
+                        class="form-control"
+                        type="number"
+                        name="sequence_id"
+                        placeholder="जस्तै १"
+                      />
+              
+                    </div>
+                  <div class="form-group">
+           
+                    <div class="form-check form-check-inline">
+                     
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        name="month_requires"
+                        id="inlineRadio22"
+                        value="1"
+                      />
+                      <label class="form-check-label" for="inlineRadio22"
+                        >महिना आवश्यक</label
+                      >
+                    </div>
+                    
+                     
+                    </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-light" data-dismiss="modal">
+                रद्द गर्नुहोस्
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+              >
+                सिर्जना गर्नुहोस्
+              </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+      <div
+        class="modal mymodal modal-02"
+        id="exampleModal11"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header align-items-center">
+              <h5 class="modal-title">Percentage Field Settings</h5>
+              <button
+                type="button"
+                class="close cper"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span
+                  aria-hidden="true"
+                  class="ic-close-circular-filled text-danger h5"
+                ></span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="form-row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label>Choose Numerator</label
+                    ><select class="form-control nume">छान्नुहोस्
+                     
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label>Choose Denominator</label
+                    ><select class="form-control d">
+                      छान्नुहोस्
+                   
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="error p-error" style="display: none;">Numerator and Denominator can not be same.</div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-light cper" data-dismiss="modal">
+                रद्द गर्नुहोस्
+              </button>
+              <button type="button" class="btn btn-primary save-per">शेभ गर्नुहोस्</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row flex-center">
+        <div class="col-lg-8">
+         <div class="form-row">
+                    <div class="col-lg-5">
+                      <div class="form-group">
+                        <label>सूचकको नाम</label>
+                        <input
+                          class="form-control"
+                          type="text"
+                          placeholder="टाइप गर्नुहोस्"
+                          value = {{ques.survey.name}}
+                          readonly
+                        />
+                      </div>
+                    </div>
+                    <div class="col-lg-4">
+                      <div class="form-group">
+                        <label for="" class="d-block">सूचकको स्तर</label>
+                        <div class="form-check form-check-inline">
+                          <input
+                            class="form-check-input"
+                            type="radio"
+                            name="inlineRadioOptions"
+                            id="inlineRadio1"
+                            value="option1"
+                            disabled
+                            {% if ques.survey.level == 'P' %}checked{% endif %}
+                          />
+                          <label class="form-check-label" for="inlineRadio1"
+                            >प्रदेश तह</label
+                          >
+                        </div>
+                        <div class="form-check form-check-inline">
+                          <input
+                            class="form-check-input"
+                            type="radio"
+                            name="inlineRadioOptions"
+                            id="inlineRadio2"
+                            value="option2"
+                            disabled
+                             {% if ques.survey.level == 'L' %}checked{% endif %}
+                          />
+                          <label class="form-check-label" for="inlineRadio2"
+                            >स्थानीय तह</label
+                          >
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+          <div class="card-index">
+            <div class="option-group">
+              <p>
+                {{ques.title}}
+              </p>
+               <a href="{% url 'dashboard:survey_detail' ques.survey.id %}"><button class="btn btn-icon-only">
+                    <i class="ic-close-circular-filled text-danger"></i>
+              </button></a>
+            </div>
+            
+              <div class="option-group-new" style="border: none; background:none;">
+               <div class="form-check form-check-inline">
+                      <input
+                        class="form-check-input has-options"
+                        type="checkbox"
+                        name="has_options"
+                        id="inlineRadio22"
+                        value="1"
+                        {% if ques.is_options_created %}checked {% endif %}
+                      />
+                      <label class="form-check-label" for="inlineRadio22"
+                        >Has option groups</label
+                      >
+              </div>
+            <div class="option-group-new success-create" style="border: none; display:none;">
+                 <p class="text-success"><strong>Successfully Saved.</strong></p>
+              </div>
+            </div>
+         
+          <form action="{% url 'dashboard:index_option_create' ques.id %}" class="group-form" method="post"> 
+             {% csrf_token %}
+            <div class="option-group-added all-groups">               
+              <div class="option-group-new q">
+              
+                <p class="untitled q-name q-click" >
+                   Untitled
+                  <i class="ic-edit-outline ml-1 q-ic"></i>   
+                       
+                </p>  
+                   
+                 
+                <input
+                  type="text"
+                  name="ques"
+                  hidden
+                  placeholder="टाइप गर्नुहोस्"
+                  class="form-control q-title"
+                  
+                /> 
+                </div>
+              <div class="card-option-group options">
+              <div class="opt">
+                 <div class="item">
+                  <div>
+                    <input
+                      class="form-control custom-error otitle"
+                      type="text"
+                      name="title"
+                      placeholder="New Option"
+                      required
+                    />
+                  </div>
+        
+                  <div>
+                    <select name="field_type" class="form-control ftypes">
+                      छान्नुहोस्
+                      <option disabled>Select field type</option>
+                      {% for field, value in field_type_choices %}
+                      <option value="{{field}}">{{value}}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                </div>
+              
+                <div class="item last">
+                  <button type="button"q-id="{{q.id}}" class="btn btn-icon-only addOption">
+                    <i class="ic-add" style="color: #8f8f8f"></i>
+                  </button>
+                  <div>
+                    <div class="error o-error" style="display:none;">
+                        <span class="ic-warning">Please enter option first.</span>
+                     </div>   
+
+                    <div class="custom-control custom-switch">
+                      <input
+                        name="is_document_required"
+                        type="checkbox"
+                        class="custom-control-input isfile"
+                        id="customSwitche{{forloop.counter}}"
+                        value="1"
+                      />
+                       
+                      <label class="custom-control-label" for="customSwitche{{forloop.counter}}"
+                        >फाइल अपलोड इनेबल गर्नुहोस्</label
+                      >
+                    {% comment %} </div>
+                      <div class="custom-control custom-switch per-switch" style="display:none;">
+                      <input
+                        name="is_calc_field"
+                        type="checkbox"
+                        class="custom-control-input percent"
+                        id="customSwitch{{forloop.counter}}"
+                        value="1"
+                      />
+                       
+                      <label class="custom-control-label" for="customSwitch{{forloop.counter}}"
+                        >Percentage Calculation Enabled</label
+                      >
+                    </div> {% endcomment %}
+                  </div>
+
+
+                  <div></div>
+                </div>
+              
+              </div> 
+              </div>
+             
+               <div class="option-group-new fail-create" style="border: none; display: none;">
+                 <p class="text-danger"><strong>Something went wrong. Please check your data properly.</strong></p>
+              </div> 
+              </div>
+            
+          
+              <div class="option-group-new option-group-added new-group" style="display:none;">
+                 <p><i class="ic-add mr-1"></i> Save and add another group</p>
+              </div> 
+              <div class="flex-end mt-3 no-group">
+                <button type="submit" class="btn btn-success">शेभ गर्नुहोस्</button>
+              </div>
+          
+            
+             
+          <div class="text-right mt-4">
+            {% comment %} <button type="button" data-toggle="modal" data-target="#exampleModal2" 
+            class="btn btn-info mr-2 add-index"><i class="ic-add mr-1"></i> Add Index</button> {% endcomment %}
+            <a href="{% url 'dashboard:home' %}"><button type="button" class="btn btn-blue mr-2 publish">समाप्त</button></a>
+          </div>
+        </div>
+        </div>
+         </form>
+       
+      </div>
+    </div>
+</div>
+  
+</Fragment>
+
+{% endblock content %} {% block extra_scripts %}
+<script>
+  $(document).on("click", ".q-click", function () {
+    $(this).closest(".untitled").hide();
+    $(this).siblings('.q-title').prop('hidden', false);
+  });
+
+   $(document).ready(function () {
+    if($(".has-options").is(":checked")){
+        $(".new-group").show();
+        $(".no-group").hide();
+        $(".q-name").show();
+       
+    }
+    else{
+      $(".new-group").hide();
+      $(".no-group").show();
+      $('.q-name').hide();
+
+    }
+   
+  });
+
+  $(document).on("click", ".has-options",function () {
+    if($(this).is(":checked")){
+        $(".new-group").show();
+        $(".no-group").hide();
+        $(".q-name").show();
+
+       
+    }
+    else{
+      $(".new-group").hide();
+      $(".no-group").show();
+      $(".q-name").hide();
+     
+    }
+   
+  });
+
+
+  $(document).on("change", ".ftypes", function () {
+    var checked = $(this).find(":selected").val();
+    if(checked === 'P'){
+    titles = $('.options').find('.otitle')
+    vals = []
+    for(var i = 0; i < titles.length; i++){
+        vals.push($(titles[i]).val())
+    }
+    $('.nume').empty();
+    $('.d').empty();
+    for(var i=0; i < vals.length; i++){
+      $('.nume').append(`<option value="${vals[i]}">${vals[i]}</option>`)
+      $('.d').append(`<option value="${vals[i]}">${vals[i]}</option>`)
+    }
+
+    $('#exampleModal11').modal('show');
+    }
+
+  });
+  
+  $(document).on("click", ".cper", function () {
+    $('.percent').prop("checked", false);
+    
+  });
+
+  $(document).on("click", ".save-per", function () {
+    var nume = $('.nume :selected').val();
+    var d = $('.d :selected').val();
+    if(nume != d){
+      $('.group-form').append(`<input name="n" hidden value="${nume}"/>`)
+      $('.group-form').append(`<input name="d" hidden value="${d}"/>`)
+      $('#exampleModal11').modal('hide');
+
+    }
+    else{
+      $('.p-error').show().delay(1300).fadeOut('slow');;
+    }
+    
+  });
+
+</script>
+
+
+<script>
+  $(document).on("click", '.addOption', function () {
+    var qId = $(this).attr('q-id');
+    option = `<div class="item">
+                  <div>
+                    <input
+                      class="form-control custom-error otitle"
+                      type="text"
+                      name="title"
+                      placeholder="New Option"
+                      required
+                    />
+                  </div>               
+                  <div>
+                    <select name="field_type" class="form-control ftypes">
+                      Select
+                      <option disabled>Select field type</option>
+                      {% for field, value in field_type_choices %}
+                      <option value="{{field}}">{{value}}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <button type="button" class="btn btn-icon-only d-option">
+                    <i class="ic-delete d-option"></i>
+                  </button>
+                </div>`;
+
+    var title = $(this).closest(".options").find("input[name='title']")    
+    if (title.val() != ""){
+        $(this).closest(".options").find('.opt').append(option);
+    }
+    else
+    {
+       var error = $(this).closest(".options").find('.o-error');
+       error.show();
+       error.delay(1300).fadeOut('slow');
+    }
+   // options = $('.options').find('.otitle').length
+   // if(options > 1){
+     // $('.per-switch').show();
+    //}
+    //else{
+    //  $('.per-switch').hide();
+    //}
+  });
+
+  $(document).on("click", '.d-option', function () {
+    $(this).closest('.item').remove();
+    options = $('.options').find('.otitle').length
+    if(options <= 1){
+      $('.per-switch').hide();
+    }
+
+  });
+
+  $(document).on("click", ".new-group", function(){
+    //$('.all-groups').append(group);
+    var quesTitle = $(this).closest('.card-index').find('.q-title').val();
+ 
+    var inputs1 = $(this).closest('.card-index').find('.ftypes');
+    var inputs2  = $(this).closest('.card-index').find('.otitle');
+    var nume = $(this).closest('.card-index').find('input[name="n"]').val();
+    var deno = $(this).closest('.card-index').find('input[name="d"').val();
+    //var calcField = $(this).closest('.card-index').find('input[name="is_calc_field"').val();
+    var optionTitles = []
+    var fieldTypes = []
+    var isFile = 0;
+    if($('.isfile').is(":checked")){
+      isFile = 1;
+    }
+    for(var i = 0; i < inputs2.length; i++){
+          fieldTypes.push($(inputs1[i]).val())
+        }
+     for(var i = 0; i < inputs1.length; i++){
+       if($(inputs2[i]).val() != ''){
+          optionTitles.push($(inputs2[i]).val())
+       }
+      }
+
+    var datas = {
+          option_title: optionTitles,
+          field_type:fieldTypes,
+          is_file:isFile,
+          ques_title: quesTitle,
+          n:nume,
+          d:deno,
+          //is_calc_field:calcField
+    }
+    $.ajax({ 
+        url: "{% url 'dashboard:option_create' ques.id %}",
+        type: 'POST',
+        headers:{
+          'X-CSRFToken':'{{ csrf_token }}',
+         },
+        data: JSON.stringify(datas),
+        dataType: 'json',   
+        contentType: 'application/json',  
+        processData: false, 
+        contentType: false, 
+        success: function (data){
+        if(data['success']){
+          location.reload(true);
+          }
+        else{
+           $(".fail-create").show().delay(2500).fadeOut('slow');
+
+        } 
+        }, 
+     });
+    
+    })
+  
+</script>
+<script>
+$("body").on("submit", ".group-form", function(e){
+  e.preventDefault();
+  url = $(this).attr('action')
+  $.ajax({ 
+    url: url,
+    type: 'POST',
+    data: new FormData(this),
+    processData: false, 
+    contentType: false, 
+    success: function (data){
+    if(data['success']){
+          location.href = data["url"]
+          }
+    else{
+          $(".fail-create").show().delay(2500).fadeOut('slow');
+         } 
+         }, 
+     });
+})
+
+
+ $("body").on("submit", "#qForm", function(e) {
+        e.preventDefault();
+        url=$(this).attr('action')          
+        $.ajax({
+        url: url,
+        type: 'POST',           
+        data: new FormData(this),
+        processData: false,
+        contentType: false,
+        success: function (data) {
+        if(data['success']){
+          location.href = data['url']
+        }
+        else if($("input").next('p').length) $("input").nextAll('p').remove();
+          for (var error in data) {
+            var input = $("input[name='"+ error +"']");
+            input.after('<p class="error" id='+error +'-error for='+ error +'><span>'+ data[error] +'</span></p>');
+          }
+              
+            },
+          });
+         
+      });
+</script>
+
+{% endblock extra_scripts %}

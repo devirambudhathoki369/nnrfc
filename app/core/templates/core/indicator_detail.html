@@ -1,0 +1,297 @@
+{% extends 'fragments/base.html' %} 
+{% load static %} 
+
+{% block backbtn %}
+  <div>
+    <a href="{% url 'core:homepage' survey_id %}">
+    <button class="btn btn-danger">पछाडी जानुहोस</button></a>
+  </div>
+{% endblock backbtn %}
+
+{% block content %}
+    <div class="container mt-5">
+      <div class="card">
+        <div class="card-body pyaxis-32">
+          <div class="row justify-content-center">
+            <div class="col-lg-10">
+              <h3 class="mb-3">
+              {{ question_obj.title }}
+              </h3>
+              {% if has_months %}
+              <div class="row">
+                <div class="form-group col-lg-4">
+                  <select class="form-control" id="month_selector" href="{% url 'core:check_level_month_data' %}">
+                    <option value="4">श्रावण</option>
+                    <option value="5">भदौ</option>
+                    <option value="6">असोज</option>
+                    <option value="7">कार्तिक</option>
+                    <option value="8">मंसिर</option>
+                    <option value="9">पौष</option>
+                    <option value="10">माघ</option>
+                    <option value="11">फागुन</option>
+                    <option value="12">चैत्र</option>
+                    <option value="1" >वैशाख</option>
+                    <option value="2">ज्येष्ठ</option>
+                    <option value="3">असार</option>
+                  </select>
+                </div>
+              </div>
+              {% endif %}
+              {% if not has_child %}
+              <div class="table-responsive mb-3">
+                <table class="table-survey">
+                  <thead>
+                    <tr>
+                      <th colspan="2">विवरण प्रविष्ट गर्नुहोस्</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for option in option_answer_pairs %}
+                    <tr>
+                      <td>
+                        <div class="px-3 py-2">
+                          {{ option.option_title }}
+                        </div>
+                      </td>
+                      <td class="fixed-column">
+                        <!-- <input
+                          class="form-control border-0 input-td"
+                          type="number"
+                          placeholder="रकम"
+                        /> -->
+                    <div class="px-3 py-2">{{ option.indicator }} {{ option.answer_value }}</div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% if files %}
+              <p class="mt-3 mb-1 font-bold">संलग्नहरु</p>
+                <ul class="list list-bullet text-primary des mb-3">
+                  {% for file in files %}
+                    <li><a href="{{ file.url }}"> {{file.name}} </a></li>
+                  {% endfor %}
+                </ul>
+            {% endif %}
+          </div>
+          <div class="text-right mt-3">
+            <button
+              class="btn btn-outline-primary"
+              data-toggle="modal"
+              data-target="#correct" 
+              data-question="{{ question_obj.id }}"
+              id="request_correction"
+            >
+              संशोधन सम्बन्धी अनुरोध 
+            </button>
+          </div>
+          {% else %} {% for child_question in question_option_value %}
+          <div class="table-responsive mb-3">
+            <table class="table-survey">
+              <thead>
+                <tr>
+                  <th colspan="2">{{ child_question.question.title }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for option in child_question.option_answer %}
+                <tr>
+                  <td>
+                    <div class="px-3 py-2">{{ option.title }}</div>
+                  </td>
+                  <td>
+                    <div class="px-3 py-2">{{ option.indicator }}{{ option.answer }}</div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% if child_question.files %}
+              <p class="mt-3 mb-1 font-bold">संलग्नहरु</p>
+                <ul class="list list-bullet text-primary des mb-3">
+                  {% for file in child_question.files %}
+                    <li><a href="{{ file.document.url }}"> {{file.document.name}} </a></li>
+                  {% endfor %}
+                </ul>
+            {% endif %}
+          </div>
+          <div class="text-right mt-3">
+            <button
+              class="btn btn-outline-primary"
+              data-toggle="modal"
+              data-target="#correct"
+              data-question="{{ child_question.question.id }}"
+              id="request_correction"
+            >
+              संशोधन सम्बन्धी अनुरोध 
+            </button>
+          </div>
+          <br>
+          {% endfor %} {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock content %}
+
+{% block modal %}
+<div
+  class="modal fade modal-01"
+  id="correct"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="correct"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="correctionModalLongTitle">
+          सुधार अनुरोध गर्नुहोस्
+        </h3>
+        <button
+          class="close"
+          type="button"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form
+          class="form-inline-block align-items-center justify-content-center"
+        >
+        <div class="form-group">
+          <label for="subject">विषय</label>
+          <input
+            type="text"
+            id="subject"
+            class="form-control"
+          />
+        </div>
+        <div class="form-group">
+          <label for="message">सुधार गर्नुपर्ने विषय यहाँ प्रष्टसँग उल्लेख गर्नुहोस् </label>
+          <textarea
+            class="form-control"
+            id="message"
+            rows="3"
+            placeholder="संशोधन गर्नुपर्ने विषय यहाँ प्रष्टसँग उल्लेख गर्नुहोस्..."
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label for="inputPassword5" class="d-block"
+            >सुधारका लागि अनुरोध भएको निर्णयको प्रति र अन्य प्रमाण कागजात अपलोड गर्नुहोस्।</label
+          >
+          <div class="custom-file custom-file-upload">
+            <input
+              class="custom-file-input"
+              type="file"
+              id="correctionFile"
+            /><label class="custom-file-label" for="customFile"> </label>
+          </div>
+        </div>
+        <div class="d-flex">
+          <button
+            class="btn btn-danger flex-grow-1 mr-3"
+            type="button"
+            data-dismiss="modal"
+            aria-label="Close"
+          >
+            रद्द गर्नुहोस्</button
+          >
+          <button class="btn btn-primary flex-grow-1" type="button" id="send_for_correction"
+            href="{% url 'core:send_for_correction' %}">
+              पेश गर्नुहोस्
+          </button>
+        </div>
+      </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock modal %}
+{% block extra_scripts %}
+<script>
+  $('#correct').on('shown.bs.modal', function(event){
+    question_id = $(event.relatedTarget).data('question');
+    $("#send_for_correction").on("click", function (e) {
+      var subject = $("#subject").val();
+      var message = $("#message").val();
+      var uploaded_file = $("#correctionFile");
+      var form_data = new FormData()
+      var up_file = uploaded_file[0].files[0];
+      var month_id = $("#month_selector").val();
+      form_data.append("filename", up_file);
+      form_data.append("subject", subject);
+      form_data.append("message", message);
+      form_data.append("question_id", question_id);
+      form_data.append("month_id", month_id);
+      var dataurl = $(this).attr("href");
+
+      $.ajax({
+        url: dataurl,
+        method: "POST",
+        data: form_data,
+        processData: false,
+        contentType: false,
+        dataType: "json",
+        success: function(data){
+          $('#correct').modal('hide');
+          showMsg("Request for correction sent!");
+        },
+        error:function(data)  
+        {
+          alert("Please select image size no more than 2 MB");
+        }
+      })
+    })
+  });
+
+  window.onload = function() {
+    month_id = {{ month_id }};
+    dd = $("#month_selector");
+    dd.val(month_id)
+  }
+
+
+  $("#month_selector").on("change", function() {
+    event.preventDefault();
+    var dataurl = $(this).attr("href");
+    var question_id = {{ question_id }};
+    var month_value = $(this).val();
+    if (month_value === "undefined"){
+      month_value = 0;
+    }
+    // var question_id = ;
+    // var month_value = $(this).value;
+    $.ajax({
+      url: dataurl,
+      method: 'POST',
+      data: {
+          // csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value,
+          'question_id': question_id,
+          'month_value': month_value,
+      },
+      dataType: 'json',
+      success: function(data){
+        if (data.has_month_value){
+          window.location.href = "{% url 'core:filled_question_month' question_id 99999 %}".replace('99999', month_value)
+        }
+        else {
+          window.location.href = "{% url 'core:create_answer' question_id %}"
+        }
+      }
+    })
+  });
+
+  $(".custom-file-input").on("change", function() {
+    var fileName = $(this).val().split("\\").pop();
+    $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+  });
+
+</script>
+{% endblock extra_scripts %}

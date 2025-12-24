@@ -1,0 +1,41 @@
+{% extends 'fragments/base.html' %} 
+
+{% load static %} 
+{% load devanagari %} 
+
+{% block backbtn %}
+  <div>
+    <a href="{% url 'core:pdf_generate' survey.id %}"
+    <Button class="btn bg-white mr-3">PDF को रूपमा डाउनलोड गर्नुहोस्</Button></a>
+    <a href="{% url 'core:survey_list' %}">
+    <button class="btn btn-danger">पछाडी जानुहोस</button></a>
+  </div>
+{% endblock backbtn %}
+
+{%block content %}
+
+<div class="container">
+  <section class="section--topic">
+    <h3 class="text-primary mb-3">सूचकहरु</h3>
+    <ol class="list--topic">
+      {% for question in questionaire %}
+      <li>
+        {% if question.is_question_filled %}
+        <a
+          class="list-link"
+          href="{% url 'core:filled_question' question.pk %}"
+        >
+          <span>{{ question.title }}</span>
+            <img src="{% static 'back/assets/images/check-circle.svg' %}" alt="" />
+        </a>
+        {% else %}
+        <a class="list-link" href="{% url 'core:create_answer' question.pk %}">
+          <span>{{ question.title }}</span>
+        </a>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+</div>
+{% endblock content %}
