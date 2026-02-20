@@ -12,14 +12,14 @@ class AbstractInfo(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        abstract = True
+        abstract = True 
 
 
 class User(AbstractUser):
     full_name = models.CharField(_("Full Name"), max_length=100, null=True)
     roles = models.ManyToManyField("Role", blank=True, related_name="users")
     email = models.EmailField((_("Email")), unique=True)
-    personal_email = models.EmailField(_("Personal Email"), null=True)
+    personal_email = models.EmailField(_("Personal Email"), null=True)          
     department = models.ForeignKey(
         "Department",
         on_delete=models.SET_NULL,

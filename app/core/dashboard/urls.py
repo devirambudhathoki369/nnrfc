@@ -54,7 +54,7 @@ urlpatterns = [
     path("",views.DashBoardHome.as_view(),name="dashboard"),
     path("index/", views.DashboardIndexView.as_view(), name="home"),
     path("index-create/", IndexCreateView.as_view(), name="index_create"),
-    path(
+    path(   
         "survey-detail/<int:survey_id>/",
         SurveyDetailView.as_view(),
         name="survey_detail",
