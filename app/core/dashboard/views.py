@@ -768,3 +768,7 @@ class FiscalYearUpdateView(SuccessMessageMixin, UpdateView):
     success_url = reverse_lazy("dashboard:master_configuration")
     success_message = "Fiscal Year Updated Successfully."
     context_object_name = 'fiscal'
+
+
+class SettingsView(LoginRequiredMixin, TemplateView):
+    template_name = "core/dashboard/settings.html"

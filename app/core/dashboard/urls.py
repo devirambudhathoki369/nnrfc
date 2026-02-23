@@ -9,6 +9,7 @@ from core.dashboard.views import (
     IndexOptionUpdateView,
     IndexUpdateView,
     OptionCreateView,
+    SettingsView,
     SurveyDetailView,
     assign_department_to_index,
     complaint_detail,
@@ -165,4 +166,6 @@ urlpatterns = [
     path("district_edit/<int:pk>/", DistrictNameUpdateView.as_view(), name="district_update"),
 
     path("fiscal_edit/<int:pk>/", FiscalYearUpdateView.as_view(), name="fiscal_update"),
+
+    path("settings/", SettingsView.as_view(), name="settings"),
 ]

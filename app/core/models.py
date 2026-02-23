@@ -401,6 +401,7 @@ class SurveyCorrection(AbstractInfo):
     month = models.PositiveSmallIntegerField(
         null=True, blank=True, choices=month_choices
     )
+    remarks = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.sub

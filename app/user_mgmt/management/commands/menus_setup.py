@@ -69,8 +69,19 @@ class Command(BaseCommand):
                 "code": "appraisal_review_request",
                 "url": "dashboard:appraisal_review_request",
             },
+            {
+                "name": "सेटिङ",
+                "code": "settings",
+                "url": "dashboard:settings",
+            },
         ]
         for menu in menus:
-            Menu.objects.get_or_create(**menu)
+            Menu.objects.update_or_create(
+                code=menu["code"],
+                defaults={
+                    "name": menu["name"],
+                    "url": menu["url"],
+                }
+            )
 
         print("Command Executed Successfully.")
