@@ -520,7 +520,7 @@ def send_for_correction(request):
         user_level = current_user.level
         try:
             document = request.FILES["filename"]
-            if document.size > 5297152:
+            if document.size > 1024:
                 return JsonResponse({"message":"Please select image size no more than 2 MB"},status=400)
 
         except:
