@@ -16,7 +16,7 @@ class UserLoginForm(forms.Form):
     email = forms.EmailField()
 
 
-class SetNewStaffPasswordForm(forms.Form):
+class SetNewStaffPasswordForm(forms.Form):  
     new_password1 = forms.CharField(
         widget=forms.PasswordInput, validators=[validate_password]
     )

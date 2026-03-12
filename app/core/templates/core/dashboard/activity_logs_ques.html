@@ -1,5 +1,5 @@
-{% extends 'fragments/dashboard/base.html' %} {% load static %}
- {% block title-bar %}
+{% extends 'fragments/dashboard/base.html' %} {% load static %} {% block
+title-bar %}
 <div class="header-page">
   <h1>लगहरु</h1>
   <a href="{% url 'dashboard:activity_log' %}"
@@ -9,40 +9,38 @@
   </a>
 </div>
 {% endblock title-bar %} {% block content %}
- <Fragment>
-          <div class="inner">
-            <div class="container">
-              
-              <div class="table-responsive">
-                <table class="table table-02 mb-3 d-xl-table">
-                  <thead>
-                    <tr>
-                      <th>क्रम संख्या</th>
-                      <th>सूचकहरु</th>
-                      <th>कार्य</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  {% for l in q_logs %}
-                    <tr>
-                      <td>{{forloop.counter}}</td>
-                      <td>{{l.question_title}}</td>
-                       <td>
-                            <a
-                              href="{% url 'dashboard:log_detail' l.action_level l.question_id %}"
-                              title="Edit"
-                              class="mr-2 text-coolGray600"
-                            >
-                              <i class="ic-visible"></i
-                            ></a>
-                          </td>
-                    </tr>
-                {% endfor %}
-                    
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </Fragment>
+<Fragment>
+  <div class="inner">
+    <div class="container">
+      <div class="table-responsive">
+        <table class="table table-02 mb-3 d-xl-table">
+          <thead>
+            <tr>
+              <th>क्रम संख्या</th>
+              <th>सूचकहरु</th>
+              <th>कार्य</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for l in q_logs %}
+            <tr>
+              <td>{{forloop.counter}}</td>
+              <td>{{l.question_title}}</td>
+              <td>
+                <a
+                  href="{% url 'dashboard:log_detail' l.action_level l.question_id %}"
+                  title="Edit"
+                  class="mr-2 text-coolGray600"
+                >
+                  <i class="ic-visible"></i
+                ></a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</Fragment>
 {% endblock content %}

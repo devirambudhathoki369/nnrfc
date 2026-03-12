@@ -252,6 +252,7 @@
           <table class="table table-02" >
             <thead>
               <tr>
+                <th>क्रम संख्या</th>
                 <th>सूचक</th>
                 <th>विभाग/संस्था/मन्त्रालय</th>
                 <th>सूचकहरु</th>
@@ -261,6 +262,7 @@
             <tbody>
               {% for question in questions %}
               <tr>
+              <td>{{forloop.counter}}</td>
               <td>{{question.title|truncatewords:5}}</td>
               <td>{{question.department}}</td>
               {% if question.children_questions.all.count < 1 %}

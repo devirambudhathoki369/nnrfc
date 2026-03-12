@@ -6,16 +6,21 @@
         <div class="login-greeting login-greeting-lg">
           <div class="align-center">
             <div class="logo">
-              <img src="{% static 'front/assets/images/gov-logo.png' %}" alt="" />
+              <img
+                src="{% static 'front/assets/images/gov-logo.png' %}"
+                alt=""
+              />
             </div>
             <div>
               <p>राष्ट्रिय प्राकृतिक स्रोत तथा वित्त आयोग</p>
-            </div>
+            </div>  
           </div>
           <div class="login-divider"></div>
           <div class="greeting">
             <h3>NNRFC को अनलाइन पोर्टलमा स्वागत छ।</h3>
-            <p class="mt-2">कृपया तपाईंको ईमेल र पासवर्ड प्रयोग गरि लग – इन गर्नुहोस्।</p>
+            <p class="mt-2">
+              कृपया तपाईंको ईमेल र पासवर्ड प्रयोग गरि लग – इन गर्नुहोस्।
+            </p>
           </div>
         </div>
       </div>
@@ -30,47 +35,67 @@
           <h4>लग – इन</h4>
           <div class="d-flex justify-content-between align-items-center mb-3">
             <!-- <a to="/register" class="text-primary">Register</a> -->
-            {% for error in form.non_field_errors  %}
+            {% for error in form.non_field_errors %}
             <span class="error">{{error}}</span>
             {% endfor %}
           </div>
           <form action="" method="POST">
-           {% csrf_token %}
+            {% csrf_token %}
             <div class="form-group">
               <label htmlFor="">ईमेल</label>
-              <input type="text" name="username" placeholder="ईमेल टाइप गर्नुहोस्" value="{{form.username.value|default_if_none:''}}" class="form-control" />
-              {% if form.username.errors %}<span class="error">{{form.username.errors.as_text}}</span>{% endif %}
+              <input
+                type="text"
+                name="username"
+                placeholder="ईमेल टाइप गर्नुहोस्"
+                value="{{form.username.value|default_if_none:''}}"
+                class="form-control"
+              />
+              {% if form.username.errors %}<span class="error"
+                >{{form.username.errors.as_text}}</span
+              >{% endif %}
             </div>
             <div class="form-group">
               <label htmlFor="" class="d-block">
                 <span class="d-block">पासवर्ड</span>
               </label>
               <div class="form-icon">
-                <input id="password" type="password" name="password"
-                class="form-control" placeholder="पासवर्ड टाइप गर्नुहोस्" value="{{form.password.value|default_if_none:''}}" />
-               {% if form.password.errors %}<span class="error">{{form.password.errors.as_text}}</span>{% endif %}
+                <input
+                  id="password"
+                  type="password"
+                  name="password"
+                  class="form-control"
+                  placeholder="पासवर्ड टाइप गर्नुहोस्"
+                  value="{{form.password.value|default_if_none:''}}"
+                />
+                {% if form.password.errors %}<span class="error"
+                  >{{form.password.errors.as_text}}</span
+                >{% endif %}
                 <i class="ic-hidden rft" id="togglePassword"></i>
               </div>
               <div class="text-right">
-                <a href="{% url 'password_reset' %}" class="text-primary small">पासवर्ड भुल्नु भयो ?</a>
+                <a href="{% url 'password_reset' %}" class="text-primary small"
+                  >पासवर्ड भुल्नु भयो ?</a
+                >
               </div>
             </div>
 
-            {% comment %} <div class="custom-control custom-checkbox mr-sm-2">
+            {% comment %}
+            <div class="custom-control custom-checkbox mr-sm-2">
               <input
                 type="checkbox"
                 class="custom-control-input"
                 id="customControlAutosizing"
                 checked
               />
-              <label
-                class="custom-control-label"
-                for="customControlAutosizing"
+              <label class="custom-control-label" for="customControlAutosizing"
                 >Keep Me Logged In</label
               >
-            </div> {% endcomment %}
+            </div>
+            {% endcomment %}
 
-            <button type="submit" to="/" class="btn btn-primary btn-block my-3"> लग – इन </button>
+            <button type="submit" to="/" class="btn btn-primary btn-block my-3">
+              लग – इन
+            </button>
           </form>
         </div>
       </div>

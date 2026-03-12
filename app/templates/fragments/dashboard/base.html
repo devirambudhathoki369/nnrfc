@@ -152,9 +152,7 @@
                 >
                   <div class="textbox mr-2">
                     <h6 class="username">
-                      {% if request.user.full_name %} {{
-                      request.user.full_name}} {% else %} {{request.user.email}}
-                      {% endif %}
+                      {% if request.user.full_name %} {{ request.user.full_name}} {% else %} {{request.user.email}} {% endif %}
                     </h6>
                   </div>
                   <i class="ic-triangle-down"></i>
@@ -291,8 +289,8 @@
           </div>
 
           {% block title-bar %} {% endblock title-bar %} {% block user-list %}
-          {% endblock user-list %} {% block role-setup %} 
-          {% endblock role-setup %} {% block master %} {% endblock master %}
+          {% endblock user-list %} {% block role-setup %} {% endblock role-setup %}
+          {% block master %} {% endblock master %}
         </header>
         <!--Main section-->
         {% block content %}{% endblock content %}
