@@ -1,277 +1,287 @@
-{% extends 'fragments/base.html' %} 
-{% load static %} 
-{% load devanagari %}
-
-
-{% block backbtn %}
-  <div>
-    <a href="{% url 'core:homepage' survey_id %}">
-    <button class="btn btn-danger">पछाडी जानुहोस</button></a>
-  </div>
-{% endblock backbtn %}
-
-
-{% block content %}
+{% extends 'fragments/base.html' %} {% load static %} {% load devanagari %}
+{%block backbtn %}
+<div>
+  <a href="{% url 'core:homepage' survey_id %}">
+    <button class="btn btn-danger">पछाडी जानुहोस</button>
+  </a>
+</div>
+{% endblock backbtn %} {% block content %}
 <div class="container mt-5">
   <div class="card">
     <div class="card-body pyaxis-32">
       <div class="row justify-content-center">
         <div class="col-lg-10">
-          <!-- <form action="{% url 'core:create_answer' question_id %}" class="group-form" method="post">
-            {% csrf_token %} -->
-            <h3 class="mb-3">
-              {{ question_title }}
-            </h3>
-            {% if has_months %}
-            <div class="row">
-              <div class="form-group col-lg-4">
-                विवरण गर्ने महिना:
-                <select class="form-control" id="month_selector" href="{% url 'core:check_level_month_data' %}">
-                  <option value="" disabled selected hidden>
-                    महिना छान्नुहोस्
-                  </option>
-                  <option value="4">श्रावण</option>
-                  <option value="5">भदौ</option>
-                  <option value="6">असोज</option>
-                  <option value="7">कार्तिक</option>
-                  <option value="8">मंसिर</option>
-                  <option value="9">पौष</option>
-                  <option value="10">माघ</option>
-                  <option value="11">फागुन</option>
-                  <option value="12">चैत्र</option>
-                  <option value="1">वैशाख</option>
-                  <option value="2">ज्येष्ठ</option>
-                  <option value="3">असार</option>
-                </select>
-              </div>
+          {# Hidden CSRF token for AJAX calls #} {% csrf_token %}
+
+          <h3 class="mb-3">{{ question_title }}</h3>
+
+          {% if has_months %}
+          <div class="row">
+            <div class="form-group col-lg-4">
+              विवरण गर्ने महिना:
+              <select
+                class="form-control"
+                id="month_selector"
+                data-url="{% url 'core:check_level_month_data' %}"
+              >
+                <option value="" disabled selected hidden>
+                  महिना छान्नुहोस्
+                </option>
+                <option value="4">श्रावण</option>
+                <option value="5">भदौ</option>
+                <option value="6">असोज</option>
+                <option value="7">कार्तिक</option>
+                <option value="8">मंसिर</option>
+                <option value="9">पौष</option>
+                <option value="10">माघ</option>
+                <option value="11">फागुन</option>
+                <option value="12">चैत्र</option>
+                <option value="1">वैशाख</option>
+                <option value="2">ज्येष्ठ</option>
+                <option value="3">असार</option>
+              </select>
             </div>
-            {% endif %}
-            {% if not has_child %}
-            <div class="table-responsive mb-3">
-              <table class="table-survey">
-                <thead>
-                  <tr>
-                    <th colspan="2">विवरण प्रविष्ट गर्नुहोस्</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for option in options %}
-                  <tr>
-                    <td>
-                      <div class="px-3 py-2">
-                        {{ option.title }}
-                      </div>
-                    </td>
-                    <td class="fixed-column">
-                      {% if option.input_type == "checkbox" %}
-                        <div class="custom-control custom-checkbox">
-                          <input
-                          class="custom-control-input"
-                          type="checkbox"
-                          data-option-id={{ option.id }}
-                          data-option-type={{ option.option_type }}
-                          name="answer"
-                          id="check{{ option.id }}"
-                          autocomplete="off"
-                          /><label
-                          class="custom-control-label ml-3"
-                          for="check{{ option.id }}"
-                          ></label
-                          >
-                        </div>
-                      {% elif option.input_type == "fiscal_year" %}
-                        <select class="custom-select" id="inputGroupSelect01">
-                          {% for fy_datum in option.fy_data %}
-                            <option id="fiscal_year_selector" data-option-id={{option.id}} value="{{ fy_datum.id }}">{{ fy_datum.name }}</option>
-                          {% endfor %}
-                        </select>
-                      {% elif option.input_type == "date" %}
-                        <div class="input-group">
-                          <div class="input-group-prepend">
-                            <span class="input-group-text"
-                              id="inputGroup-sizing-sm">{{ option.field_indicator }}</span>
-                          </div>
-                          <input
-                          class="form-control border-0 input-td"
-                          type="text"
-                          placeholder="Date"
-                          data-option-id={{ option.id }}
-                          data-option-type={{ option.option_type }}
-                          name="answer"
-                          id="nepali-datepicker{{ option.id }}"
-                          autocomplete="off"
-                          />
-                        </div>
-                      {% else %}
-                        <div class="input-group">
-                          <div class="input-group-prepend">
-                            <span class="input-group-text"
-                              id="inputGroup-sizing-sm">{{ option.field_indicator }}</span>
-                          </div>
-                          <input
-                            class="form-control border-0 input-td"
-                            type={{ option.input_type }}
-                            placeholder="Value"
-                            data-option-id={{ option.id }}
-                            data-option-type={{ option.option_type }}
-                            name="answer"
-                            id="submitted_answer"
-                            autocomplete="off"
-                          />
-                        </div>
-                      {% endif %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colspan="2">
-                      <div class="custom-file custom-file-upload mt-3 w-50">
-                        <input
-                          class="custom-file-input"
-                          type="file"
-                          id="customFile{{ child_question.id }}"
-                          data-file-question-id={{ question_id }}
-                        /><label
-                          class="custom-file-label border-0"
-                          for="customFile"
-                          >सम्बन्धित फाइल अपलोड गर्नुहोस्</label
+          </div>
+          {% endif %} {% if not has_child %}
+          <div class="table-responsive mb-3">
+            <table class="table-survey">
+              <thead>
+                <tr>
+                  <th colspan="2">विवरण प्रविष्ट गर्नुहोस्</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for option in options %}
+                <tr>
+                  <td>
+                    <div class="px-3 py-2">{{ option.title }}</div>
+                  </td>
+                  <td class="fixed-column">
+                    {% if option.input_type == "checkbox" %}
+                    <div class="custom-control custom-checkbox">
+                      <input
+                        class="custom-control-input survey-checkbox"
+                        type="checkbox"
+                        data-option-id="{{ option.id }}"
+                        data-option-type="{{ option.option_type }}"
+                        name="answer"
+                        id="check{{ option.id }}"
+                        autocomplete="off"
+                      />
+                      <label
+                        class="custom-control-label ml-3"
+                        for="check{{ option.id }}"
+                      ></label>
+                    </div>
+                    {% elif option.input_type == "fiscal_year" %}
+                    <select
+                      class="custom-select survey-fy-select"
+                      data-option-id="{{ option.id }}"
+                    >
+                      {% for fy_datum in option.fy_data %}
+                      <option value="{{ fy_datum.id }}">
+                        {{ fy_datum.name }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                    {% elif option.input_type == "date" %}
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputGroup-sizing-sm"
+                          >{{ option.field_indicator }}</span
                         >
                       </div>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-              </div>
-              {% else %}
-              {% for child_question in child_options %}
-              <div class="table-responsive mb-3">
-                <table class="table-survey">
-                  <thead>
-                    <tr>
-                      <th colspan="2">{{ child_question.child_question.title }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for option in child_question.options %}
-                    <tr>
-                      <td>
-                        <div class="px-3 py-2">
-                          {{ option.title }}
-                        </div>
-                      </td>
-                      <td class="fixed-column">
-                        {% if option.input_type == "checkbox" %}
-                          <div class="custom-control custom-checkbox">
-                            <input
-                              class="custom-control-input"
-                              type="checkbox"
-                              data-option-id={{ option.id }}
-                              data-option-type={{ option.option_type }}
-                              name="answer"
-                              id="check{{ option.id }}"
-                              autocomplete="off"
-                              /><label
-                              class="custom-control-label ml-3"
-                              for="check{{ option.id }}"
-                              >गराएको</label
-                            >
-                          </div>
-                        {% elif option.input_type == "fiscal_year" %}
-                        <select class="custom-select" id="inputGroupSelect01">
-                          {% for fy_datum in option.fy_data %}
-                            <option id="fiscal_year_selector" data-option-id={{option.id}} value="{{ fy_datum.id }}">{{ fy_datum.name }}</option>
-                          {% endfor %}
-                        </select>
-                        {% elif option.input_type == "date" %}
-                          <div class="input-group">
-                            <div class="input-group-prepend">
-                              <span class="input-group-text"
-                                id="inputGroup-sizing-sm">{{ option.field_indicator }}</span>
-                            </div>
-                            <input
-                            class="form-control border-0 input-td"
-                            type="text"
-                            placeholder="Value"
-                            data-option-id={{ option.id }}
-                            data-option-type={{ option.option_type }}
-                            name="answer"
-                            id="nepali-datepicker{{option.id}}"
-                            autocomplete="off"
-                            />
-                          </div>
-                        {% elif option.input_type == "percentage" %}
-                          <div class="input-group">
-                            <div class="input-group-prepend">
-                              <span class="input-group-text"
-                                id="inputGroup-sizing-sm">{{ option.field_indicator }}</span>
-                            </div>
-                            <input
-                              class="form-control border-0 input-td"
-                              type={{ option.input_type }}
-                              placeholder="Value"
-                              data-option-id={{ option.id }}
-                              data-option-type={{ option.option_type }}
-                              name="answer"
-                              id="submitted_answer"
-                              autocomplete="off"
-                              readonly
-                            />
-                          </div>
-                        {% else %}
-                          <div class="input-group">
-                            <div class="input-group-prepend">
-                              <span class="input-group-text"
-                                id="inputGroup-sizing-sm">{{ option.field_indicator }}</span>
-                            </div>
-                            <input
-                              class="form-control border-0 input-td"
-                              type={{ option.input_type }}
-                              placeholder="Value"
-                              data-option-id={{ option.id }}
-                              data-option-type={{ option.option_type }}
-                              name="answer"
-                              id="submitted_answer"
-                              autocomplete="off"
-                            />
-                          </div>
-                        {% endif %}
-                      </td>
-                    </tr>
-                    {% endfor %}
-                    <tfoot>
-                      <tr>
-                        <td colspan="2">
-                          <div class="custom-file custom-file-upload mt-3 w-50">
-                            <input
-                              class="custom-file-input"
-                              type="file"
-                              id="customFile{{ child_question.child_question.id }}"
-                              data-file-question-id={{ child_question.child_question.id }}
-                            /><label
-                              class="custom-file-label border-0"
-                              for="customFile"
-                              >सम्बन्धित फाइल अपलोड गर्नुहोस्</label
-                            >
-                          </div>
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </tbody>
-                </table>
-              </div>
-              {% endfor %}
-              {% endif %}
-            <div class="text-right mt-3">
-              <button
-                class="btn btn-primary"
-                data-toggle="modal"
-                data-target="#confirmationModalCenter">
-                  पेश गर्नुहोस्
-              </button>
-            </div>
+                      <input
+                        class="form-control border-0 input-td survey-datepicker"
+                        type="text"
+                        placeholder="Date"
+                        data-option-id="{{ option.id }}"
+                        data-option-type="{{ option.option_type }}"
+                        name="answer"
+                        id="nepali-datepicker{{ option.id }}"
+                        autocomplete="off"
+                      />
+                    </div>
+                    {% else %}
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputGroup-sizing-sm"
+                          >{{ option.field_indicator }}</span
+                        >
+                      </div>
+                      <input
+                        class="form-control border-0 input-td survey-input"
+                        type="{{ option.input_type }}"
+                        placeholder="Value"
+                        data-option-id="{{ option.id }}"
+                        data-option-type="{{ option.option_type }}"
+                        name="answer"
+                        autocomplete="off"
+                      />
+                    </div>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2">
+                    <div class="custom-file custom-file-upload mt-3 w-50">
+                      <input
+                        class="custom-file-input survey-file"
+                        type="file"
+                        id="customFile{{ question_id }}"
+                        data-file-question-id="{{ question_id }}"
+                      />
+                      <label
+                        class="custom-file-label border-0"
+                        for="customFile{{ question_id }}"
+                        >सम्बन्धित फाइल अपलोड गर्नुहोस्</label
+                      >
+                    </div>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          {% else %} {% for child_question in child_options %}
+          <div class="table-responsive mb-3">
+            <table class="table-survey">
+              <thead>
+                <tr>
+                  <th colspan="2">{{ child_question.child_question.title }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for option in child_question.options %}
+                <tr>
+                  <td>
+                    <div class="px-3 py-2">{{ option.title }}</div>
+                  </td>
+                  <td class="fixed-column">
+                    {% if option.input_type == "checkbox" %}
+                    <div class="custom-control custom-checkbox">
+                      <input
+                        class="custom-control-input survey-checkbox"
+                        type="checkbox"
+                        data-option-id="{{ option.id }}"
+                        data-option-type="{{ option.option_type }}"
+                        name="answer"
+                        id="check{{ option.id }}"
+                        autocomplete="off"
+                      />
+                      <label
+                        class="custom-control-label ml-3"
+                        for="check{{ option.id }}"
+                        >गराएको</label
+                      >
+                    </div>
+                    {% elif option.input_type == "fiscal_year" %}
+                    <select
+                      class="custom-select survey-fy-select"
+                      data-option-id="{{ option.id }}"
+                    >
+                      {% for fy_datum in option.fy_data %}
+                      <option value="{{ fy_datum.id }}">
+                        {{ fy_datum.name }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                    {% elif option.input_type == "date" %}
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputGroup-sizing-sm"
+                          >{{ option.field_indicator }}</span
+                        >
+                      </div>
+                      <input
+                        class="form-control border-0 input-td survey-datepicker"
+                        type="text"
+                        placeholder="Value"
+                        data-option-id="{{ option.id }}"
+                        data-option-type="{{ option.option_type }}"
+                        name="answer"
+                        id="nepali-datepicker{{ option.id }}"
+                        autocomplete="off"
+                      />
+                    </div>
+                    {% elif option.input_type == "percentage" %}
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputGroup-sizing-sm"
+                          >{{ option.field_indicator }}</span
+                        >
+                      </div>
+                      <input
+                        class="form-control border-0 input-td survey-input"
+                        type="{{ option.input_type }}"
+                        placeholder="Value"
+                        data-option-id="{{ option.id }}"
+                        data-option-type="{{ option.option_type }}"
+                        name="answer"
+                        autocomplete="off"
+                        readonly
+                      />
+                    </div>
+                    {% else %}
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputGroup-sizing-sm"
+                          >{{ option.field_indicator }}</span
+                        >
+                      </div>
+                      <input
+                        class="form-control border-0 input-td survey-input"
+                        type="{{ option.input_type }}"
+                        placeholder="Value"
+                        data-option-id="{{ option.id }}"
+                        data-option-type="{{ option.option_type }}"
+                        name="answer"
+                        autocomplete="off"
+                      />
+                    </div>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2">
+                    <div class="custom-file custom-file-upload mt-3 w-50">
+                      <input
+                        class="custom-file-input survey-file"
+                        type="file"
+                        id="customFile{{ child_question.child_question.id }}"
+                        data-file-question-id="{{ child_question.child_question.id }}"
+                      />
+                      <label
+                        class="custom-file-label border-0"
+                        for="customFile{{ child_question.child_question.id }}"
+                        >सम्बन्धित फाइल अपलोड गर्नुहोस्</label
+                      >
+                    </div>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          {% endfor %} {% endif %}
+
+          <div class="text-right mt-3">
+            <button
+              class="btn btn-primary"
+              data-toggle="modal"
+              data-target="#confirmationModalCenter"
+            >
+              पेश गर्नुहोस्
+            </button>
+          </div>
         </div>
+
+        {# Confirmation Modal #}
         <div
           class="modal fade modal-01"
           id="confirmationModalCenter"
@@ -282,248 +292,273 @@
         >
           <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
-              <div class="modal-body flex-center-center flex-column text-center">
+              <div
+                class="modal-body flex-center-center flex-column text-center"
+              >
                 <h2>पुष्टिकरण</h2>
                 <p>
-                  के तपाईं पक्का विवरण पेस गर्न चाहानुहुन्छ? यो पेस गरिसके पछि परिवर्तन गर्न सक्नु हुनेछैन।
+                  के तपाईं पक्का विवरण पेस गर्न चाहानुहुन्छ? यो पेस गरिसके पछि
+                  परिवर्तन गर्न सक्नु हुनेछैन।
                 </p>
                 <div class="d-flex w-100">
                   <button
                     class="btn btn-danger flex-grow-1 mr-3"
                     type="button"
                     data-dismiss="modal"
-                    aria-label="Close">
-                      रद्द गर्नुहोस्
+                    aria-label="Close"
+                  >
+                    रद्द गर्नुहोस्
                   </button>
-                  <button class="btn btn-primary flex-grow-1" type="button" id="submit_answer"
-                    href="{% url 'core:submit_answer' %}">
-                      पेश गर्नुहोस्
+                  <button
+                    class="btn btn-primary flex-grow-1"
+                    type="button"
+                    id="submit_answer"
+                    data-url="{% url 'core:submit_answer' %}"
+                  >
+                    पेश गर्नुहोस्
                   </button>
                 </div>
               </div>
             </div>
           </div>
-      <!-- </form> -->
+        </div>
       </div>
     </div>
   </div>
 </div>
-  </div>
-{% endblock content %}
-
-
-{% block extra_scripts %}
+{% endblock content %} {% block extra_scripts %}
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<!-- use downloaded file later -->
 <script
-      type="text/javascript"
-      src="{% static 'front/assets/nepaliDatePicker.js' %}">
-</script>
+  type="text/javascript"
+  src="{% static 'front/assets/nepaliDatePicker.js' %}"
+></script>
 
 <script>
-  $("input[id^='nepali-datepicker'").each(function(index, item){
-    /* Select your element */
-    var mainInput = $(item);
-    /* Initialize Datepicker with options */
-    mainInput.nepaliDatePicker();
-  })
+  $(document).ready(function() {
 
-  $('input, textarea').attr('autocomplete', 'off');
-  $("input").change(function(index, item){
-    var num = $("input[data-option-type='Num']");
-    var deno = $("input[data-option-type='Deno']");
-    var calc = $("input[data-option-type='Per']");
-
-    if (num.val() && deno.val()) {
-      var numf = parseFloat(num.val());
-      var denof = parseFloat(deno.val());
-      var calcf = (numf / denof) * 100;
-      calcf = Math.round(calcf)
+    // ========================================
+    // CSRF Token Helper
+    // ========================================
+    function getCookie(name) {
+      var cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+          var cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
     }
-    calc.val(calcf);
-  });
+    var csrftoken = getCookie('csrftoken');
 
-  $("#month_selector").on("change", function() {
-    event.preventDefault();
-    var dataurl = $(this).attr("href");
-    var question_id = {{ question_id }};
-    var month_value = $(this).val();
-    if (month_value === "undefined"){
-      month_value = 0;
-    }
-    // var question_id = ;
-    // var month_value = $(this).value;
-    $.ajax({
-      url: dataurl,
-      method: 'POST',
-      data: {
-          // csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value,
+    // Set CSRF token globally for all AJAX POST requests
+    $.ajaxSetup({
+      beforeSend: function(xhr, settings) {
+        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+          xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        }
+      }
+    });
+
+    // ========================================
+    // Initialize Nepali Date Pickers
+    // ========================================
+    $(".survey-datepicker").each(function() {
+      $(this).nepaliDatePicker();
+    });
+
+    // Disable autocomplete on all inputs
+    $('input, textarea').attr('autocomplete', 'off');
+
+    // ========================================
+    // Percentage Calculation — Scoped per table
+    // ========================================
+    $(document).on("change input", ".survey-input", function() {
+      var $table = $(this).closest("table");
+
+      var $num = $table.find("input[data-option-type='Num']");
+      var $deno = $table.find("input[data-option-type='Deno']");
+      var $calc = $table.find("input[data-option-type='Per']");
+
+      if ($num.length && $deno.length && $calc.length &&
+          $num.val() && $deno.val()) {
+        var numf = parseFloat($num.val());
+        var denof = parseFloat($deno.val());
+        if (denof !== 0) {
+          var calcf = (numf / denof) * 100;
+          $calc.val(parseFloat(calcf.toFixed(2)));
+        } else {
+          $calc.val('');
+        }
+      }
+    });
+
+    // ========================================
+    // Month Selector
+    // ========================================
+    $("#month_selector").on("change", function(event) {
+      event.preventDefault();
+      var dataurl = $(this).attr("data-url");
+      var question_id = {{ question_id }};
+      var month_value = $(this).val();
+
+      if (!month_value) {
+        return;
+      }
+
+      $.ajax({
+        url: dataurl,
+        method: 'POST',
+        data: {
           'question_id': question_id,
           'month_value': month_value,
-      },
-      dataType: 'json',
-      success: function(data){
-        if (data.has_month_value){
-          window.location.href = "{% url 'core:filled_question_month' question_id 99999 %}".replace('99999', month_value)
+        },
+        dataType: 'json',
+        success: function(data) {
+          if (data.has_month_value) {
+            window.location.href = "{% url 'core:filled_question_month' question_id 99999 %}".replace('99999', month_value);
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error("Month check failed:", status, error);
+          alert("महिना जाँच गर्दा त्रुटि भयो। कृपया पुन: प्रयास गर्नुहोस्।");
         }
+      });
+    });
+
+    // ========================================
+    // Submit Answer
+    // ========================================
+    $("#submit_answer").on("click", function(event) {
+      event.preventDefault();
+      var dataurl = $(this).attr("data-url");
+      var form_data = new FormData();
+      var answer_list = [];
+      var fy_answers = [];
+      var question_file = [];
+      var file_option_ids = [];
+      var question_id = {{ question_id }};
+      var has_validation_error = false;
+
+      // Collect all text/number inputs
+      $(".survey-input").each(function() {
+        var $item = $(this);
+        var answer_data = {};
+        answer_data["option_id"] = $item.attr("data-option-id");
+        answer_data["value"] = $item.val();
+        answer_data["is_valid"] = this.checkValidity();
+        if (!answer_data["is_valid"]) {
+          has_validation_error = true;
+        }
+        answer_list.push(answer_data);
+      });
+
+      if (has_validation_error) {
+        alert("कृपया सबै फिल्डमा मान्य डाटा प्रविष्ट गर्नुहोस्।");
+        return;
       }
-    })
+
+      // Collect all file uploads
+      $(".survey-file").each(function() {
+        var $item = $(this);
+        var up_file = $item[0].files[0];
+        if (up_file) {
+          if (up_file.size > 2097152) {
+            alert("कृपया 2 MB भन्दा सानो फाइल चयन गर्नुहोस्।");
+            has_validation_error = true;
+            return false; // break out of .each()
+          }
+          var q_id = $item.attr("data-file-question-id");
+          question_file.push({
+            "question_id": q_id,
+            "file": up_file
+          });
+          file_option_ids.push(q_id);
+        }
+      });
+
+      if (has_validation_error) {
+        return;
+      }
+
+      // Append files to FormData
+      for (var i = 0; i < question_file.length; i++) {
+        var file_holder = "f" + file_option_ids[i];
+        form_data.append(file_holder, question_file[i]["file"]);
+      }
+
+      // Collect all checkboxes
+      $(".survey-checkbox").each(function() {
+        var $item = $(this);
+        var answer_data = {};
+        answer_data["option_id"] = $item.attr("data-option-id");
+        answer_data["value"] = $item.is(":checked") ? "True" : "False";
+        answer_list.push(answer_data);
+      });
+
+      // Collect all date pickers
+      $(".survey-datepicker").each(function() {
+        var $item = $(this);
+        var answer_data = {};
+        answer_data["option_id"] = $item.attr("data-option-id");
+        answer_data["value"] = $item.val();
+        answer_list.push(answer_data);
+      });
+
+      // Collect fiscal year selections (only the selected option)
+      $(".survey-fy-select").each(function() {
+        var $select = $(this);
+        var answer_data = {};
+        answer_data["option_id"] = $select.attr("data-option-id");
+        answer_data["value"] = $select.val();
+        fy_answers.push(answer_data);
+      });
+
+      // Collect month value
+      var month_value = "";
+      $("#month_selector").each(function() {
+        month_value = $(this).val() || "";
+      });
+
+      // Build FormData
+      form_data.append("answers", JSON.stringify(answer_list));
+      form_data.append("fy_answers", JSON.stringify(fy_answers));
+      form_data.append("question_id", question_id);
+      form_data.append("month_value", month_value);
+      form_data.append("file_question_ids", JSON.stringify(file_option_ids));
+
+      $.ajax({
+        url: dataurl,
+        method: "POST",
+        data: form_data,
+        processData: false,
+        contentType: false,
+        dataType: "json",
+        success: function(data) {
+          if (data.no_file_field) {
+            alert("No file field allocated for this question.");
+          } else if (data.not_valid_ext) {
+            alert(data.message);
+          } else if (data.file_required_validation) {
+            alert(data.message);
+          } else if (data.invalid_data) {
+            alert(data.message);
+          } else {
+            window.location.href = "{% url 'core:filled_question' question_id %}";
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error("Submit failed:", status, error);
+          console.error("Response:", xhr.responseText);
+          alert("डाटा पेस गर्दा त्रुटि भयो। कृपया पुन: प्रयास गर्नुहोस्।");
+        }
+      });
+    });
+
   });
-
-  $("#submit_answer").on("click", function (e) {
-    event.preventDefault();
-    var answer_vals = $("#submitted_answer").val();
-    var option_id = $("#submitted_answer").attr("data-option-id")
-    var dataurl = $(this).attr("href");
-    var answer_list = [];
-    var fy_answers = [];
-    var uploaded_file = $("#customFile");
-    var file_question_id = uploaded_file.attr("data-file-question-id")
-    var form_data = new FormData()
-    var question_file = [];
-    var question_id = {{ question_id }};
-
-    
-    $("input[id^='submitted_answer'").each(function(index, item){
-      var answer_data = {};
-      var value = $(item).val()
-      check_validity = item.checkValidity();
-      var option_id = $(item).attr("data-option-id")
-      answer_data["option_id"] = option_id;
-      answer_data["value"] = value;
-      answer_data["is_valid"] = true;
-      if (!check_validity){
-        answer_data["is_valid"] = false;
-      }
-      answer_list.push(answer_data)
-    })
-    file_option_ids = []
-    $("input[id^='customFile'").each(function(index, item){
-      var file_data = {};
-      var up_file_obj = $(item)
-      var question_id = $(item).attr("data-file-question-id")
-      var up_file = up_file_obj[0].files[0];
-      if(up_file.size >2097152)
-      {
-        alert("Please select image size no more than 2 MB")
-        return false;
-      }
-      file_data["question_id"] = question_id
-      file_data["file"] = up_file
-      question_file.push(file_data)
-      file_option_ids.push(question_id)
-    })
-
-    for(var i = 0, size = question_file.length; i < size; i++){
-      file_holder = "f" + file_option_ids[i];
-      file_obj = question_file[i]["file"];
-      form_data.append(file_holder, file_obj);
-    }
-
-    $("input[id^='check'").each(function(index, item){
-      var answer_data = {};
-      var value = $(item).val()
-      var option_id = $(item).attr("data-option-id")
-      if ($(item).is(":checked")){
-        answer_data["value"] = "True";
-      }
-      else {
-        answer_data["value"] = "False";
-      }
-      answer_data["option_id"] = option_id;
-      answer_list.push(answer_data)
-    })
-
-    $("input[id^='nepali-datepicker'").each(function(index, item){
-      var answer_data = {};
-      var value = $(item).val()
-      var option_id = $(item).attr("data-option-id")
-      answer_data["value"] = value;
-      answer_data["option_id"] = option_id;
-      answer_list.push(answer_data);
-    })
-
-    $("option[id^='fiscal_year_selector'").each(function(index, item){
-      var answer_data = {};
-      var value = $(item).val()
-      var option_id = $(item).attr("data-option-id")
-      answer_data["option_id"] = option_id;
-      answer_data["value"] = value;
-      fy_answers.push(answer_data)
-    })
-
-    var month_value = "";
-    $("select[id^='month_selector'").each(function(index, item){
-      var answer_data = {};
-      var value = $(item).val();
-      month_value = value;
-    })
-
-    form_data.append("answers", JSON.stringify(answer_list));
-    form_data.append("fy_answers", JSON.stringify(fy_answers));
-    form_data.append("question_id", question_id);
-    form_data.append("file_question_id", file_question_id);
-    form_data.append("month_value", month_value);
-    form_data.append("question_file", question_file);
-
-    $.ajax({
-      url: dataurl,
-      method: "POST",
-      // data: {
-      //   csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value,
-      //   "answers": JSON.stringify(answer_list),
-      //   "question_id": question_id,
-      //   "uploaded_file": form_data
-      // },
-      data: form_data,
-      processData: false,
-      contentType: false,
-      dataType: "json",
-      success: function(data){
-        if(data.no_file_field){
-          alert("No file field allocated for this question.");
-        }
-        else if(data.not_valid_ext){
-          alert(data.message);
-        }
-        else if(data.file_required_validation){
-          alert(data.message);
-        }
-        else if(data.invalid_data){
-          alert(data.message)
-        }
-        else{
-          window.location.href = "{% url 'core:filled_question' question_id %}"
-        }
-      }
-
-    })
-
-  })
 </script>
-
-<!-- <script>
-  function upload(event) {
-  event.preventDefault();
-  var data = new FormData($('form').get(0));
-
-  $.ajax({
-      url: $(this).attr('action'),
-      type: $(this).attr('method'),
-      data: data,
-      cache: false,
-      processData: false,
-      contentType: false,
-      success: function(data) {
-          alert('success');
-      }
-  });
-  return false;
-  }
-
-  $(function() {
-      $('form').submit(upload);
-  });
-</script> -->
-
 {% endblock extra_scripts %}
