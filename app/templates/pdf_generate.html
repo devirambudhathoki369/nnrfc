@@ -7,23 +7,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Powe of Attorney</title>
   </head>
-
   <style>
-    @page {
-      size: A4;
-    }
+  @font-face {
+    font-family: 'NotoDevanagari';
+    src: url("{% static 'back/assets/fonts/NotoSansDevanagari.ttf' %}");
+    font-weight: 100 900;
+  }
 
-    .border {
-      border-bottom: 1px dashed grey;
-    }
+  * {
+    font-family: 'NotoDevanagari', sans-serif;
+  }
 
-    @media print {
-      .pagebreak {
-        page-break-after: always;
-        clear: both;
-      }
+  @page {
+    size: A4;
+    margin: 20mm;
+  }
+
+  .border {
+    border-bottom: 1px dashed grey;
+  }
+
+  @media print {
+    .pagebreak {
+      page-break-after: always;
+      clear: both;
     }
-  </style>
+  }
+</style>
 
   <body>
     <table style="width: 100%;">
