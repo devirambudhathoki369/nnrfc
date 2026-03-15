@@ -81,51 +81,169 @@ class DashboardIndexView(LoginRequiredMixin, generic.ListView):
 class DashBoardHome(LoginRequiredMixin, TemplateView):
     template_name = "core/dashboard/dashboard_home.html"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    def _build_progress_for_levels(self, questions, levels, count, survey_id=None):
+        """
+        Returns list of dicts:
+          {data, question_filled (%), question_filleds (int), level_id, survey_id}
+        """
+        data = []
+        if count == 0:
+            return data
+        for level in levels:
+            filled = 0
+            for question in questions:
+                children = Question.objects.filter(parent=question.id)
+                options = (
+                    Option.objects.filter(question__id__in=children)
+                    if children.exists()
+                    else question.options.all()
+                )
+                if Answer.objects.filter(
+                    option__in=options, created_by_level=level.id
+                ).exists():
+                    filled += 1
+            data.append({
+                "data": level.name,
+                "question_filled": round((filled * 100) / count, 1),
+                "question_filleds": filled,
+                "level_id": level.id,
+                "survey_id": survey_id,
+            })
+        return data
+
+    def _get_common_context(self):
+        """Shared base data — active FY, survey, question count."""
         try:
             fiscal = FiscalYear.objects.filter(active_fy=True).first()
+            if not fiscal:
+                return None, None, 0, "कुनै सक्रिय आर्थिक वर्ष फेला परेन।"
             survey = Survey.objects.filter(fiscal_year=fiscal.id).first()
+            if not survey:
+                return None, None, 0, "यस आर्थिक वर्षमा कुनै सर्वेक्षण छैन।"
             questions = survey.questions.filter(parent=None, month_requires=False)
-            try:
-                question_count = questions.count()
-                levels = Level.objects.filter(type__type="P")
-                data = []
-                for level in levels:
-                    question_filled = 0
-                    for question in questions:
-                        children_question = Question.objects.filter(parent=question.id)
-                        if len(children_question) >= 1:
-                            options = Option.objects.filter(
-                                question__id__in=children_question
-                            )
-                        else:
-                            options = question.options.all()
+            return fiscal, survey, questions.count(), None
+        except Exception:
+            return None, None, 0, "डेटा उपलब्ध छैन।"
 
-                        for option in options:
-                            answers = Answer.objects.filter(
-                                option=option, created_by_level=level.id
-                            )
-                            if len(answers) >= 1:
-                                question_filled = question_filled + 1
-                                break
-                    dictdata = {
-                        "data": level.name,
-                        "question_filled": (question_filled * 100) / question_count,
-                        "question_filleds": question_filled,
-                    }
-                    data.append(dictdata)
-            except ZeroDivisionError:
-                context["question_filled"] = "No existing data found."
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
 
-            context["questions"] = data
-            context["count"] = question_count
-        except:
-            context["data"] = "No data available"
+        fiscal, survey, count, error_msg = self._get_common_context()
+
+        if error_msg or not survey:
+            context["data"] = error_msg or "डेटा उपलब्ध छैन।"
+            return context
+
+        questions_qs = survey.questions.filter(parent=None, month_requires=False)
+        context["count"] = count
+
+        # ── Determine user surveys for quick-action buttons ──
+        try:
+            user_level_type = user.level.type.type if user.level else None
+        except AttributeError:
+            user_level_type = None
+
+        if user_level_type:
+            context["my_surveys"] = Survey.objects.filter(
+                fiscal_year=fiscal.id,
+                level=user_level_type,
+            )
+        else:
+            context["my_surveys"] = Survey.objects.filter(fiscal_year=fiscal.id)
+
+        # ════════════════════════════════
+        # ADMIN / OFFICE HEAD
+        # ════════════════════════════════
+        if user.is_superuser or getattr(user, "is_office_head", False):
+            p_levels = Level.objects.filter(type__type="P")
+            l_levels = Level.objects.filter(type__type="L")
+
+            p_data = self._build_progress_for_levels(
+                questions_qs, p_levels, count, survey.id
+            )
+            l_data = self._build_progress_for_levels(
+                questions_qs, l_levels, count, survey.id
+            )
+
+            context["questions"] = p_data
+            context["local_questions"] = l_data
+            context["province_count"] = p_levels.count()
+            context["local_count"] = l_levels.count()
+
+            if p_data:
+                context["avg_progress"] = round(
+                    sum(d["question_filled"] for d in p_data) / len(p_data), 1
+                )
+
+            # Recent 5 corrections for the admin sidebar
+            context["recent_corrections"] = (
+                SurveyCorrection.objects.order_by("-created_at")[:5]
+            )
+            return context
+
+        # ════════════════════════════════
+        # STAFF ROLE (no level, has roles)
+        # ════════════════════════════════
+        if user.is_staff and not user_level_type:
+            p_levels = Level.objects.filter(type__type="P")
+            p_data = self._build_progress_for_levels(
+                questions_qs, p_levels, count, survey.id
+            )
+            context["questions"] = p_data
+            context["province_count"] = p_levels.count()
+            if p_data:
+                context["avg_progress"] = round(
+                    sum(d["question_filled"] for d in p_data) / len(p_data), 1
+                )
+            return context
+
+        # ════════════════════════════════
+        # PROVINCE OR LOCAL LEVEL USER
+        # ════════════════════════════════
+        if not user_level_type:
+            context["data"] = "तपाईंको खाता कुनै तहसँग जोडिएको छैन।"
+            return context
+
+        try:
+            user_level = user.level
+        except AttributeError:
+            context["data"] = "तपाईंको खाता कुनै तहसँग जोडिएको छैन।"
+            return context
+
+        # Progress for this specific user's level
+        my_data = self._build_progress_for_levels(
+            questions_qs, [user_level], count, survey.id
+        )
+        context["questions"] = my_data
+
+        if my_data:
+            context["my_filled"] = my_data[0]["question_filleds"]
+            context["my_progress"] = my_data[0]["question_filled"]
+
+        # Their correction requests
+        context["my_corrections"] = (
+            SurveyCorrection.objects.filter(level=user_level)
+            .order_by("-created_at")[:5]
+        )
+
+        # Their complaints
+        context["my_complaints"] = (
+            Complaint.objects.filter(level=user_level)
+            .order_by("-created_at")[:5]
+        )
+
+        # Province users also see a table of local-level progress in their province
+        if user_level_type == "P":
+            l_levels = Level.objects.filter(
+                type__type="L",
+                province_level=user_level,
+            )
+            context["local_questions"] = self._build_progress_for_levels(
+                questions_qs, l_levels, count, survey.id
+            )
 
         return context
-
-
 class IndexCreateView(LoginRequiredMixin, CreateView):
     model = Question
     template_name = "core/dashboard/index.html"
@@ -392,54 +510,70 @@ def get_correction_detail(request, level_id):
 
 
 def correction_fix_view(request, correction_id, ques_id):
-    question = Question.objects.get(id=ques_id)
-    correction = SurveyCorrection.objects.get(id=correction_id)
-    level = correction.level
-    options = question.options.all().order_by("sequence_id")
+    """
+    View for admin/staff to fix a correction request.
+
+    BUG FIX: The original code called Notification.objects.create() every time
+    the form was submitted, even on re-saves, causing duplicate notifications.
+    Now uses get_or_create keyed on (correction, correction_checked=True)
+    so at most one 'checked' notification exists per correction.
+    """
+    question   = get_object_or_404(Question, id=ques_id)
+    correction = get_object_or_404(SurveyCorrection, id=correction_id)
+    level      = correction.level
+    options    = question.options.all().order_by("sequence_id")
     options_data = get_options_with_field_types(options, level)
-    context = {"ques": question, "correction": correction, "options_data": options_data}
+
+    context = {
+        "ques": question,
+        "correction": correction,
+        "options_data": options_data,
+    }
+
     if request.method == "POST":
         answer_ids = request.POST.getlist("ans_id")
         ans_values = request.POST.getlist("ans")
+
         with transaction.atomic():
+            # Mark correction as checked
             correction.status = "C"
             correction.save()
 
-            # update answer values
-            params = zip(answer_ids, ans_values)
-            for a_id, v in params:
-                ans = Answer.objects.get(id=a_id)
-                ans.value = v
-                ans.save()
-            # update if new files updated
+            # Update answer values
+            for a_id, v in zip(answer_ids, ans_values):
+                Answer.objects.filter(id=a_id).update(value=v)
+
+            # Update file if a new one was uploaded
             file_ans = request.POST.get("anss")
-            file = request.FILES.get("new_file")
+            file     = request.FILES.get("new_file")
             if file_ans and file:
-                answer_obj = AnswerDocument.objects.get(answer_id=file_ans)
-                answer_obj.document = file
-                answer_obj.save()
+                AnswerDocument.objects.filter(answer_id=file_ans).update(document=file)
                 Answer.objects.filter(id=file_ans).update(value=file.name)
 
-            # update levels of activity log
+            # Update activity logs for this correction's level
             q_options = correction.question.options.all().values_list("id", flat=True)
-            logs = CorrectionActivityLog.objects.filter(option_id__in=q_options)
-            logs.update(
+            CorrectionActivityLog.objects.filter(option_id__in=q_options).update(
                 action_level=correction.level.name,
                 action_level_type=correction.level.type.type,
             )
 
-            # send notification to correction user
-            Notification.objects.create(
-                user=correction.user,
-                msg=f"तपाइँको सुधार अनुरोध एडमिन द्वारा जाँच गरीयो।",
+            # ── Send notification — EXACTLY ONCE per correction ──────────────
+            # get_or_create prevents duplicates if the admin saves multiple times
+            Notification.objects.get_or_create(
                 correction=correction,
-                level=level,
                 correction_checked=True,
+                defaults={
+                    "user":    correction.user,
+                    "msg":     "तपाइँको सुधार अनुरोध एडमिन द्वारा जाँच गरीयो।",
+                    "level":   level,
+                    "is_viewed": False,
+                },
             )
-            messages.success(request, "Updated Successfully.")
-            return redirect("dashboard:correction_detail", correction.level_id)
-    return render(request, "core/dashboard/correction_fix.html", context)
 
+        messages.success(request, "Updated Successfully.")
+        return redirect("dashboard:correction_detail", correction.level_id)
+
+    return render(request, "core/dashboard/correction_fix.html", context)
 
 def show_activity_logs(request):
     logs = CorrectionActivityLog.objects.all().order_by()

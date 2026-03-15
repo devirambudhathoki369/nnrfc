@@ -9,15 +9,37 @@
     <link href="{% static 'back/vendors.style.css' %}" rel="stylesheet" />
     <link href="{% static 'back/sweetalert2.css' %}" rel="stylesheet" />
     <link href="{% static 'front/nepaliDatePicker.css' %}" rel="stylesheet" />
-    {% block extra_styles %} {% endblock extra_styles %}
+    {% block extra_styles %}{% endblock extra_styles %}
   </head>
   <body>
     <nav>
       <div class="nav-item">
         <img src="{% static 'back/assets/images/logo.png' %}" alt="" />
       </div>
-      <div class="d-flex">
-      <div class="dropdown">
+
+      <div class="d-flex align-items-center">
+
+        {# ── Dashboard button (province & local users only) ─────────────── #}
+        {% comment %} {% if request.user.is_authenticated and request.user.level %}
+        <a href="{% url 'dashboard:dashboard' %}"
+           class="btn btn-sm btn-outline-primary mr-2"
+           title="ड्यासबोर्ड हेर्नुहोस्"
+           style="white-space: nowrap;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+               viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               style="vertical-align: -2px; margin-right: 4px;">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          ड्यासबोर्ड
+        </a>
+        {% endif %} {% endcomment %}
+
+        {# ── Notification bell ────────────────────────────────────────────── #}
+        <div class="dropdown">
           <button
             class="notification{% if u_end_notifs %}-active{% endif %} btn"
             id="dropdownNotificationButton"
@@ -26,288 +48,233 @@
             aria-haspopup="true"
             aria-expanded="false"
           >
-          <img class="bell-nav" src="{% static 'back/assets/images/bell.svg' %}" alt="" />
-
+            <img class="bell-nav" src="{% static 'back/assets/images/bell.svg' %}" alt="" />
           </button>
-          <div
-            class="dropdown-menu dropdown-menu-right dropdown-notification"
-            aria-labelledby="dropdownNotificationButton"
-          >
-             {% for notif in u_end_notifs %}
-              <a href="#" url="{{notif.get_detail_url}}" notif-id="{{notif.id}}" class="dropdown-item notiff">
+
+          <div class="dropdown-menu dropdown-menu-right dropdown-notification"
+               aria-labelledby="dropdownNotificationButton">
+            {% for notif in u_end_notifs %}
+              <a href="#"
+                 url="{{ notif.get_detail_url }}"
+                 notif-id="{{ notif.id }}"
+                 class="dropdown-item notiff">
                 <div class="icon">
-                  <svg
-                    class="bell-nav"
-                    viewBox="-43 0 512 512"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="m413.417969 360.8125c-32.253907-27.265625-50.75-67.117188-50.75-109.335938v-59.476562c0-75.070312-55.765625-137.214844-128-147.625v-23.042969c0-11.796875-9.558594-21.332031-21.335938-21.332031-11.773437 0-21.332031 9.535156-21.332031 21.332031v23.042969c-72.257812 10.410156-128 72.554688-128 147.625v59.476562c0 42.21875-18.496094 82.070313-50.945312 109.503907-8.296876 7.105469-13.054688 17.429687-13.054688 28.351562 0 20.589844 16.746094 37.335938 37.332031 37.335938h352c20.589844 0 37.335938-16.746094 37.335938-37.335938 0-10.921875-4.757813-21.246093-13.25-28.519531zm0 0"
-                    />
-                    <path
-                      d="m213.332031 512c38.636719 0 70.957031-27.542969 78.378907-64h-156.757813c7.425781 36.457031 39.746094 64 78.378906 64zm0 0"
-                    />
+                  <svg class="bell-nav" viewBox="-43 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="m413.417969 360.8125c-32.253907-27.265625-50.75-67.117188-50.75-109.335938v-59.476562c0-75.070312-55.765625-137.214844-128-147.625v-23.042969c0-11.796875-9.558594-21.332031-21.335938-21.332031-11.773437 0-21.332031 9.535156-21.332031 21.332031v23.042969c-72.257812 10.410156-128 72.554688-128 147.625v59.476562c0 42.21875-18.496094 82.070313-50.945312 109.503907-8.296876 7.105469-13.054688 17.429687-13.054688 28.351562 0 20.589844 16.746094 37.335938 37.332031 37.335938h352c20.589844 0 37.335938-16.746094 37.335938-37.335938 0-10.921875-4.757813-21.246093-13.25-28.519531zm0 0"/>
+                    <path d="m213.332031 512c38.636719 0 70.957031-27.542969 78.378907-64h-156.757813c7.425781 36.457031 39.746094 64 78.378906 64zm0 0"/>
                   </svg>
                 </div>
-                <p>{{notif.msg}}</p>
-                  <small><small>{{notif.created_at|timesince}} ago</small></small>
+                <p>{{ notif.msg }}</p>
+                <small><small>{{ notif.created_at|timesince }} अघि</small></small>
               </a>
-              {% empty %}
-                <a href="" class="dropdown-item">
-                  <div class="icon">
-                    <svg
-                      class="bell-nav"
-                      viewBox="-43 0 512 512"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="m413.417969 360.8125c-32.253907-27.265625-50.75-67.117188-50.75-109.335938v-59.476562c0-75.070312-55.765625-137.214844-128-147.625v-23.042969c0-11.796875-9.558594-21.332031-21.335938-21.332031-11.773437 0-21.332031 9.535156-21.332031 21.332031v23.042969c-72.257812 10.410156-128 72.554688-128 147.625v59.476562c0 42.21875-18.496094 82.070313-50.945312 109.503907-8.296876 7.105469-13.054688 17.429687-13.054688 28.351562 0 20.589844 16.746094 37.335938 37.332031 37.335938h352c20.589844 0 37.335938-16.746094 37.335938-37.335938 0-10.921875-4.757813-21.246093-13.25-28.519531zm0 0"
-                      />
-                      <path
-                        d="m213.332031 512c38.636719 0 70.957031-27.542969 78.378907-64h-156.757813c7.425781 36.457031 39.746094 64 78.378906 64zm0 0"
-                      />
-                    </svg>
-                  </div>
-                  <p>कुनै नयाँ सूचना छैन</p>
-                </a>
+            {% empty %}
+              <a href="#" class="dropdown-item">
+                <div class="icon">
+                  <svg class="bell-nav" viewBox="-43 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="m413.417969 360.8125c-32.253907-27.265625-50.75-67.117188-50.75-109.335938v-59.476562c0-75.070312-55.765625-137.214844-128-147.625v-23.042969c0-11.796875-9.558594-21.332031-21.335938-21.332031-11.773437 0-21.332031 9.535156-21.332031 21.332031v23.042969c-72.257812 10.410156-128 72.554688-128 147.625v59.476562c0 42.21875-18.496094 82.070313-50.945312 109.503907-8.296876 7.105469-13.054688 17.429687-13.054688 28.351562 0 20.589844 16.746094 37.335938 37.332031 37.335938h352c20.589844 0 37.335938-16.746094 37.335938-37.335938 0-10.921875-4.757813-21.246093-13.25-28.519531zm0 0"/>
+                    <path d="m213.332031 512c38.636719 0 70.957031-27.542969 78.378907-64h-156.757813c7.425781 36.457031 39.746094 64 78.378906 64zm0 0"/>
+                  </svg>
+                </div>
+                <p>कुनै नयाँ सूचना छैन</p>
+              </a>
             {% endfor %}
           </div>
         </div>
-      <div class="dropdown">
-         <button
-          class="btn dropdown-toggle"
-          id="dropdownMenuButton"
-          type="button"
-          data-toggle="dropdown"
-          aria-haspopup="true"
-          aria-expanded="true"
-        >
-          {% if request.user.full_name %}
-          {{ request.user.full_name }}
-          {% else %}
-          {{request.user.email}}
-          {% endif %}
-        </button>
-        <div
-            class="dropdown-menu"
-            aria-labelledby="dropdownMenuButton"
-          >
-            <a
-              class="dropdown-item menu-items"
-              {% comment %} href="{% url 'user_mgmt:change-password' %}" {% endcomment %}
-              type="button"
-              data-toggle="modal"
-              data-target="#exampleModalCenter"
-              >पासवर्ड परिवर्तन</a
-            >
-            <a
-              class="dropdown-item menu-items text-danger"
-              href="{% url 'logout' %}"
-              >लग-आउट</a
-            >
+
+        {# ── User dropdown ────────────────────────────────────────────────── #}
+        <div class="dropdown">
+          <button class="btn dropdown-toggle"
+                  id="dropdownMenuButton"
+                  type="button"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="true">
+            {% if request.user.full_name %}
+              {{ request.user.full_name }}
+            {% else %}
+              {{ request.user.email }}
+            {% endif %}
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            {# Dashboard link also in dropdown for easy access #}
+            {% if request.user.is_authenticated and request.user.level %}
+            <a class="dropdown-item menu-items"
+               href="{% url 'dashboard:dashboard' %}">
+              ड्यासबोर्ड
+            </a>
+            <div class="dropdown-divider"></div>
+            {% endif %}
+            <a class="dropdown-item menu-items"
+               type="button"
+               data-toggle="modal"
+               data-target="#exampleModalCenter">
+              पासवर्ड परिवर्तन
+            </a>
+            <a class="dropdown-item menu-items text-danger"
+               href="{% url 'logout' %}">
+              लग-आउट
+            </a>
           </div>
         </div>
-        </div>
-    
 
-      <div
-        class="modal fade modal-01"
-        id="exampleModalCenter"
-        tabindex="-1"
-        role="dialog"
-        aria-labelledby="exampleModalCenterTitle"
-        aria-hidden="true"
-      >
+      </div>{# end .d-flex #}
+    </nav>
+
+    {# ── Change password modal ─────────────────────────────────────────────── #}
+    <div class="modal fade modal-01"
+         id="exampleModalCenter"
+         tabindex="-1"
+         role="dialog"
+         aria-labelledby="exampleModalCenterTitle"
+         aria-hidden="true">
       <form method="POST" action="{% url 'change_password' %}" id="ChangePWD">
-      {% csrf_token %}
+        {% csrf_token %}
         <div class="modal-dialog modal-dialog-centered" role="document">
           <div class="modal-content">
             <div class="modal-header">
               <h3 class="modal-title" id="exampleModalLongTitle">
                 पासवर्ड परिवर्तन गर्नुहोस्
               </h3>
-              <button
-                class="close"
-                type="button"
-                data-dismiss="modal"
-                aria-label="Close"
-              >
+              <button class="close" type="button" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>
             <div class="modal-body">
               <div class="form-group">
-                <label for="">करेन्ट पासवर्ड</label>
-                <input
-                  type="password"
-                  id="inputPassword5"
-                  class="form-control"
-                  name="currentPassword"
-                  value="{{form.currentPassword.value|default_if_none:''}}"
-                  aria-describedby="passwordHelpBlock"
-                  required
-                />
-                <span class="error"
-                  >{{form.currentPassword.errors|striptags}}</span
-                >
+                <label>करेन्ट पासवर्ड</label>
+                <input type="password"
+                       id="inputPassword5"
+                       class="form-control"
+                       name="currentPassword"
+                       aria-describedby="passwordHelpBlock"
+                       required />
               </div>
               <div class="form-group">
-                <label for="">नयाँ पासवर्ड</label>
-                <input
-                  type="password"
-                  id="Password"
-                  class="form-control"
-                  name="newPassword"
-                  value="{{form.newPassword.value|default_if_none:''}}"
-                  aria-describedby="passwordHelpBlock"
-                  title="Password must contain at least 6 characters, including UPPER/Lowercase and numbers."
-                  required pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" 
-                />
-                <span class="error"
-                  >{{form.newPassword.errors|striptags}}</span
-                >
+                <label>नयाँ पासवर्ड</label>
+                <input type="password"
+                       id="Password"
+                       class="form-control"
+                       name="newPassword"
+                       aria-describedby="passwordHelpBlock"
+                       title="पासवर्डमा कम्तिमा ६ अक्षर, एउटा ठूलो अक्षर, एउटा सानो अक्षर र एउटा अंक हुनुपर्छ।"
+                       required
+                       pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" />
               </div>
               <div class="form-group">
-                <label for="">कन्फर्म नयाँ पासवर्ड</label>
-                <input
-                  type="password"
-                  id="ConfirmPassword"
-                  class="form-control"
-                  name="confirmNewPassword"
-                  value="{{form.confirmNewPassword.value|default_if_none:''}}"
-                  aria-describedby="passwordHelpBlock"
-                  title="Please enter the same Password as above."
-                  required pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" 
-                />
-                <span class="error"
-                  >{{form.confirmNewPassword.errors|striptags}}</span
-                >
+                <label>कन्फर्म नयाँ पासवर्ड</label>
+                <input type="password"
+                       id="ConfirmPassword"
+                       class="form-control"
+                       name="confirmNewPassword"
+                       aria-describedby="passwordHelpBlock"
+                       title="माथि भरेको पासवर्ड यहाँ पनि भर्नुहोस्।"
+                       required
+                       pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" />
               </div>
+              <div id="pwd-error" class="alert alert-danger d-none mb-2" role="alert"></div>
               <div class="d-flex">
-                <button class="btn btn-danger flex-grow-1 mr-3" type="button" data-dismiss="modal">
-                  रद्द गर्नुहोस्</button
-                ><button class="btn btn-primary flex-grow-1" type="submit" value="Change Password" id="submitBtn">
+                <button class="btn btn-danger flex-grow-1 mr-3"
+                        type="button"
+                        data-dismiss="modal">
+                  रद्द गर्नुहोस्
+                </button>
+                <button class="btn btn-primary flex-grow-1"
+                        type="submit"
+                        id="submitBtn">
                   कन्फर्म गर्नुहोस्
                 </button>
               </div>
             </div>
           </div>
         </div>
-        </form>
+      </form>
+    </div>
+
+    <main>
+      <div class="header">
+        <div class="container d-flex justify-content-between align-items-center">
+          <div>
+            <h1>कार्य सम्पादन सूचक अनलाइन पोर्टल</h1>
+          </div>
+          {% block registerComplaint %}{% endblock registerComplaint %}
+          {% block backbtn %}{% endblock backbtn %}
+        </div>
       </div>
 
-    </nav>
-    <main>
-    <div class="header">
-      <div class="container d-flex justify-content-between align-items-center">
-        <div>
-          <h1>कार्य सम्पादन सूचक अनलाइन पोर्टल</h1>
-          {% comment %} <p class="mb-0">
-          {% if request.user.level %}
-            {{ request.user.level }} सरकारको हकमा</p>
-          {% else %}
-            सरकारको हकमा</p>       
-          {% endif %} {% endcomment %}
-        </div>
-        {% block registerComplaint %}{% endblock registerComplaint %}
-        {% block backbtn %}{% endblock backbtn %}
+      {% block content %}
+      <div class="container">
+        <section class="section--topic">
+          <h3 class="text-primary mb-3">सूचकहरु</h3>
+          <ol class="list--topic"></ol>
+        </section>
       </div>
-    </div>
-    {% block content %}
-    <div class="container">
-      <section class="section--topic">
-        <h3 class="text-primary mb-3">सूचकहरु</h3>
-        <ol class="list--topic"></ol>
-      </section>
-    </div>
-    {% endblock content %}
-  </main>
-  {% block modal %}
-  {% endblock modal %}
+      {% endblock content %}
+    </main>
+
+    {% block modal %}{% endblock modal %}
+
     <footer class="mt-5">
       <div class="container text-center text-white">
-        <p class="mb-0">COPYRIGHT © {% now 'Y' %}. राष्ट्रिय प्राकृतिक स्रोत तथा वित्त आयोगमा अधिकार सुरक्षित।</p>
+        <p class="mb-0">
+          COPYRIGHT &copy; {% now 'Y' %}.
+          राष्ट्रिय प्राकृतिक स्रोत तथा वित्त आयोगमा अधिकार सुरक्षित।
+        </p>
       </div>
     </footer>
+
     <script src="{% static 'back/assets/vendors.js' %}"></script>
     <script src="{% static 'back/assets/home.js' %}"></script>
     <script src="{% static 'back/assets/sweetalert2.js' %}"></script>
 
-
-
+    {# ── Django messages → SweetAlert toasts ─────────────────────────────── #}
     {% for message in messages %}
     <script>
-      var success_msg = "{{message}}";
-      var tags = "{{message.tags}}";
       Swal.fire({
         toast: true,
-        icon: "{{message.tags}}",
-        title: success_msg,
+        icon: "{{ message.tags }}",
+        title: "{{ message|escapejs }}",
         animation: true,
         position: "top-end",
         showConfirmButton: false,
         timer: 5000,
         timerProgressBar: true,
-        didOpen: (toast) => {
+        didOpen: function(toast) {
           toast.addEventListener("mouseenter", Swal.stopTimer);
           toast.addEventListener("mouseleave", Swal.resumeTimer);
-        },
+        }
       });
     </script>
     {% endfor %}
 
+    {# ── Notification click → mark viewed → navigate ─────────────────────── #}
     <script>
-    $(document).on("click", ".notiff", function (e) {
-          e.preventDefault();
-          url = $(this).attr("url");
-          id = $(this).attr("notif-id");
-
-          let data = {
-            notif_id: id,
+      $(document).on("click", ".notiff", function (e) {
+        e.preventDefault();
+        var url = $(this).attr("url");
+        var id  = $(this).attr("notif-id");
+        $.ajax({
+          url: "{% url 'core:notif_update' %}",
+          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          type: "POST",
+          data: JSON.stringify({ notif_id: id }),
+          processData: false,
+          contentType: false,
+          success: function (data) {
+            if (data.success) {
+              window.location.href = url;
+            }
           }
-          $.ajax({
-              url: "{% url 'core:notif_update' %}",
-              headers:{
-                'X-CSRFToken':'{{ csrf_token }}',
-              },
-              type: "POST",
-              data: JSON.stringify(data),
-              processData: false,
-              contentType: false,
-              success: function (data) {
-                if (data["success"]) {
-                  location.href = url
-                } 
-              },
-            });
         });
+      });
     </script>
 
-    {% comment %} <script>
-      $('#ChangePWD').submit(function() {
-        $.ajax({
-          type: $('#ChangePWD').attr('method'),
-          url: $('#ChangePWD').attr('action'),
-          data: $('#ChangePWD').serialize(),
-          success: function(response) {
-            if (response['result'] == "Success!")
-              window.location.href = "{% url 'core:survey_list' %}";
-            else
-              alert(response["message"]);
-          },
-        });
-        return false;
-      });
-    </script> {% endcomment %}
-
+    {# ── showMsg helper (used by child templates for AJAX feedback) ───────── #}
     <script>
-      const showMsg = (msg) => {
-        var success_msg = ""+msg;
-        var tags = "{{message.tags}}";
+      var showMsg = function (msg, type) {
         Swal.fire({
           toast: true,
-          icon: "{{message.tags}}",
-          title: success_msg,
+          icon: type || "success",
+          title: String(msg),
           background: "#2DB539",
           color: "#fff",
           animation: true,
@@ -315,73 +282,69 @@
           showConfirmButton: false,
           timer: 5000,
           timerProgressBar: true,
-          didOpen: (toast) => {
+          didOpen: function (toast) {
             toast.addEventListener("mouseenter", Swal.stopTimer);
             toast.addEventListener("mouseleave", Swal.resumeTimer);
-          },
+          }
         });
       };
     </script>
 
+    {# ── Password change: client-side validation ──────────────────────────── #}
     <script>
-      document.addEventListener("DOMContentLoaded", function(){
-        var checkPassword = function(str)
-        {
-          var re = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$/;
-          return re.test(str);
-        };
+      document.addEventListener("DOMContentLoaded", function () {
+        var PWD_RE = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$/;
+        var form   = document.getElementById("ChangePWD");
+        var p1     = document.getElementById("Password");
+        var p2     = document.getElementById("ConfirmPassword");
+        var errBox = document.getElementById("pwd-error");
 
-        var checkForm = function(e){
-          if(this.newPassword.value != "" && this.newPassword.value == this.confirmNewPassword.value){
-            if(!checkPassword(this.newPassword.value.value)){
-              alert("This password you have entered is not valid!");
-              this.newPassword.focus();
-              e.preventDefault();
-              return;
-            }
+        function showErr(msg) {
+          errBox.textContent = msg;
+          errBox.classList.remove("d-none");
+        }
+        function hideErr() {
+          errBox.classList.add("d-none");
+        }
+
+        // Real-time: p1 validity
+        p1.addEventListener("keyup", function () {
+          if (!PWD_RE.test(this.value)) {
+            this.setCustomValidity(this.title);
+          } else {
+            this.setCustomValidity("");
+            // Mirror pattern to p2 so browser validates match
+            p2.pattern = this.value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
           }
-          else {
-            alert("Error: Please check that you've entered and confirmed your password!");
-            this.newPassword.focus();
+        });
+
+        // Real-time: p2 validity
+        p2.addEventListener("keyup", function () {
+          if (this.value !== p1.value) {
+            this.setCustomValidity(this.title);
+          } else {
+            this.setCustomValidity("");
+          }
+        });
+
+        form.addEventListener("submit", function (e) {
+          hideErr();
+          if (!PWD_RE.test(p1.value)) {
             e.preventDefault();
+            showErr("पासवर्डमा कम्तिमा ६ अक्षर, एउटा ठूलो, एउटा सानो र एउटा अंक हुनुपर्छ।");
+            p1.focus();
             return;
           }
-          alert("Both password and confirm password are valid!");
-        };
-
-        var ChangePWD = document.getElementById("ChangePWD");
-        ChangePWD.addEventListener("submitBtn", checkForm, true);
-
-        var supports_input_validity = function()
-        {
-          var i = document.createElement("input");
-          return "setCustomValidity" in i;
-        }
-
-        if(supports_input_validity()){
-          var Password1 = document.getElementById("Password")
-          Password1.setCustomValidity(Password1.title);
-          
-          var Password2 = document.getElementById("ConfirmPassword");
-
-          Password1.addEventListener("keyup",function(e){
-            this.setCustomValidity(this.validity.patternMismatch ? Password1.title : "");
-            if(this.checkValidity()){
-              Password2.pattern = RegExp.escape(this.value);
-              Password2.setCustomValidity(Password2.title)
-            }
-            else {
-              Password2.pattern = this.pattern;
-              Password2.setCustomValidity("");
-            }
-          }, false);
-
-          Password2.addEventListener("keyup", function(e){
-            this.setCustomValidity(this.validity.patternMismatch ? Password2.title: "");
-          }, false);
-        }
-      }, false);
+          if (p1.value !== p2.value) {
+            e.preventDefault();
+            showErr("नयाँ पासवर्ड र कन्फर्म पासवर्ड मिलेन।");
+            p2.focus();
+            return;
+          }
+        });
+      });
     </script>
-    {% block extra_scripts %} {% endblock extra_scripts %}
+
+    {% block extra_scripts %}{% endblock extra_scripts %}
   </body>
 </html>

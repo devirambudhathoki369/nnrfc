@@ -1,274 +1,214 @@
-{% extends 'fragments/dashboard/base.html' %} {% block title-bar %}
+{% extends 'fragments/dashboard/base.html' %}
+
+{% block title-bar %}
 <div class="header-page">
   <h1>प्रतिवेदनहरु</h1>
 </div>
-{% endblock title-bar %} {% block content %}
-<Fragment>
-  <div class="inner screen-user-setup">
-    <div class="container">
-      <div class="card card-body radius-top-0 mb-3">
-        <form action="{% url 'report:reports' %}">
-          <div class="row">
-            <div class="col-lg-3 col-md-6">
-              <div class="form-group">
-                <label>आर्थिक वर्ष</label
-                ><select name="fy" required class="form-control">
-                  छान्नुहोस्
-                  <option disabled selected>छान्नुहोस्...</option>
-                  {% for yr in fiscal_yrs %}
-                  <option
-                    value="{{yr.id}}"
-                    {%
-                    if
-                    yr.id=""
-                    ="yr_id"
-                    %}selected{%
-                    endif
-                    %}
-                  >
-                    {{yr}}
-                  </option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-              <div class="form-group">
-                <label>सूचक</label
-                ><select required name="survey" class="form-control">
-                  छान्नुहोस्
-                  <option disabled selected>छान्नुहोस्...</option>
-                  {% for survey in surveys %}
-                  <option
-                    value="{{survey.id}}"
-                    {%
-                    if
-                    survey.id=""
-                    ="survey_id"
-                    %}selected{%
-                    endif
-                    %}
-                  >
-                    {{survey}}
-                  </option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-              <div class="form-group">
-                <label>प्रदेश</label
-                ><select required name="level" class="form-control p-levels">
-                  छान्नुहोस्
-                  <option disabled selected>छान्नुहोस्...</option>
-                  <option value="all">All</option>
-                  {% for province in provinces %}
-                  <option
-                    value="{{province.id}}"
-                    {%
-                    if
-                    province.id=""
-                    ="level_id"
-                    %}selected{%
-                    endif
-                    %}
-                  >
-                    {{province}}
-                  </option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-              <div class="form-group">
-                <label>स्थानीय तह </label
-                ><select name="local_level" class="form-control l-levels">
-                  छान्नुहोस्
-                  <option disabled selected>छान्नुहोस्...</option>
-                </select>
-              </div>
-            </div>
+{% endblock title-bar %}
 
-            <div class="col-lg-3 col-md-6">
-              <div class="form-group">
-                <label> &nbsp;</label>
-                <button type="submit" class="btn btn-primary d-block">
-                  प्रतिवेदन हेर्नुहोस्।
-                </button>
-              </div>
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="card card-body radius-top-0">
-        <div class="table-default">
-          <div class="table-actions">
-            {% comment %}
-            <form>
-              <select name="cars" class="custom-select">
-                <option selected>Sort By</option>
-                <option value="volvo">Province</option>
-                <option value="fiat">Role</option>
-                <option value="audi">Date</option>
-              </select>
-            </form>
-            <div class="search--input">
-              <div class="form-group-icon">
-                <input
-                  type="search"
-                  class="form-control"
-                  placeholder="search..."
-                />
-                <i class="ic-search"></i>
-              </div>
-            </div>
-            <button class="btn btn-icon btn-primary mr-0 filter-btn">
-              <i class="ic-filter"></i>Filter
-            </button>
-            <div class="filter-wrapper hide">
-              <h6 class="font-bold mb-3">Filter Table</h6>
+{% block content %}
+<div class="inner screen-user-setup">
+  <div class="container">
 
-              <div class="form-group" id="multiple-selection">
-                <label>Province</label>
-                <select class="form-control">
-                  <option disabled>Select...</option>
-                  <option>Bagmati</option>
-                  <option>Karnali</option>
-                  <option>Lumbini</option>
-                </select>
-              </div>
-              <div class="form-group" id="multiple-selection">
-                <label>User Role</label>
-                <select class="form-control">
-                  <option disabled>Select...</option>
-                  <option>ATM</option>
-                  <option>Nostro</option>
-                  <option>Options C</option>
-                </select>
-              </div>
+    {# ── Filter form ── #}
+    <div class="card card-body radius-top-0 mb-3">
+      <form action="{% url 'report:reports' %}" method="get">
+        <div class="row">
 
-              <div class="flex-end">
-                <a href="#" class="btn btn-outline-danger mr-2 filter-btn"
-                  >Cancel</a
-                >
-                <button class="btn btn-primary filter-btn">Filter</button>
-              </div>
-            </div>
-            {% endcomment %}
-          </div>
-          <div class="table-responsive">
-            <table class="table table-02 d-xl-table">
-              <thead>
-                <tr>
-                  <th>क्रम संख्या</th>
-                  <th>सूचकहरु</th>
-
-                  <th class="text-right">कार्य</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for q in questions %}
-                <tr>
-                  <td>{{forloop.counter}}</td>
-                  <td>{{q.title}}</td>
-                  <td class="text-right">
-                    {% if level_id == 'all' %}
-                    <a
-                      href="{% url 'report:export_report_levels' q.id level_type %}"
-                      type="button"
-                      title="View"
-                      class="btn btn-link px-0"
-                    >
-                      प्रतिवेदन उत्पन्न गर्नुहोस्</a
-                    >
-                    {% else %}
-                    <a
-                      href="{% url 'report:export_report' q.id level_id %}"
-                      type="button"
-                      title="View"
-                      class="btn btn-link px-0"
-                    >
-                      प्रतिवेदन उत्पन्न गर्नुहोस्</a
-                    >
-                    {% endif %}
-                  </td>
-                </tr>
+          {# Fiscal Year #}
+          <div class="col-lg-2 col-md-6">
+            <div class="form-group">
+              <label>आर्थिक वर्ष</label>
+              <select name="fy" required class="form-control" id="fy-select">
+                <option value="" disabled {% if not yr_id %}selected{% endif %}>छान्नुहोस्...</option>
+                {% for yr in fiscal_yrs %}
+                <option value="{{ yr.id }}"
+                  {% if yr.id|stringformat:"s" == yr_id|stringformat:"s" %}selected{% endif %}>
+                  {{ yr }}
+                </option>
                 {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          {% comment %}
-          <div class="pagination-wrapper">
-            <ul class="pagination pagination-02">
-              <li class="page-item">
-                <a
-                  class="page-link pagination-arrow mr-2"
-                  href="#"
-                  aria-label="Previous"
-                >
-                  <i class="ic-arrow-left text-black"></i>
-                </a>
-              </li>
-              <li class="page-item active">
-                <a class="page-link" href="#">1</a>
-              </li>
-              <li class="page-item">
-                <a class="page-link" href="#">2</a>
-              </li>
-              <li class="page-item">
-                <a class="page-link" href="#">3</a>
-              </li>
-              <li class="page-item">
-                <a class="page-link" href="#">4</a>
-              </li>
-              <li class="page-item">
-                <a class="page-link" href="#">.....</a>
-              </li>
-              <li class="page-item">
-                <a class="page-link" href="#">2000</a>
-              </li>
-              <li class="page-item">
-                <a
-                  class="page-link pagination-arrow ml-2"
-                  href="#"
-                  aria-label="Next"
-                >
-                  <i class="ic-arrow-right text-black"></i>
-                </a>
-              </li>
-            </ul>
-            <div class="align-center">
-              <div class="flex-shrink-1 ml-1 mr-2">
-                <input type="text" class="form-control page-input" />
-              </div>
-              <p class="des text-gray-500">Page</p>
+              </select>
             </div>
           </div>
-          {% endcomment %}
+
+          {# Survey — includes "all" option #}
+          <div class="col-lg-2 col-md-6">
+            <div class="form-group">
+              <label>सर्वेक्षण</label>
+              <select required name="survey" class="form-control" id="survey-select">
+                <option value="" disabled {% if not survey_id %}selected{% endif %}>छान्नुहोस्...</option>
+                <option value="all" {% if survey_id == "all" %}selected{% endif %}>
+                  — सबै सर्वेक्षण —
+                </option>
+                {% for s in surveys %}
+                <option value="{{ s.id }}"
+                  {% if s.id|stringformat:"s" == survey_id|stringformat:"s" %}selected{% endif %}>
+                  {{ s }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          {# Province #}
+          <div class="col-lg-3 col-md-6">
+            <div class="form-group">
+              <label>प्रदेश</label>
+              <select required name="level" class="form-control p-levels" id="province-select">
+                <option value="" disabled {% if not level_id %}selected{% endif %}>छान्नुहोस्...</option>
+                <option value="all" {% if level_id == "all" %}selected{% endif %}>
+                  — सबै प्रदेश —
+                </option>
+                {% for province in provinces %}
+                <option value="{{ province.id }}"
+                  {% if province.id|stringformat:"s" == level_id|stringformat:"s" %}selected{% endif %}>
+                  {{ province }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          {# Local level (AJAX-populated) #}
+          <div class="col-lg-3 col-md-6">
+            <div class="form-group">
+              <label>स्थानीय तह</label>
+              <select name="local_level" class="form-control l-levels" id="local-select">
+                <option value="">— सबै स्थानीय तह —</option>
+              </select>
+            </div>
+          </div>
+
+          {# Submit #}
+          <div class="col-lg-2 col-md-6 d-flex align-items-end">
+            <div class="form-group w-100">
+              <button type="submit" class="btn btn-primary btn-block">
+                खोज्नुहोस्
+              </button>
+            </div>
+          </div>
+
         </div>
+      </form>
+    </div>
+
+    {# ── Results ── #}
+    <div class="card card-body radius-top-0">
+
+      {# Result summary bar #}
+      {% if questions %}
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap" style="gap: 8px;">
+        <p class="mb-0 text-muted small">
+          <strong>{{ questions|length }}</strong> सूचकहरु
+          {% if survey_label %}&nbsp;|&nbsp;<strong>{{ survey_label }}</strong>{% endif %}
+          {% if level_label %}&nbsp;|&nbsp;{{ level_label }}{% endif %}
+        </p>
+      </div>
+      {% endif %}
+
+      <div class="table-responsive">
+        <table class="table table-02 d-xl-table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">क्र.सं.</th>
+              <th>सूचकहरु</th>
+              <th class="text-right" style="width: 200px;">कार्य</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for q in questions %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ q.title }}</td>
+              <td class="text-right">
+                {% if level_id == "all" %}
+                  <a href="{% url 'report:export_report_levels' q.id level_type %}"
+                     class="btn btn-sm btn-outline-primary">
+                    Excel डाउनलोड
+                  </a>
+                {% elif effective_level_id %}
+                  <a href="{% url 'report:export_report' q.id effective_level_id %}"
+                     class="btn btn-sm btn-outline-primary">
+                    Excel डाउनलोड
+                  </a>
+                {% else %}
+                  <span class="text-muted small">तह छान्नुहोस्</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-center text-muted py-4">
+                {% if survey_id or level_id %}
+                  कुनै सूचकहरु फेला परेनन्।
+                {% else %}
+                  माथिको फिल्टर भरेर खोज्नुहोस्।
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
+
   </div>
-</Fragment>
-{% endblock content %} {% block extra_scripts %}
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
 <script>
-  $(".l-levels").append(`<option value="all">All</option>`);
-  $(".p-levels").on("change", function () {
-    let pId = $(this).find("option:selected").val();
-    let url = "{% url 'report:filter_locals' 0 %}";
-    // $('.l-levels').empty();
-    // $('.l-levels').append(`<option disabled selected>सेलेक्ट..</option>`)
+(function () {
+  // ── On province change: load local levels via AJAX ──────────────────────
+  function loadLocals(pId, preselectId) {
+    if (!pId || pId === "all" || pId === "") {
+      $("#local-select").html('<option value="">— सबै स्थानीय तह —</option>');
+      return;
+    }
+    var url = "{% url 'report:filter_locals' 0 %}".replace("0", pId);
+    $("#local-select").html('<option value="">लोड हुँदैछ...</option>');
     $.ajax({
-      url: url.replace(0, pId),
+      url: url,
       type: "GET",
       success: function (data) {
-        for (i = 0; i < data["l_levels"].length; i++) {
-          lId = data["l_levels"][i]["id"];
-          lName = data["l_levels"][i]["name"];
-          $(".l-levels").append(`<option value="${lId}">${lName}</option>`);
-        }
+        var opts = '<option value="">— सबै स्थानीय तह —</option>';
+        $.each(data.l_levels, function (i, item) {
+          var sel = (String(item.id) === String(preselectId)) ? " selected" : "";
+          opts += '<option value="' + item.id + '"' + sel + '>' + item.name + '</option>';
+        });
+        $("#local-select").html(opts);
       },
+      error: function () {
+        $("#local-select").html('<option value="">लोड हुन सकेन</option>');
+      }
     });
+  }
+
+  // Pre-populate on page load if province was already chosen
+  var currentProvince = "{{ level_id|default:'' }}";
+  var currentLocal    = "{{ local_level_id|default:'' }}";
+  if (currentProvince && currentProvince !== "all" && currentProvince !== "") {
+    loadLocals(currentProvince, currentLocal);
+  }
+
+  $("#province-select").on("change", function () {
+    loadLocals($(this).val(), "");
   });
+
+  // ── Reload survey dropdown when fiscal year changes ─────────────────────
+  // (optional progressive enhancement — keeps survey options in sync)
+  $("#fy-select").on("change", function () {
+    var fyId = $(this).val();
+    if (!fyId) return;
+    // Re-submit the form so surveys are filtered by the new FY
+    // This is the simplest reliable approach without a separate AJAX endpoint
+    var $form = $(this).closest("form");
+    // Clear survey/level/local so user must re-select
+    $("#survey-select").val("");
+    $("#province-select").val("");
+    $("#local-select").html('<option value="">— सबै स्थानीय तह —</option>');
+  });
+
+})();
 </script>
 {% endblock extra_scripts %}
