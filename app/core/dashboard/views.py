@@ -281,13 +281,15 @@ class AddIndexView(IndexCreateView):
     def form_valid(self, form):
         survey_id = self.kwargs.get("survey_id")
         form.instance.survey_id = survey_id
-        ques = form.save()
-        success_url = reverse(
-            "dashboard:index_option_create",
-            args=[
-                ques.id,
-            ],
-        )
+        ques = form.save(commit=False)
+        department_id = self.request.POST.get("department")
+        full_marks = self.request.POST.get("full_marks")
+        if department_id:
+            ques.department_id = department_id
+        if full_marks:
+            ques.full_marks = full_marks
+        ques.save()
+        success_url = reverse("dashboard:index_option_create", args=[ques.id])
         messages.success(self.request, "Index Added Successfully.")
         return JsonResponse({"success": True, "url": success_url})
 
@@ -300,6 +302,7 @@ class SurveyDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["departments"] = Department.objects.all()
         survey = self.get_object()
         context["questions"] = survey.questions.filter(parent=None).order_by(
             "sequence_id"
@@ -324,7 +327,7 @@ class IndexDeleteView(DeleteView):
 class IndexUpdateView(UpdateView):
     model = Question
     template_name = "core/dashboard/index_update.html"
-    fields = ["title", "month_requires", "sequence_id", "department"]
+    fields = ["title", "month_requires", "sequence_id", "department", "full_marks"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -892,7 +895,7 @@ class DistrictNameUpdateView(SuccessMessageMixin, UpdateView):
 
     def form_valid(self, form):
         messages.success(self.request, self.success_message)
-        form.save()
+        form.save() 
         return JsonResponse({}, status=200)
 
 class FiscalYearUpdateView(SuccessMessageMixin, UpdateView):

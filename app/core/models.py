@@ -156,6 +156,8 @@ class Question(AbstractCommonInfo):
     department = models.ForeignKey(
         Department, on_delete=models.SET_NULL, null=True, blank=True
     )
+    full_marks = models.PositiveIntegerField(null=True, blank=True, verbose_name=_("Full Marks"))
+
 
     def __str__(self) -> str:
         return self.title

@@ -142,19 +142,39 @@
                 <div class="col-lg-12">
                  <div class="form-group">
                       <label>Sequence ID</label>
-
                       <input
                         class="form-control"
                         type="number"
                         name="sequence_id"
                         placeholder="जस्तै १"
                       />
-              
                     </div>
+
+                  <!-- NEW: विभाग/संस्था/मन्त्रालय -->
                   <div class="form-group">
-           
+                    <label>विभाग/संस्था/मन्त्रालय</label>
+                    <select name="department" class="form-control">
+                      <option value="">--- छान्नुहोस् ---</option>
+                      {% for dept in departments %}
+                        <option value="{{ dept.pk }}">{{ dept.name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <!-- NEW: Full Marks -->
+                  <div class="form-group">
+                    <label>पूर्णाङ्क (Full Marks)</label>
+                    <input
+                      class="form-control"
+                      type="number"
+                      name="full_marks"
+                      placeholder="जस्तै १००"
+                      min="0"
+                    />
+                  </div>
+
+                  <div class="form-group">
                     <div class="form-check form-check-inline">
-                     
                       <input
                         class="form-check-input"
                         type="checkbox"
@@ -165,9 +185,9 @@
                       <label class="form-check-label" for="inlineRadio22"
                         >महिना आवश्यक</label
                       >
-                    </div>                   
-                     
                     </div>
+                  </div>
+
                 </div>
               </div>
             
@@ -224,7 +244,7 @@
           </div>
            
         </div>
-        </div>
+      </div>
         
 
 
@@ -255,6 +275,7 @@
                 <th>क्रम संख्या</th>
                 <th>सूचक</th>
                 <th>विभाग/संस्था/मन्त्रालय</th>
+                <th>Full marks</th>
                 <th>सूचकहरु</th>
                 <th class="text-right">कार्य</th>
               </tr>
@@ -265,6 +286,7 @@
               <td>{{forloop.counter}}</td>
               <td>{{question.title|truncatewords:5}}</td>
               <td>{{question.department}}</td>
+              <td>{{question.full_marks}}</td>
               {% if question.children_questions.all.count < 1 %}
                 <td>{{question.count}}1</td>
               {% else %}

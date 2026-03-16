@@ -1,90 +1,82 @@
-<form action="{% url 'dashboard:index_update' object.id %}" class="update-form" method="post">
-                 {% csrf_token %}
-              <div class="form-group">
-                <label>सूचकको शीर्षक</label>
-                <input
-                  class="form-control title-i"
-                  type="text"
-                  name="title"
-                  placeholder="टाइप गर्नुहोस्"
-                  value="{{object.title}}"
-                />
-              </div>
-              <div class="form-row">
-                <div class="col-lg-12">
-                 <div class="form-group">
-                      <label>Sequence ID</label> 
+{% load static %}
+<form action="{% url 'dashboard:index_update' object.pk %}" method="POST" class="update-form">
+  {% csrf_token %}
 
-                      <input
-                        class="form-control seq"
-                        type="number"
-                        name="sequence_id"
-                        placeholder="जस्तै १"
-                        value="{{object.sequence_id}}"
-                      />
-              
-                    </div>
-                     <div class="form-group">
-                    <label>विभाग/संस्था/मन्त्रालय</label
-                    ><select name="department" class="form-control departments">
-                      छान्नुहोस्
-                      <option val="" disabled selected>छान्नुहोस्...</option>
-                      {% for depart in departments %}
-                      <option value="{{depart.pk}}" {% if depart.pk == object.department.pk %}selected{% endif %}>{{depart.name}}</option>
-                      {% endfor %}
-                    </select>
-                    <span class="error">{{form.department.errors.as_text}}</span>
-                  </div>  
-                  <div class="form-group">
-                    <div class="form-check form-check-inline">
-                      <input
-                        class="form-check-input month-r"
-                        type="checkbox"
-                        name="month_requires"
-                        id="inlineRadio22"
-                        value="1"
-                        {% if object.month_requires %}checked{% endif %}
-                      />
-                      <label class="form-check-label" for="inlineRadio22"
-                        >महिना आवश्यक</label
-                      >
-                    </div>                   
-                    </div>
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-light" data-dismiss="modal">
-                रद्द गर्नुहोस्
-              </button>
-              <button type="submit" class="btn btn-primary">शेभ गर्नुहोस्</button>
-            </div>
-             </form>
+  <div class="form-group">
+    <label>सूचकको शीर्षक</label>
+    <input
+      class="form-control title-i"
+      type="text"
+      name="title"
+      value="{{ object.title }}"
+      required
+    />
+  </div>
 
+  <div class="form-row">
+    <div class="col-lg-6">
+      <div class="form-group">
+        <label>Sequence ID</label>
+        <input
+          class="form-control seq"
+          type="number"
+          name="sequence_id"
+          value="{{ object.sequence_id }}"
+          placeholder="जस्तै १"
+        />
+      </div>
+    </div>
 
-             <script>
-             
-    $("body").on("submit", ".update-form", function(e) {
-        e.preventDefault();
-        url=$(this).attr('action')  
-        $.ajax({
-        url: url,
-        type: 'POST',           
-        data: new FormData(this),
-        processData: false,
-        contentType: false,
-        success: function (data) {
-        if(data['success']){
-          location.href = data['url']
-        }
-        else if($("input").next('p').length) $("input").nextAll('p').remove();
-          for (var error in data) {
-            var input = $("input[name='"+ error +"']");
-            input.after('<p class="error" id='+error +'-error for='+ error +'><span>'+ data[error] +'</span></p>');
-          }
-              
-            },
-          });
-         
-      });
-             </script>
+    <div class="col-lg-6">
+      <div class="form-group">
+        <label>पूर्णाङ्क (Full Marks)</label>
+        <input
+          class="form-control"
+          type="number"
+          name="full_marks"
+          value="{{ object.full_marks|default_if_none:'' }}"
+          placeholder="जस्तै १००"
+          min="0"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>विभाग/संस्था/मन्त्रालय</label>
+    <select name="department" class="form-control departments">
+      <option value="">--- छान्नुहोस् ---</option>
+      {% for dept in departments %}
+        <option value="{{ dept.pk }}"
+          {% if object.department_id == dept.pk %}selected{% endif %}>
+          {{ dept.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <div class="form-check form-check-inline">
+      <input
+        class="form-check-input month-r"
+        type="checkbox"
+        name="month_requires"
+        id="updateMonthRequires"
+        value="1"
+        {% if object.month_requires %}checked{% endif %}
+      />
+      <label class="form-check-label" for="updateMonthRequires">
+        महिना आवश्यक
+      </label>
+    </div>
+  </div>
+
+  <div class="modal-footer px-0">
+    <button type="button" class="btn btn-light" data-dismiss="modal">
+      रद्द गर्नुहोस्
+    </button>
+    <button type="submit" class="btn btn-primary">
+      सेभ गर्नुहोस्
+    </button>
+  </div>
+</form>
