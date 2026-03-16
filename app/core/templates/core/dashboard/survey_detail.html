@@ -294,35 +294,41 @@
               {% endif %}
                 
                 <td class="text-right">
-                 {% comment %} <a href="#" url="{% url 'dashboard:assign_depart' question.id %}" data-toggle="modal" data-target="#assignModal" title="विभाग अपडेट" class="text-coolGray600 assign-q">
-                    <i class="ic-error"></i
-                  ></a> &nbsp; {% endcomment %}
+                  {% comment %} <a href="#" url="{% url 'dashboard:assign_depart' question.id %}" data-toggle="modal" data-target="#assignModal" title="विभाग अपडेट" class="text-coolGray600 assign-q">
+                    <i class="ic-error"></i></a> &nbsp; 
+                  {% endcomment %}
+
+                  {# Permission for standard update - Now acting as Edit Options #}
                   {% user_can_change request 'survey_setup' as update %}
                   {% if update %}
-                 <a href="#" url="{% url 'dashboard:index_update' question.id %}" data-toggle="modal" data-target="#updateModal" title="सूचकका जानकारी अपडेट" class="text-coolGray600 update-q">
-                    <i class="ic-info"></i
-                  ></a> &nbsp;
+                    <a href="{% url 'dashboard:index_option_update' question.id %}" title="सूचकका विकल्प सम्पादन गर्नुहोस्" class="text-coolGray600">
+                      <i class="ic-info"></i>
+                    </a> &nbsp;
                   {% endif %}
+
+                  {# Permission for delete #}
                   {% user_can_delete request 'survey_setup' as delete %}
                   {% if delete %}
-                  <a href="#" url="{% url 'dashboard:index_delete' question.id %}" data-toggle="modal" data-target="#deleteModal" title="मेटाउनुहोस्" class="text-coolGray600 delete-q">
-                    <i class="ic-delete"></i
-                  ></a>
+                    <a href="#" url="{% url 'dashboard:index_delete' question.id %}" data-toggle="modal" data-target="#deleteModal" title="मेटाउनुहोस्" class="text-coolGray600 delete-q">
+                      <i class="ic-delete"></i>
+                    </a>
                   {% endif %}
-                {% user_can_add request 'survey_setup' as add %}
+
+                  {# Permission for add #}
+                  {% user_can_add request 'survey_setup' as add %}
                   {% if add %}
-                     <a href="{% url 'dashboard:index_option_add_more' question.id %}" title="थप" class="mr-2 text-coolGray600">
-                    <i class="ic-add"></i
-                  ></a>
+                    <a href="{% url 'dashboard:index_option_add_more' question.id %}" title="थप" class="mr-2 text-coolGray600">
+                      <i class="ic-add"></i>
+                    </a>
                   {% endif %}
                   
-                {% user_can_change request 'survey_setup' as change %}
+                  {# Permission for option update - Now acting as Info Update #}
+                  {% user_can_change request 'survey_setup' as change %}
                   {% if change %}
-                  <a href="{% url 'dashboard:index_option_update' question.id %}" title="सूचकका विकल्प सम्पादन गर्नुहोस्" class="mr-2 text-coolGray600">
-                    <i class="ic-edit"></i
-                  ></a>
+                    <a href="#" url="{% url 'dashboard:index_update' question.id %}" data-toggle="modal" data-target="#updateModal" title="सूचकका जानकारी अपडेट" class="mr-2 text-coolGray600 update-q">
+                      <i class="ic-edit"></i>
+                    </a>
                   {% endif %}
-                  
                 </td>
               </tr>
             

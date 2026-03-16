@@ -205,8 +205,15 @@
 
           <div class="card-index">
             <div class="option-group">
-              <p>
-                {{ques.title}}
+              <p class="d-flex justify-content-between align-items-center">
+                
+
+                <span style="color: #2563eb; font-size: 1.1rem;">
+                  {{ ques.title }}
+                </span>
+                <span class="font-weight-bold">
+                  Full Marks: {{ ques.full_marks }}
+                </span>
               </p>
                <a href="{% url 'dashboard:survey_detail' ques.survey.id %}"><button class="btn btn-icon-only">
                     <i class="ic-close-circular-filled text-danger"></i>
