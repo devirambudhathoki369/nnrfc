@@ -80,12 +80,55 @@ class DashboardIndexView(LoginRequiredMixin, generic.ListView):
 
 class DashBoardHome(LoginRequiredMixin, TemplateView):
     template_name = "core/dashboard/dashboard_home.html"
-
+ 
+    def _get_filled_level_ids(self, question, levels):
+        """Returns set of level IDs that have answered this question."""
+        children = Question.objects.filter(parent=question.id)
+        if children.exists():
+            target_options = Option.objects.filter(question__in=children)
+        else:
+            target_options = question.options.all()
+ 
+        filled_ids = set()
+        for level in levels:
+            if Answer.objects.filter(
+                option__in=target_options,
+                created_by_level=level.id
+            ).exists():
+                filled_ids.add(level.id)
+        return filled_ids
+ 
+    def _build_question_status(self, survey, level_type):
+        """
+        Build question-wise fill/not-fill status for a survey.
+        Returns list of dicts with question info and fill counts.
+        """
+        if not survey:
+            return [], 0
+ 
+        questions = survey.questions.filter(parent__isnull=True).order_by("sequence_id")
+        levels = Level.objects.filter(type__type=level_type)
+        total_levels = levels.count()
+ 
+        data = []
+        for question in questions:
+            filled_ids = self._get_filled_level_ids(question, levels)
+            filled_count = len(filled_ids)
+            not_filled_count = total_levels - filled_count
+            percentage = round((filled_count / total_levels * 100), 1) if total_levels > 0 else 0
+ 
+            data.append({
+                "question": question,
+                "filled_count": filled_count,
+                "not_filled_count": not_filled_count,
+                "total": total_levels,
+                "percentage": percentage,
+            })
+ 
+        return data, total_levels
+ 
     def _build_progress_for_levels(self, questions, levels, count, survey_id=None):
-        """
-        Returns list of dicts:
-          {data, question_filled (%), question_filleds (int), level_id, survey_id}
-        """
+        """Returns list of dicts: {data, question_filled (%), question_filleds (int)}"""
         data = []
         if count == 0:
             return data
@@ -110,140 +153,180 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
                 "survey_id": survey_id,
             })
         return data
-
-    def _get_common_context(self):
-        """Shared base data — active FY, survey, question count."""
-        try:
-            fiscal = FiscalYear.objects.filter(active_fy=True).first()
-            if not fiscal:
-                return None, None, 0, "कुनै सक्रिय आर्थिक वर्ष फेला परेन।"
-            survey = Survey.objects.filter(fiscal_year=fiscal.id).first()
-            if not survey:
-                return None, None, 0, "यस आर्थिक वर्षमा कुनै सर्वेक्षण छैन।"
-            questions = survey.questions.filter(parent=None, month_requires=False)
-            return fiscal, survey, questions.count(), None
-        except Exception:
-            return None, None, 0, "डेटा उपलब्ध छैन।"
-
+ 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-
-        fiscal, survey, count, error_msg = self._get_common_context()
-
-        if error_msg or not survey:
-            context["data"] = error_msg or "डेटा उपलब्ध छैन।"
+ 
+        # ── Get active fiscal year ───────────────────────────────────
+        fiscal = FiscalYear.objects.filter(active_fy=True).first()
+        if not fiscal:
+            context["error"] = "कुनै सक्रिय आर्थिक वर्ष फेला परेन।"
             return context
-
-        questions_qs = survey.questions.filter(parent=None, month_requires=False)
-        context["count"] = count
-
-        # ── Determine user surveys for quick-action buttons ──
+ 
+        context["fiscal_year"] = fiscal
+ 
+        # ── Get surveys for active FY ────────────────────────────────
+        p_survey = Survey.objects.filter(fiscal_year=fiscal, level="P").first()
+        l_survey = Survey.objects.filter(fiscal_year=fiscal, level="L").first()
+ 
+        context["p_survey"] = p_survey
+        context["l_survey"] = l_survey
+ 
+        # ── Determine user level type ────────────────────────────────
         try:
             user_level_type = user.level.type.type if user.level else None
         except AttributeError:
             user_level_type = None
-
+ 
+        # ── User's surveys for quick-action buttons ──────────────────
         if user_level_type:
             context["my_surveys"] = Survey.objects.filter(
-                fiscal_year=fiscal.id,
-                level=user_level_type,
+                fiscal_year=fiscal, level=user_level_type
             )
         else:
-            context["my_surveys"] = Survey.objects.filter(fiscal_year=fiscal.id)
-
-        # ════════════════════════════════
-        # ADMIN / OFFICE HEAD
-        # ════════════════════════════════
+            context["my_surveys"] = Survey.objects.filter(fiscal_year=fiscal)
+ 
+        # ════════════════════════════════════════════════════════════
+        # ADMIN / SUPERUSER / OFFICE HEAD
+        # ════════════════════════════════════════════════════════════
         if user.is_superuser or getattr(user, "is_office_head", False):
+ 
+            # ── Summary counts ───────────────────────────────────────
             p_levels = Level.objects.filter(type__type="P")
             l_levels = Level.objects.filter(type__type="L")
-
-            p_data = self._build_progress_for_levels(
-                questions_qs, p_levels, count, survey.id
-            )
-            l_data = self._build_progress_for_levels(
-                questions_qs, l_levels, count, survey.id
-            )
-
-            context["questions"] = p_data
-            context["local_questions"] = l_data
             context["province_count"] = p_levels.count()
             context["local_count"] = l_levels.count()
-
-            if p_data:
-                context["avg_progress"] = round(
-                    sum(d["question_filled"] for d in p_data) / len(p_data), 1
-                )
-
-            # Recent 5 corrections for the admin sidebar
+ 
+            # ── Question-wise status for LOCAL level ─────────────────
+            l_question_status, l_total = self._build_question_status(l_survey, "L")
+            context["l_question_status"] = l_question_status
+            context["l_total_levels"] = l_total
+ 
+            # ── Question-wise status for PROVINCE level ──────────────
+            p_question_status, p_total = self._build_question_status(p_survey, "P")
+            context["p_question_status"] = p_question_status
+            context["p_total_levels"] = p_total
+ 
+            # ── Total indicators count ───────────────────────────────
+            total_count = 0
+            if p_survey:
+                total_count += p_survey.questions.filter(parent__isnull=True).count()
+            if l_survey:
+                total_count += l_survey.questions.filter(parent__isnull=True).count()
+            context["count"] = total_count
+ 
+            # ── Average progress (province level) ────────────────────
+            if p_survey:
+                p_questions = p_survey.questions.filter(parent__isnull=True)
+                p_count = p_questions.count()
+                if p_count > 0:
+                    p_progress = self._build_progress_for_levels(
+                        p_questions, p_levels, p_count, p_survey.id
+                    )
+                    if p_progress:
+                        context["avg_progress"] = round(
+                            sum(d["question_filled"] for d in p_progress) / len(p_progress), 1
+                        )
+ 
+            # ── Recent corrections ───────────────────────────────────
             context["recent_corrections"] = (
                 SurveyCorrection.objects.order_by("-created_at")[:5]
             )
+ 
             return context
-
-        # ════════════════════════════════
-        # STAFF ROLE (no level, has roles)
-        # ════════════════════════════════
-        if user.is_staff and not user_level_type:
-            p_levels = Level.objects.filter(type__type="P")
-            p_data = self._build_progress_for_levels(
-                questions_qs, p_levels, count, survey.id
-            )
-            context["questions"] = p_data
-            context["province_count"] = p_levels.count()
-            if p_data:
-                context["avg_progress"] = round(
-                    sum(d["question_filled"] for d in p_data) / len(p_data), 1
-                )
-            return context
-
-        # ════════════════════════════════
-        # PROVINCE OR LOCAL LEVEL USER
-        # ════════════════════════════════
-        if not user_level_type:
-            context["data"] = "तपाईंको खाता कुनै तहसँग जोडिएको छैन।"
-            return context
-
-        try:
-            user_level = user.level
-        except AttributeError:
-            context["data"] = "तपाईंको खाता कुनै तहसँग जोडिएको छैन।"
-            return context
-
-        # Progress for this specific user's level
-        my_data = self._build_progress_for_levels(
-            questions_qs, [user_level], count, survey.id
-        )
-        context["questions"] = my_data
-
-        if my_data:
-            context["my_filled"] = my_data[0]["question_filleds"]
-            context["my_progress"] = my_data[0]["question_filled"]
-
-        # Their correction requests
-        context["my_corrections"] = (
-            SurveyCorrection.objects.filter(level=user_level)
-            .order_by("-created_at")[:5]
-        )
-
-        # Their complaints
-        context["my_complaints"] = (
-            Complaint.objects.filter(level=user_level)
-            .order_by("-created_at")[:5]
-        )
-
-        # Province users also see a table of local-level progress in their province
+ 
+        # ════════════════════════════════════════════════════════════
+        # PROVINCE USER
+        # ════════════════════════════════════════════════════════════
         if user_level_type == "P":
-            l_levels = Level.objects.filter(
-                type__type="L",
-                province_level=user_level,
+            user_level = user.level
+            context["user_level"] = user_level
+ 
+            # Own progress
+            if p_survey:
+                p_questions = p_survey.questions.filter(parent__isnull=True)
+                p_count = p_questions.count()
+                context["count"] = p_count
+                my_progress = self._build_progress_for_levels(
+                    p_questions, [user_level], p_count, p_survey.id
+                )
+                if my_progress:
+                    context["my_filled"] = my_progress[0]["question_filleds"]
+                    context["my_progress"] = my_progress[0]["question_filled"]
+ 
+            # Local levels under this province
+            l_levels = Level.objects.filter(type__type="L", province_level=user_level)
+            if l_survey:
+                l_question_status, l_total = [], l_levels.count()
+                l_questions = l_survey.questions.filter(parent__isnull=True).order_by("sequence_id")
+                for question in l_questions:
+                    filled_ids = self._get_filled_level_ids(question, l_levels)
+                    filled_count = len(filled_ids)
+                    l_question_status.append({
+                        "question": question,
+                        "filled_count": filled_count,
+                        "not_filled_count": l_total - filled_count,
+                        "total": l_total,
+                        "percentage": round((filled_count / l_total * 100), 1) if l_total > 0 else 0,
+                    })
+                context["l_question_status"] = l_question_status
+                context["l_total_levels"] = l_total
+ 
+            # Corrections and complaints
+            context["my_corrections"] = (
+                SurveyCorrection.objects.filter(level=user_level).order_by("-created_at")[:5]
             )
-            context["local_questions"] = self._build_progress_for_levels(
-                questions_qs, l_levels, count, survey.id
+            context["my_complaints"] = (
+                Complaint.objects.filter(level=user_level).order_by("-created_at")[:5]
             )
-
+ 
+            return context
+ 
+        # ════════════════════════════════════════════════════════════
+        # LOCAL LEVEL USER
+        # ════════════════════════════════════════════════════════════
+        if user_level_type == "L":
+            user_level = user.level
+            context["user_level"] = user_level
+ 
+            if l_survey:
+                l_questions = l_survey.questions.filter(parent__isnull=True)
+                l_count = l_questions.count()
+                context["count"] = l_count
+                my_progress = self._build_progress_for_levels(
+                    l_questions, [user_level], l_count, l_survey.id
+                )
+                if my_progress:
+                    context["my_filled"] = my_progress[0]["question_filleds"]
+                    context["my_progress"] = my_progress[0]["question_filled"]
+ 
+            context["my_corrections"] = (
+                SurveyCorrection.objects.filter(level=user_level).order_by("-created_at")[:5]
+            )
+            context["my_complaints"] = (
+                Complaint.objects.filter(level=user_level).order_by("-created_at")[:5]
+            )
+ 
+            return context
+ 
+        # ════════════════════════════════════════════════════════════
+        # STAFF (no level, has roles)
+        # ════════════════════════════════════════════════════════════
+        if user.is_staff:
+            if p_survey:
+                p_question_status, p_total = self._build_question_status(p_survey, "P")
+                context["p_question_status"] = p_question_status
+                context["p_total_levels"] = p_total
+                context["count"] = p_survey.questions.filter(parent__isnull=True).count()
+ 
+            context["province_count"] = Level.objects.filter(type__type="P").count()
+            return context
+ 
+        # Fallback
+        context["error"] = "तपाईंको खाता कुनै तहसँग जोडिएको छैन।"
         return context
+
 class IndexCreateView(LoginRequiredMixin, CreateView):
     model = Question
     template_name = "core/dashboard/index.html"
