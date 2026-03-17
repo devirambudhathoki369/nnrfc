@@ -1,19 +1,20 @@
-{% extends 'fragments/base.html' %} 
+{% extends 'fragments/base.html' %}
 
-{% load static %} 
-{% load devanagari %} 
+{% load static %}
+{% load devanagari %}
 
 {% block backbtn %}
   <div>
-    <a href="{% url 'core:pdf_generate' survey.id %}"
-    <Button class="btn bg-white mr-3">PDF को रूपमा डाउनलोड गर्नुहोस्</Button></a>
+    <a href="{% url 'core:pdf_generate' survey.id %}">
+      <button class="btn bg-white mr-3">PDF को रूपमा डाउनलोड गर्नुहोस्</button>
+    </a>
     <a href="{% url 'core:survey_list' %}">
-    <button class="btn btn-danger">पछाडी जानुहोस</button></a>
+      <button class="btn btn-danger">पछाडी जानुहोस</button>
+    </a>
   </div>
 {% endblock backbtn %}
 
-{%block content %}
-
+{% block content %}
 <div class="container">
   <section class="section--topic">
     <h3 class="text-primary mb-3">सूचकहरु</h3>
@@ -21,16 +22,21 @@
       {% for question in questionaire %}
       <li>
         {% if question.is_question_filled %}
-        <a
-          class="list-link"
-          href="{% url 'core:filled_question' question.pk %}"
-        >
+        <a class="list-link" href="{% url 'core:filled_question' question.pk %}">
           <span>{{ question.title }}</span>
+          <div class="d-flex align-items-center">
+            {% if question.full_marks %}
+              <span class="badge badge-primary mr-2">पूर्णांक: {{ question.full_marks }}</span>
+            {% endif %}
             <img src="{% static 'back/assets/images/check-circle.svg' %}" alt="" />
+          </div>
         </a>
         {% else %}
         <a class="list-link" href="{% url 'core:create_answer' question.pk %}">
           <span>{{ question.title }}</span>
+          {% if question.full_marks %}
+            <span class="badge badge-primary">पूर्णांक: {{ question.full_marks }}</span>
+          {% endif %}
         </a>
         {% endif %}
       </li>

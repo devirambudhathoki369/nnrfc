@@ -39,7 +39,10 @@ from core.dashboard.views import (
     level_appraisals,
     mark_appraisal_checked,
     DistrictNameUpdateView,
-    FiscalYearUpdateView
+    FiscalYearUpdateView,
+    QuestionWiseStatusView,
+    QuestionFillDetailView,
+    LevelQuestionAnswerView,
 )
 from django.urls import path
 from . import views
@@ -168,4 +171,8 @@ urlpatterns = [
     path("fiscal_edit/<int:pk>/", FiscalYearUpdateView.as_view(), name="fiscal_update"),
 
     path("settings/", SettingsView.as_view(), name="settings"),
+
+    path("question-status/", QuestionWiseStatusView.as_view(), name="question_status"),
+    path("question-fill-detail/<int:question_id>/<str:status>/", QuestionFillDetailView.as_view(), name="question_fill_detail"),
+    path("level-answer/<int:question_id>/<int:level_id>/", LevelQuestionAnswerView.as_view(), name="level_question_answer"),
 ]

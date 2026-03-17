@@ -53,10 +53,10 @@ class StaffUserCreateView(SuccessMessageMixin, CreateView):
         form.instance.set_password(pwd)
         form.instance.is_first_login = True
         form.instance.is_active = True
-
-        # SAVE USER FIRST (before attempting email)
+ 
+        # SAVE USER FIRST — before attempting email
         form.save()
-
+ 
         html_template = "email/user_invitation.html"
         context = {
             "email": email,
@@ -70,14 +70,13 @@ class StaffUserCreateView(SuccessMessageMixin, CreateView):
         msg = render_to_string(html_template, context)
         try:
             send_email.delay(msg, [form.instance.personal_email])
-        except:
-            # User is already saved, just warn about email
+            return JsonResponse({"success": True, "msg": self.success_message})
+        except Exception:
+            # User IS saved — just warn about email failure
             return JsonResponse({
                 "success": True,
-                "msg": "User created successfully but invitation email could not be sent. Password: " + pwd
+                "msg": f"प्रयोगकर्ता सिर्जना भयो तर इमेल पठाउन सकिएन। पासवर्ड: {pwd}",
             })
-
-        return JsonResponse({"success": True, "msg": self.success_message})
 
     def form_invalid(self, form):
         return JsonResponse(form.errors)

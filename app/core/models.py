@@ -120,6 +120,55 @@ class Survey(AbstractCommonInfo):
 
     def __str__(self) -> str:
         return self.name
+    
+    @property
+    def total_full_marks(self):
+        """Sum of full_marks across all top-level questions in this survey."""
+        from django.db.models import Sum
+        total = self.questions.filter(
+            parent__isnull=True
+        ).aggregate(total=Sum('full_marks'))['total']
+        return total or 0
+ 
+    def to_json(self):
+        file_name = ""
+        file_url = ""
+        if self.complaint_file and self.complaint_file.name:
+            file_name = self.complaint_file.name
+            try:
+                file_url = self.complaint_file.url
+            except ValueError:
+                file_url = ""
+        return {
+            "id": self.id,
+            "sub": self.sub,
+            "msg": self.msg,
+            "is_checked": self.is_checked,
+            "file_name": file_name,
+            "level": self.level.name if self.level else "",
+            "file_url": file_url,
+        }
+ 
+ 
+    def to_json(self):
+        file_name = ""
+        file_url = ""
+        if self.file_upload and self.file_upload.name:
+            file_name = self.file_upload.name
+            try:
+                file_url = self.file_upload.url
+            except ValueError:
+                file_url = ""
+        return {
+            "id": self.id,
+            "sub": self.subject,
+            "msg": self.reason,
+            "is_checked": self.is_checked,
+            "question_title": self.question_id.title if self.question_id else "",
+            "file_name": file_name,
+            "level": self.level.name if self.level else "",
+            "file_url": file_url,
+        }
 
 
 class Question(AbstractCommonInfo):

@@ -909,3 +909,241 @@ class FiscalYearUpdateView(SuccessMessageMixin, UpdateView):
 
 class SettingsView(LoginRequiredMixin, TemplateView):
     template_name = "core/dashboard/settings.html"
+
+
+
+class QuestionWiseStatusView(LoginRequiredMixin, TemplateView):
+    """
+    Dashboard page showing question-wise fill status.
+    For each question: how many levels filled it, how many didn't.
+    Separate sections for Province (P) and Local (L) level surveys.
+    """
+    template_name = "core/dashboard/question_wise_status.html"
+ 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+ 
+        # Get active fiscal year
+        fiscal = FiscalYear.objects.filter(active_fy=True).first()
+        if not fiscal:
+            context["error"] = "कुनै सक्रिय आर्थिक वर्ष फेला परेन।"
+            return context
+ 
+        context["fiscal_year"] = fiscal
+ 
+        # ── Province Level Survey ────────────────────────────────────
+        p_survey = Survey.objects.filter(fiscal_year=fiscal, level="P").first()
+        p_data = []
+        if p_survey:
+            p_questions = p_survey.questions.filter(parent__isnull=True).order_by("sequence_id")
+            p_levels = Level.objects.filter(type__type="P")
+            p_total = p_levels.count()
+ 
+            for question in p_questions:
+                filled_level_ids = self._get_filled_levels(question, p_levels)
+                filled_count = len(filled_level_ids)
+                not_filled_count = p_total - filled_count
+ 
+                p_data.append({
+                    "question": question,
+                    "filled_count": filled_count,
+                    "not_filled_count": not_filled_count,
+                    "total": p_total,
+                    "percentage": round((filled_count / p_total * 100), 1) if p_total > 0 else 0,
+                })
+ 
+        context["p_survey"] = p_survey
+        context["p_data"] = p_data
+        context["p_total_levels"] = Level.objects.filter(type__type="P").count()
+ 
+        # ── Local Level Survey ───────────────────────────────────────
+        l_survey = Survey.objects.filter(fiscal_year=fiscal, level="L").first()
+        l_data = []
+        if l_survey:
+            l_questions = l_survey.questions.filter(parent__isnull=True).order_by("sequence_id")
+            l_levels = Level.objects.filter(type__type="L")
+            l_total = l_levels.count()
+ 
+            for question in l_questions:
+                filled_level_ids = self._get_filled_levels(question, l_levels)
+                filled_count = len(filled_level_ids)
+                not_filled_count = l_total - filled_count
+ 
+                l_data.append({
+                    "question": question,
+                    "filled_count": filled_count,
+                    "not_filled_count": not_filled_count,
+                    "total": l_total,
+                    "percentage": round((filled_count / l_total * 100), 1) if l_total > 0 else 0,
+                })
+ 
+        context["l_survey"] = l_survey
+        context["l_data"] = l_data
+        context["l_total_levels"] = Level.objects.filter(type__type="L").count()
+ 
+        return context
+ 
+    def _get_filled_levels(self, question, levels):
+        """
+        Returns set of level IDs that have filled this question.
+        Checks child questions if they exist.
+        """
+        filled_ids = set()
+        children = Question.objects.filter(parent=question.id)
+ 
+        if children.exists():
+            # Has child questions — check child options
+            child_options = Option.objects.filter(question__in=children)
+        else:
+            # No children — check own options
+            child_options = question.options.all()
+ 
+        for level in levels:
+            if Answer.objects.filter(
+                option__in=child_options,
+                created_by_level=level.id
+            ).exists():
+                filled_ids.add(level.id)
+ 
+        return filled_ids
+ 
+ 
+class QuestionFillDetailView(LoginRequiredMixin, TemplateView):
+    """
+    Shows which levels filled / didn't fill a specific question.
+    URL: /dashboard/question-fill-detail/<question_id>/<status>/
+    status = "filled" or "not_filled"
+    """
+    template_name = "core/dashboard/question_fill_detail.html"
+ 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        question_id = self.kwargs.get("question_id")
+        status = self.kwargs.get("status")  # "filled" or "not_filled"
+ 
+        question = get_object_or_404(Question, pk=question_id)
+        context["question"] = question
+        context["status"] = status
+ 
+        # Determine which level type this question's survey targets
+        survey_level = question.survey.level  # "P" or "L"
+        all_levels = Level.objects.filter(type__type=survey_level)
+ 
+        # Find which levels have filled this question
+        children = Question.objects.filter(parent=question.id)
+        if children.exists():
+            child_options = Option.objects.filter(question__in=children)
+        else:
+            child_options = question.options.all()
+ 
+        filled_level_ids = set()
+        for level in all_levels:
+            if Answer.objects.filter(
+                option__in=child_options,
+                created_by_level=level.id
+            ).exists():
+                filled_level_ids.add(level.id)
+ 
+        if status == "filled":
+            context["levels"] = all_levels.filter(id__in=filled_level_ids)
+            context["title"] = "भरेका कार्यालयहरु"
+        else:
+            context["levels"] = all_levels.exclude(id__in=filled_level_ids)
+            context["title"] = "नभरेका कार्यालयहरु"
+ 
+        context["filled_count"] = len(filled_level_ids)
+        context["not_filled_count"] = all_levels.count() - len(filled_level_ids)
+ 
+        return context
+ 
+ 
+class LevelQuestionAnswerView(LoginRequiredMixin, TemplateView):
+    """
+    Shows actual answers submitted by a specific level for a specific question.
+    URL: /dashboard/level-answer/<question_id>/<level_id>/
+    """
+    template_name = "core/dashboard/level_question_answer.html"
+ 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        question_id = self.kwargs.get("question_id")
+        level_id = self.kwargs.get("level_id")
+ 
+        question = get_object_or_404(Question, pk=question_id)
+        level = get_object_or_404(Level, pk=level_id)
+ 
+        context["question"] = question
+        context["level"] = level
+ 
+        # Get fill survey for this level
+        fill_survey = FillSurvey.objects.filter(
+            survey=question.survey, level_id=level
+        ).first()
+ 
+        if not fill_survey:
+            context["answers"] = []
+            context["child_answers"] = []
+            return context
+ 
+        children = Question.objects.filter(parent=question.id).order_by("sequence_id")
+ 
+        if children.exists():
+            # Has child questions
+            child_answers = []
+            for child in children:
+                options = child.options.all().exclude(field_type="F").order_by("sequence_id")
+                option_answers = []
+                for option in options:
+                    answer = Answer.objects.filter(
+                        option=option, fill_survey=fill_survey
+                    ).first()
+                    option_answers.append({
+                        "option_title": option.title,
+                        "field_type": option.get_field_type_display(),
+                        "value": answer.value if answer else "—",
+                    })
+ 
+                # Get files
+                file_options = child.options.filter(field_type="F")
+                files = []
+                for fo in file_options:
+                    ans = Answer.objects.filter(option=fo, fill_survey=fill_survey).first()
+                    if ans:
+                        docs = AnswerDocument.objects.filter(answer=ans)
+                        files.extend(docs)
+ 
+                child_answers.append({
+                    "child_question": child,
+                    "option_answers": option_answers,
+                    "files": files,
+                })
+            context["child_answers"] = child_answers
+            context["has_child"] = True
+        else:
+            # No children — show parent's answers
+            options = question.options.all().exclude(field_type="F").order_by("sequence_id")
+            answers = []
+            for option in options:
+                answer = Answer.objects.filter(
+                    option=option, fill_survey=fill_survey
+                ).first()
+                answers.append({
+                    "option_title": option.title,
+                    "field_type": option.get_field_type_display(),
+                    "value": answer.value if answer else "—",
+                })
+ 
+            # Get files
+            file_options = question.options.filter(field_type="F")
+            files = []
+            for fo in file_options:
+                ans = Answer.objects.filter(option=fo, fill_survey=fill_survey).first()
+                if ans:
+                    docs = AnswerDocument.objects.filter(answer=ans)
+                    files.extend(docs)
+ 
+            context["answers"] = answers
+            context["files"] = files
+            context["has_child"] = False
+ 
+        return context

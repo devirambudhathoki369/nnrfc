@@ -201,23 +201,22 @@
 {% endblock registerComplaint %}
 
 {% block content %}
-
 <section class="section--topic">
   <div class="container">
-  <h3 class="text-primary mb-3">सूचक</h3>
+    <h3 class="text-primary mb-3">सूचक</h3>
     <div class="row">
-    
-    {% for survey in survey_list %}
-    <div class="col-lg-4 mb-3 col-md-6 col-sm-12">
-      <a class="card no-underline hover-shadow card-body" href="{% url 'core:homepage' survey.pk %}">
-        <span class="clamp">
-        {{ survey.name }}
-        </span></a
-      >
-    </div>
-    {% endfor %}
-    
+      {% for survey in survey_list %}
+      <div class="col-lg-4 mb-3 col-md-6 col-sm-12">
+        <a class="card no-underline hover-shadow card-body" href="{% url 'core:homepage' survey.pk %}">
+          <span class="clamp">{{ survey.name }}</span>
+          {% if survey.total_full_marks %}
+            <small class="text-muted mt-2 d-block">
+              कुल पूर्णांक: {{ survey.total_full_marks }}
+            </small>
+          {% endif %}
+        </a>
       </div>
+      {% endfor %}
     </div>
   </div>
 </section>

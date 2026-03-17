@@ -75,9 +75,8 @@
             {% endif %}
           </div>
           <div class="text-right mt-3">
-            <button class="btn btn-outline-primary" data-toggle="modal"
-              data-target="#correct" data-question="{{ question_obj.id }}"
-              id="request_correction">संशोधन सम्बन्धी अनुरोध</button>
+            <button class="btn btn-outline-primary correction-btn" data-toggle="modal"
+              data-target="#correct" data-question="{{ question_obj.id }}">संशोधन सम्बन्धी अनुरोध</button>
           </div>
 
           {% else %}
@@ -116,9 +115,8 @@
             {% endif %}
           </div>
           <div class="text-right mt-3">
-            <button class="btn btn-outline-primary" data-toggle="modal"
-              data-target="#correct" data-question="{{ child_question.question.id }}"
-              id="request_correction">संशोधन सम्बन्धी अनुरोध</button>
+            <button class="btn btn-outline-primary correction-btn" data-toggle="modal"
+              data-target="#correct" data-question="{{ child_question.question.id }}">संशोधन सम्बन्धी अनुरोध</button>
           </div>
           <br />
           {% endfor %}
@@ -146,12 +144,12 @@
         <div class="form-inline-block align-items-center justify-content-center">
           <div class="form-group">
             <label for="subject">विषय</label>
-            <input type="text" id="subject" class="form-control" />
+            <input type="text" id="subject" class="form-control" required />
           </div>
           <div class="form-group">
             <label for="message">सुधार गर्नुपर्ने विषय यहाँ प्रष्टसँग उल्लेख गर्नुहोस्</label>
             <textarea class="form-control" id="message" rows="3"
-              placeholder="संशोधन गर्नुपर्ने विषय यहाँ प्रष्टसँग उल्लेख गर्नुहोस्..."></textarea>
+              placeholder="संशोधन गर्नुपर्ने विषय यहाँ प्रष्टसँग उल्लेख गर्नुहोस्..." required></textarea>
           </div>
           <div class="form-group">
             <label for="correctionFile" class="d-block">
@@ -162,6 +160,8 @@
               <label class="custom-file-label" for="correctionFile"></label>
             </div>
           </div>
+          {# Hidden field to store question_id #}
+          <input type="hidden" id="correction_question_id" value="" />
           <div class="d-flex">
             <button class="btn btn-danger flex-grow-1 mr-3" type="button"
               data-dismiss="modal" aria-label="Close">रद्द गर्नुहोस्</button>
@@ -177,11 +177,12 @@
 {% endblock modal %}
 
 {% block extra_scripts %}
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
 $(document).ready(function() {
 
-  // CSRF
+  // ════════════════════════════════════════
+  // CSRF Setup
+  // ════════════════════════════════════════
   function getCookie(name) {
     var cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -205,35 +206,30 @@ $(document).ready(function() {
     }
   });
 
-  // Set month selector to current value
+  // ════════════════════════════════════════
+  // Month Selector
+  // ════════════════════════════════════════
   var month_id = "{{ month_id|default_if_none:'' }}";
   if (month_id && month_id !== "" && month_id !== "None") {
     $("#month_selector").val(month_id);
   }
 
-  // Month selector change
   $("#month_selector").on("change", function(event) {
     event.preventDefault();
     var dataurl = $(this).attr("data-url");
     var question_id = {{ question_id }};
     var month_value = $(this).val();
-
     if (!month_value) return;
 
     $.ajax({
       url: dataurl,
       method: 'POST',
-      data: {
-        'question_id': question_id,
-        'month_value': month_value,
-      },
+      data: { 'question_id': question_id, 'month_value': month_value },
       dataType: 'json',
       success: function(data) {
         if (data.has_month_value) {
-          // Data exists — show filled view for that month
           window.location.href = "{% url 'core:filled_question_month' question_id 99999 %}".replace('99999', month_value);
         } else {
-          // No data — go to empty create form
           window.location.href = "{% url 'core:create_answer' question_id %}";
         }
       },
@@ -243,51 +239,120 @@ $(document).ready(function() {
     });
   });
 
-  // Correction modal
-  var correction_question_id = null;
-
-  $('#correct').on('shown.bs.modal', function(event) {
-    correction_question_id = $(event.relatedTarget).data('question');
+  // ════════════════════════════════════════
+  // Correction Modal — Capture question_id
+  // ════════════════════════════════════════
+  $('#correct').on('show.bs.modal', function(event) {
+    var button = $(event.relatedTarget);
+    var qId = button.data('question');
+    $('#correction_question_id').val(qId);
+    console.log("Correction modal opened for question_id:", qId);
   });
 
+  // Clear form when modal closes
+  $('#correct').on('hidden.bs.modal', function() {
+    $('#subject').val('');
+    $('#message').val('');
+    $('#correctionFile').val('');
+    $('.custom-file-label').text('');
+    $('#correction_question_id').val('');
+  });
+
+  // ════════════════════════════════════════
+  // Send Correction Request
+  // ════════════════════════════════════════
   $(document).off('click', '#send_for_correction').on('click', '#send_for_correction', function(e) {
     e.preventDefault();
-    var subject = $("#subject").val();
-    var message = $("#message").val();
-    var form_data = new FormData();
-    var up_file = $("#correctionFile")[0].files[0];
+
+    var subject = $("#subject").val().trim();
+    var message = $("#message").val().trim();
+    var correctionQuestionId = $("#correction_question_id").val();
     var month_id_val = $("#month_selector").val();
 
+    // ── Frontend validation ──────────────────────────────
+    if (!subject) {
+      alert("कृपया विषय लेख्नुहोस्।");
+      return;
+    }
+    if (!message) {
+      alert("कृपया सुधार विवरण लेख्नुहोस्।");
+      return;
+    }
+    if (!correctionQuestionId) {
+      alert("प्रश्न चयन गर्न सकिएन। कृपया पेज रिफ्रेस गरेर पुन: प्रयास गर्नुहोस्।");
+      return;
+    }
+
+    // ── Build form data ──────────────────────────────────
+    var form_data = new FormData();
+    var up_file = $("#correctionFile")[0].files[0];
+
     if (up_file) {
+      // Check file size on frontend (5 MB)
+      if (up_file.size > 5242880) {
+        alert("फाइल साइज ५ MB भन्दा बढी हुनु हुँदैन।");
+        return;
+      }
+      // Check file extension on frontend
+      var ext = up_file.name.split('.').pop().toLowerCase();
+      var allowed = ['pdf', 'docs', 'docx', 'jpeg', 'jpg', 'png', 'svg', 'xlsx', 'xls'];
+      if (allowed.indexOf(ext) === -1) {
+        alert("यो फाइल प्रकार अनुमति छैन। (Allowed: " + allowed.join(', ') + ")");
+        return;
+      }
       form_data.append("filename", up_file);
     }
+
     form_data.append("subject", subject);
     form_data.append("message", message);
-    form_data.append("question_id", correction_question_id);
+    form_data.append("question_id", correctionQuestionId);
     form_data.append("month_id", month_id_val || "");
 
+    // ── Disable button to prevent double-click ───────────
+    var $btn = $(this);
+    $btn.prop('disabled', true).text('पठाउँदै...');
+
     $.ajax({
-      url: $(this).attr("data-url"),
+      url: $btn.attr("data-url"),
       method: "POST",
       data: form_data,
       processData: false,
       contentType: false,
       dataType: "json",
       success: function(data) {
-        $('#correct').modal('hide');
-        if (typeof showMsg === 'function') {
-          showMsg("Request for correction sent!");
+        $btn.prop('disabled', false).text('पेश गर्नुहोस्');
+        if (data.success) {
+          $('#correct').modal('hide');
+          if (typeof showMsg === 'function') {
+            showMsg("संशोधन अनुरोध सफलतापूर्वक पठाइयो!");
+          } else {
+            alert("संशोधन अनुरोध सफलतापूर्वक पठाइयो!");
+          }
         } else {
-          alert("संशोधन अनुरोध पठाइयो!");
+          alert(data.message || "त्रुटि भयो।");
         }
       },
       error: function(xhr) {
-        alert("कृपया 5 MB भन्दा सानो फाइल चयन गर्नुहोस्।");
+        $btn.prop('disabled', false).text('पेश गर्नुहोस्');
+        try {
+          var resp = JSON.parse(xhr.responseText);
+          alert(resp.message || "त्रुटि भयो। कृपया पुन: प्रयास गर्नुहोस्।");
+        } catch(parseErr) {
+          if (xhr.status === 413) {
+            alert("फाइल साइज ५ MB भन्दा बढी हुनु हुँदैन।");
+          } else if (xhr.status === 403) {
+            alert("अनुमति छैन। कृपया पुन: लगइन गर्नुहोस्।");
+          } else {
+            alert("त्रुटि भयो (Status: " + xhr.status + ")। कृपया पुन: प्रयास गर्नुहोस्।");
+          }
+        }
       }
     });
   });
 
-  // Show file name
+  // ════════════════════════════════════════
+  // Show file name on select
+  // ════════════════════════════════════════
   $(".custom-file-input").on("change", function() {
     var fileName = $(this).val().split("\\").pop();
     $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
