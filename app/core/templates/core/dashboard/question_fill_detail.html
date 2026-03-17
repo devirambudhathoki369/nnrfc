@@ -1,0 +1,101 @@
+{% extends 'fragments/dashboard/base.html' %}
+{% load static %}
+
+{% block title-bar %}
+<div class="header-page">
+  <h1>{{ title }}</h1>
+  <a href="{% url 'dashboard:question_status' %}">
+    <button class="btn btn-danger btn-sm">पछाडी जानुहोस</button>
+  </a>
+</div>
+{% endblock title-bar %}
+
+{% block content %}
+<div class="inner">
+  <div class="container-fluid">
+
+    {# Question info card #}
+    <div class="card card-body mb-3">
+      <h5>{{ question.title }}</h5>
+      <div class="d-flex" style="gap:15px;">
+        {% if question.full_marks %}
+          <span class="badge badge-info">पूर्णांक: {{ question.full_marks }}</span>
+        {% endif %}
+        {% if question.department %}
+          <span class="badge badge-secondary">विभाग: {{ question.department.name }}</span>
+        {% endif %}
+        <span class="badge badge-success">भरेको: {{ filled_count }}</span>
+        <span class="badge badge-danger">नभरेको: {{ not_filled_count }}</span>
+      </div>
+    </div>
+
+    {# Toggle buttons #}
+    <div class="mb-3">
+      <a href="{% url 'dashboard:question_fill_detail' question.id 'filled' %}"
+         class="btn btn-sm {% if status == 'filled' %}btn-success{% else %}btn-outline-success{% endif %}">
+        भरेका कार्यालयहरु ({{ filled_count }})
+      </a>
+      <a href="{% url 'dashboard:question_fill_detail' question.id 'not_filled' %}"
+         class="btn btn-sm {% if status == 'not_filled' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+        नभरेका कार्यालयहरु ({{ not_filled_count }})
+      </a>
+    </div>
+
+    {# Levels table #}
+    <div class="card card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover mb-0" id="levels_table">
+          <thead class="thead-light">
+            <tr>
+              <th style="width:5%;">क्र.स</th>
+              <th>कार्यालय / तह</th>
+              {% if status == 'filled' %}
+              <th class="text-center" style="width:15%;">विवरण हेर्नुहोस्</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for level in levels %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ level.name }}</td>
+              {% if status == 'filled' %}
+              <td class="text-center">
+                <a href="{% url 'dashboard:level_question_answer' question.id level.id %}"
+                   class="btn btn-sm btn-primary">
+                  <i class="ic-visible"></i> हेर्नुहोस्
+                </a>
+              </td>
+              {% endif %}
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="{% if status == 'filled' %}3{% else %}2{% endif %}" class="text-center text-muted py-4">
+                {% if status == 'filled' %}
+                  कुनै कार्यालयले यो सूचक भरेको छैन।
+                {% else %}
+                  सबै कार्यालयले यो सूचक भरिसकेका छन्।
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+<script>
+  $(document).ready(function() {
+    $('#levels_table').DataTable({
+      "language": { "search": "खोज्नुहोस्:", "lengthMenu": "_MENU_ प्रति पेज" },
+      "pageLength": 50,
+      "order": [[0, "asc"]]
+    });
+  });
+</script>
+{% endblock extra_scripts %}

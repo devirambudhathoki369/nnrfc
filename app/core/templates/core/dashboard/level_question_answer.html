@@ -1,0 +1,134 @@
+{% extends 'fragments/dashboard/base.html' %}
+{% load static %}
+
+{% block title-bar %}
+<div class="header-page">
+  <h1>{{ level.name }} — उत्तर विवरण</h1>
+  <a href="{% url 'dashboard:question_fill_detail' question.id 'filled' %}">
+    <button class="btn btn-danger btn-sm">पछाडी जानुहोस</button>
+  </a>
+</div>
+{% endblock title-bar %}
+
+{% block content %}
+<div class="inner">
+  <div class="container-fluid">
+
+    {# Header info #}
+    <div class="card card-body mb-3">
+      <div class="row">
+        <div class="col-md-8">
+          <h5 class="mb-1">{{ question.title }}</h5>
+          {% if question.department %}
+            <small class="text-muted">विभाग: {{ question.department.name }}</small>
+          {% endif %}
+        </div>
+        <div class="col-md-4 text-right">
+          {% if question.full_marks %}
+            <span class="badge badge-info" style="font-size:14px;">पूर्णांक: {{ question.full_marks }}</span>
+          {% endif %}
+          <br>
+          <span class="badge badge-primary mt-1">{{ level.name }}</span>
+        </div>
+      </div>
+    </div>
+
+    {# ═══════════════ ANSWERS ═══════════════ #}
+
+    {% if has_child %}
+    {# ── Child questions with their answers ── #}
+    {% for child in child_answers %}
+    <div class="card card-body mb-3">
+      <h6 class="text-primary mb-3">{{ child.child_question.title }}</h6>
+      <div class="table-responsive">
+        <table class="table table-bordered mb-0">
+          <thead class="thead-light">
+            <tr>
+              <th style="width:50%;">विकल्प</th>
+              <th style="width:20%;">प्रकार</th>
+              <th style="width:30%;">उत्तर</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for oa in child.option_answers %}
+            <tr>
+              <td style="font-size:13px;">{{ oa.option_title }}</td>
+              <td><span class="badge badge-light">{{ oa.field_type }}</span></td>
+              <td style="font-size:13px; font-weight:500;">{{ oa.value }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center text-muted">कुनै उत्तर छैन।</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if child.files %}
+      <div class="mt-2">
+        <strong style="font-size:13px;">संलग्न फाइलहरु:</strong>
+        <ul class="list-unstyled mt-1">
+          {% for doc in child.files %}
+          <li>
+            <a href="{{ doc.document.url }}" target="_blank" style="font-size:13px;">
+              {{ doc.get_document_name }}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    {% else %}
+    {# ── Parent question answers (no children) ── #}
+    <div class="card card-body mb-3">
+      <div class="table-responsive">
+        <table class="table table-bordered mb-0">
+          <thead class="thead-light">
+            <tr>
+              <th style="width:50%;">विकल्प</th>
+              <th style="width:20%;">प्रकार</th>
+              <th style="width:30%;">उत्तर</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for oa in answers %}
+            <tr>
+              <td style="font-size:13px;">{{ oa.option_title }}</td>
+              <td><span class="badge badge-light">{{ oa.field_type }}</span></td>
+              <td style="font-size:13px; font-weight:500;">{{ oa.value }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center text-muted">कुनै उत्तर छैन।</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if files %}
+      <div class="mt-3">
+        <strong style="font-size:13px;">संलग्न फाइलहरु:</strong>
+        <ul class="list-unstyled mt-1">
+          {% for doc in files %}
+          <li>
+            <a href="{{ doc.document.url }}" target="_blank" style="font-size:13px;">
+              {{ doc.get_document_name }}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if not has_child and not answers and not child_answers %}
+    <div class="card card-body text-center py-4">
+      <p class="text-muted mb-0">यस कार्यालयले यो सूचकको लागि कुनै डाटा भरेको छैन।</p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock content %}
