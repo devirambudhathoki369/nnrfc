@@ -19,12 +19,12 @@
 
       <div class="d-flex align-items-center">
 
-        {# ── Dashboard button (province & local users only) ─────────────── #}
-        {% comment %} {% if request.user.is_authenticated and request.user.level %}
+        {# ── Dashboard button ─────────────────────────────────────────── #}
+        {% if request.user.is_authenticated and request.user.is_staff %}
         <a href="{% url 'dashboard:dashboard' %}"
            class="btn btn-sm btn-outline-primary mr-2"
            title="ड्यासबोर्ड हेर्नुहोस्"
-           style="white-space: nowrap;">
+           style="white-space: nowrap; border-radius: 20px; padding: 5px 15px; font-size: 13px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
                viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -36,9 +36,9 @@
           </svg>
           ड्यासबोर्ड
         </a>
-        {% endif %} {% endcomment %}
+        {% endif %}
 
-        {# ── Notification bell ────────────────────────────────────────────── #}
+        {# ── Notification bell ────────────────────────────────────────── #}
         <div class="dropdown">
           <button
             class="notification{% if u_end_notifs %}-active{% endif %} btn"
@@ -81,7 +81,7 @@
           </div>
         </div>
 
-        {# ── User dropdown ────────────────────────────────────────────────── #}
+        {# ── User dropdown ────────────────────────────────────────────── #}
         <div class="dropdown">
           <button class="btn dropdown-toggle"
                   id="dropdownMenuButton"
@@ -96,8 +96,7 @@
             {% endif %}
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            {# Dashboard link also in dropdown for easy access #}
-            {% if request.user.is_authenticated and request.user.level %}
+            {% if request.user.is_authenticated and request.user.is_staff %}
             <a class="dropdown-item menu-items"
                href="{% url 'dashboard:dashboard' %}">
               ड्यासबोर्ड
@@ -117,10 +116,10 @@
           </div>
         </div>
 
-      </div>{# end .d-flex #}
+      </div>
     </nav>
 
-    {# ── Change password modal ─────────────────────────────────────────────── #}
+    {# ── Change password modal ─────────────────────────────────────────── #}
     <div class="modal fade modal-01"
          id="exampleModalCenter"
          tabindex="-1"
@@ -142,45 +141,29 @@
             <div class="modal-body">
               <div class="form-group">
                 <label>करेन्ट पासवर्ड</label>
-                <input type="password"
-                       id="inputPassword5"
-                       class="form-control"
-                       name="currentPassword"
-                       aria-describedby="passwordHelpBlock"
-                       required />
+                <input type="password" id="inputPassword5" class="form-control"
+                       name="currentPassword" required />
               </div>
               <div class="form-group">
                 <label>नयाँ पासवर्ड</label>
-                <input type="password"
-                       id="Password"
-                       class="form-control"
+                <input type="password" id="Password" class="form-control"
                        name="newPassword"
-                       aria-describedby="passwordHelpBlock"
                        title="पासवर्डमा कम्तिमा ६ अक्षर, एउटा ठूलो अक्षर, एउटा सानो अक्षर र एउटा अंक हुनुपर्छ।"
-                       required
-                       pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" />
+                       required pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" />
               </div>
               <div class="form-group">
                 <label>कन्फर्म नयाँ पासवर्ड</label>
-                <input type="password"
-                       id="ConfirmPassword"
-                       class="form-control"
+                <input type="password" id="ConfirmPassword" class="form-control"
                        name="confirmNewPassword"
-                       aria-describedby="passwordHelpBlock"
                        title="माथि भरेको पासवर्ड यहाँ पनि भर्नुहोस्।"
-                       required
-                       pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" />
+                       required pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" />
               </div>
               <div id="pwd-error" class="alert alert-danger d-none mb-2" role="alert"></div>
               <div class="d-flex">
-                <button class="btn btn-danger flex-grow-1 mr-3"
-                        type="button"
-                        data-dismiss="modal">
+                <button class="btn btn-danger flex-grow-1 mr-3" type="button" data-dismiss="modal">
                   रद्द गर्नुहोस्
                 </button>
-                <button class="btn btn-primary flex-grow-1"
-                        type="submit"
-                        id="submitBtn">
+                <button class="btn btn-primary flex-grow-1" type="submit" id="submitBtn">
                   कन्फर्म गर्नुहोस्
                 </button>
               </div>
@@ -226,7 +209,6 @@
     <script src="{% static 'back/assets/home.js' %}"></script>
     <script src="{% static 'back/assets/sweetalert2.js' %}"></script>
 
-    {# ── Django messages → SweetAlert toasts ─────────────────────────────── #}
     {% for message in messages %}
     <script>
       Swal.fire({
@@ -246,7 +228,6 @@
     </script>
     {% endfor %}
 
-    {# ── Notification click → mark viewed → navigate ─────────────────────── #}
     <script>
       $(document).on("click", ".notiff", function (e) {
         e.preventDefault();
@@ -260,27 +241,18 @@
           processData: false,
           contentType: false,
           success: function (data) {
-            if (data.success) {
-              window.location.href = url;
-            }
+            if (data.success) { window.location.href = url; }
           }
         });
       });
     </script>
 
-    {# ── showMsg helper (used by child templates for AJAX feedback) ───────── #}
     <script>
       var showMsg = function (msg, type) {
         Swal.fire({
-          toast: true,
-          icon: type || "success",
-          title: String(msg),
-          background: "#2DB539",
-          color: "#fff",
-          animation: true,
-          position: "top-end",
-          showConfirmButton: false,
-          timer: 5000,
+          toast: true, icon: type || "success", title: String(msg),
+          background: "#2DB539", color: "#fff", animation: true,
+          position: "top-end", showConfirmButton: false, timer: 5000,
           timerProgressBar: true,
           didOpen: function (toast) {
             toast.addEventListener("mouseenter", Swal.stopTimer);
@@ -290,57 +262,27 @@
       };
     </script>
 
-    {# ── Password change: client-side validation ──────────────────────────── #}
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         var PWD_RE = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$/;
-        var form   = document.getElementById("ChangePWD");
-        var p1     = document.getElementById("Password");
-        var p2     = document.getElementById("ConfirmPassword");
+        var form = document.getElementById("ChangePWD");
+        var p1 = document.getElementById("Password");
+        var p2 = document.getElementById("ConfirmPassword");
         var errBox = document.getElementById("pwd-error");
-
-        function showErr(msg) {
-          errBox.textContent = msg;
-          errBox.classList.remove("d-none");
-        }
-        function hideErr() {
-          errBox.classList.add("d-none");
-        }
-
-        // Real-time: p1 validity
+        function showErr(msg) { errBox.textContent = msg; errBox.classList.remove("d-none"); }
+        function hideErr() { errBox.classList.add("d-none"); }
         p1.addEventListener("keyup", function () {
-          if (!PWD_RE.test(this.value)) {
-            this.setCustomValidity(this.title);
-          } else {
-            this.setCustomValidity("");
-            // Mirror pattern to p2 so browser validates match
-            p2.pattern = this.value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          }
+          if (!PWD_RE.test(this.value)) { this.setCustomValidity(this.title); }
+          else { this.setCustomValidity(""); p2.pattern = this.value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
         });
-
-        // Real-time: p2 validity
         p2.addEventListener("keyup", function () {
-          if (this.value !== p1.value) {
-            this.setCustomValidity(this.title);
-          } else {
-            this.setCustomValidity("");
-          }
+          if (this.value !== p1.value) { this.setCustomValidity(this.title); }
+          else { this.setCustomValidity(""); }
         });
-
         form.addEventListener("submit", function (e) {
           hideErr();
-          if (!PWD_RE.test(p1.value)) {
-            e.preventDefault();
-            showErr("पासवर्डमा कम्तिमा ६ अक्षर, एउटा ठूलो, एउटा सानो र एउटा अंक हुनुपर्छ।");
-            p1.focus();
-            return;
-          }
-          if (p1.value !== p2.value) {
-            e.preventDefault();
-            showErr("नयाँ पासवर्ड र कन्फर्म पासवर्ड मिलेन।");
-            p2.focus();
-            return;
-          }
+          if (!PWD_RE.test(p1.value)) { e.preventDefault(); showErr("पासवर्डमा कम्तिमा ६ अक्षर, एउटा ठूलो, एउटा सानो र एउटा अंक हुनुपर्छ।"); p1.focus(); return; }
+          if (p1.value !== p2.value) { e.preventDefault(); showErr("नयाँ पासवर्ड र कन्फर्म पासवर्ड मिलेन।"); p2.focus(); return; }
         });
       });
     </script>

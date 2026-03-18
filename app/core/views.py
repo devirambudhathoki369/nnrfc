@@ -939,6 +939,9 @@ def get_correction_data(request):
         return JsonResponse({"corrections": []})
  
     user_level = request.user.level
+    if not user_level:
+        return JsonResponse({"corrections": []})
+ 
     corrections = SurveyCorrection.objects.filter(
         question_id=question_id,
         level=user_level,
@@ -946,19 +949,23 @@ def get_correction_data(request):
  
     data = []
     for corr in corrections:
-        # Get files from new CorrectionDocument model
-        from core.models import CorrectionDocument
-        docs = CorrectionDocument.objects.filter(correction=corr)
         files = []
-        for doc in docs:
-            files.append({
-                "id": doc.id,
-                "name": doc.get_document_name(),
-                "url": doc.document.url,
-                "date": doc.created_at.strftime("%Y-%m-%d"),
-            })
  
-        # Also include the old single document field if it has data
+        # Get files from NEW CorrectionDocument model
+        try:
+            from core.models import CorrectionDocument
+            docs = CorrectionDocument.objects.filter(correction=corr)
+            for doc in docs:
+                files.append({
+                    "id": doc.id,
+                    "name": os.path.basename(doc.document.name),
+                    "url": doc.document.url,
+                    "date": corr.created_at.strftime("%Y-%m-%d"),
+                })
+        except Exception as e:
+            logger.error(f"Error loading CorrectionDocument: {e}")
+ 
+        # Also include OLD single document field if it has data
         if corr.document and corr.document.name:
             try:
                 files.append({
@@ -967,14 +974,14 @@ def get_correction_data(request):
                     "url": corr.document.url,
                     "date": corr.created_at.strftime("%Y-%m-%d"),
                 })
-            except ValueError:
+            except (ValueError, Exception):
                 pass
  
         data.append({
             "id": corr.id,
             "subject": corr.sub,
             "message": corr.msg,
-            "status": corr.get_status_display() if hasattr(corr, 'get_status_display') else corr.status,
+            "status": "जाँच भयो" if corr.status == "C" else "पेन्डिङ",
             "status_code": corr.status,
             "date": corr.created_at.strftime("%Y-%m-%d %H:%M"),
             "files": files,
@@ -982,6 +989,134 @@ def get_correction_data(request):
  
     return JsonResponse({"corrections": data})
  
+ 
+@csrf_exempt
+@login_required
+def add_correction_file(request):
+    """
+    AJAX POST: Add a new file to an existing correction request.
+    """
+    if request.method != "POST":
+        return JsonResponse({"success": False, "message": "Invalid method."}, status=405)
+ 
+    correction_id = request.POST.get("correction_id")
+    file = request.FILES.get("file")
+ 
+    if not correction_id or not file:
+        return JsonResponse({"success": False, "message": "Correction ID र फाइल आवश्यक छ।"})
+ 
+    # Validate file
+    if file.size > MAX_UPLOAD_SIZE:
+        return JsonResponse({"success": False, "message": "फाइल साइज ५ MB भन्दा बढी हुनु हुँदैन।"})
+    if not validate_file(file.name):
+        return JsonResponse({"success": False, "message": "यो फाइल प्रकार अनुमति छैन।"})
+ 
+    try:
+        correction = SurveyCorrection.objects.get(id=correction_id)
+ 
+        if correction.level != request.user.level:
+            return JsonResponse({"success": False, "message": "अनुमति छैन।"})
+ 
+        from core.models import CorrectionDocument
+        doc = CorrectionDocument.objects.create(
+            correction=correction,
+            document=file,
+        )
+ 
+        return JsonResponse({
+            "success": True,
+            "file": {
+                "id": doc.id,
+                "name": os.path.basename(doc.document.name),
+                "url": doc.document.url,
+                "date": doc.created_at.strftime("%Y-%m-%d"),
+            }
+        })
+    except SurveyCorrection.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Correction फेला परेन।"})
+    except Exception as e:
+        logger.error(f"add_correction_file error: {e}", exc_info=True)
+        return JsonResponse({"success": False, "message": str(e)})
+ 
+ 
+@csrf_exempt
+@login_required
+def send_for_correction(request):
+    if request.method != "POST":
+        return JsonResponse({"success": False, "message": "Invalid method."}, status=405)
+ 
+    subject = request.POST.get("subject", "").strip()
+    message = request.POST.get("message", "").strip()
+    month = request.POST.get("month_id", "")
+    question_id = request.POST.get("question_id", "")
+ 
+    if not subject:
+        return JsonResponse({"success": False, "message": "कृपया विषय लेख्नुहोस्।"})
+    if not message:
+        return JsonResponse({"success": False, "message": "कृपया सुधार विवरण लेख्नुहोस्।"})
+    if not question_id:
+        return JsonResponse({"success": False, "message": "प्रश्न ID फेला परेन।"})
+ 
+    try:
+        month = int(month) if month else None
+    except (ValueError, TypeError):
+        month = None
+ 
+    current_user = request.user
+    user_level = current_user.level
+ 
+    document = request.FILES.get("filename")
+    if document:
+        if document.size > MAX_UPLOAD_SIZE:
+            return JsonResponse({"success": False, "message": "फाइल साइज ५ MB भन्दा बढी हुनु हुँदैन।"})
+        if not validate_file(document.name):
+            return JsonResponse({"success": False, "message": "यो फाइल प्रकार अनुमति छैन।"})
+ 
+    try:
+        question_obj = Question.objects.get(pk=question_id)
+    except (Question.DoesNotExist, ValueError):
+        return JsonResponse({"success": False, "message": f"प्रश्न ID {question_id} फेला परेन।"})
+ 
+    try:
+        # Create correction (NO file in old field — use new model only)
+        correction = SurveyCorrection.objects.create(
+            sub=subject,
+            msg=message,
+            question=question_obj,
+            user=current_user,
+            level=user_level,
+            month=month,
+        )
+ 
+        # Save file to NEW CorrectionDocument model
+        if document:
+            from core.models import CorrectionDocument
+            CorrectionDocument.objects.create(
+                correction=correction,
+                document=document,
+            )
+ 
+        # Send ONE notification
+        Notification.objects.get_or_create(
+            question=question_obj,
+            level=user_level,
+            correction_checked=False,
+            defaults={
+                "user": current_user,
+                "msg": f"{user_level.name} बाट सुधार अनुरोध प्राप्त भयो।",
+                "is_viewed": False,
+            },
+        )
+ 
+        return JsonResponse({
+            "success": True,
+            "message": "संशोधन अनुरोध सफलतापूर्वक पठाइयो।",
+            "correction_id": correction.id,
+        })
+ 
+    except Exception as e:
+        logger.error(f"Correction error: {e}", exc_info=True)
+        return JsonResponse({"success": False, "message": f"त्रुटि: {str(e)}"})
  
 @csrf_exempt
 @login_required

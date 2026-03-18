@@ -598,18 +598,72 @@ def get_correction_detail(request, level_id):
 def correction_fix_view(request, correction_id, ques_id):
     """
     View for admin/staff to fix a correction request.
-    Shows correction details, attached files (both old and new model),
-    and allows admin to update answer values.
+    - Shows correction details with all attached files
+    - Filters answers by the correction's month (not just any month)
+    - Sends exactly one notification per correction
     """
     question   = get_object_or_404(Question, id=ques_id)
     correction = get_object_or_404(SurveyCorrection, id=correction_id)
     level      = correction.level
-    options    = question.options.all().order_by("sequence_id")
-    options_data = get_options_with_field_types(options, level)
  
-    # Get files from new CorrectionDocument model
+    # ── Get the correct month from the correction ────────────────
+    correction_month = correction.month  # Could be None for non-monthly questions
+ 
+    # ── Get options with answers filtered by CORRECT month ───────
+    options = question.options.all().order_by("sequence_id")
+ 
+    # We need to rebuild options_data with month filtering
+    # instead of using get_options_with_field_types which doesn't filter by month
+    from core.utils import OPTION_FIELD_INPUT_TYPE, OPTION_FIELD_INDICATOR
     from core.models import CorrectionDocument
-    correction_documents = CorrectionDocument.objects.filter(correction=correction).order_by("-created_at")
+ 
+    options_data = []
+    fill_survey = FillSurvey.objects.filter(
+        survey=question.survey, level_id=level
+    ).first()
+ 
+    for option in options:
+        option_dict = {
+            "option": option,
+            "input_type": OPTION_FIELD_INPUT_TYPE.get(option.field_type, "text"),
+            "field_indicator": OPTION_FIELD_INDICATOR.get(option.field_type, ""),
+            "field_type": option.field_type,
+        }
+ 
+        # Get answer filtered by month
+        answer = None
+        document = None
+        if fill_survey:
+            if correction_month:
+                answer = Answer.objects.filter(
+                    option=option, fill_survey=fill_survey, month=correction_month
+                ).first()
+            else:
+                answer = Answer.objects.filter(
+                    option=option, fill_survey=fill_survey
+                ).first()
+ 
+        option_dict["answer"] = answer
+ 
+        # Get document for file-type options
+        if option.field_type == "F" and answer:
+            document = AnswerDocument.objects.filter(answer=answer).first()
+ 
+        option_dict["document"] = document
+ 
+        # Fiscal year data for FY-type options
+        if option.field_type == "FY":
+            option_dict["fy_data"] = [
+                {"id": fy.id, "name": fy.name}
+                for fy in FiscalYear.objects.all()
+            ]
+ 
+        options_data.append(option_dict)
+ 
+    # ── Get correction documents (new model) ─────────────────────
+    correction_documents = CorrectionDocument.objects.filter(
+        correction=correction
+    ).order_by("-created_at")
  
     context = {
         "ques": question,
@@ -625,41 +679,38 @@ def correction_fix_view(request, correction_id, ques_id):
         with transaction.atomic():
             # Mark correction as checked
             correction.status = "C"
- 
-            # Save remarks if provided
             remarks = request.POST.get("remarks", "")
             if remarks:
                 correction.remarks = remarks
- 
             correction.save()
  
-            # Update answer values
+            # Update answer values (only non-empty IDs)
             for a_id, v in zip(answer_ids, ans_values):
                 if a_id:
                     Answer.objects.filter(id=a_id).update(value=v)
  
             # Update file if a new one was uploaded
             file_ans = request.POST.get("anss")
-            file     = request.FILES.get("new_file")
+            file = request.FILES.get("new_file")
             if file_ans and file:
                 AnswerDocument.objects.filter(answer_id=file_ans).update(document=file)
                 Answer.objects.filter(id=file_ans).update(value=file.name)
  
-            # Update activity logs for this correction's level
+            # Update activity logs
             q_options = correction.question.options.all().values_list("id", flat=True)
             CorrectionActivityLog.objects.filter(option_id__in=q_options).update(
                 action_level=correction.level.name,
                 action_level_type=correction.level.type.type,
             )
  
-            # Send notification — EXACTLY ONCE per correction
+            # Send notification — EXACTLY ONCE
             Notification.objects.get_or_create(
                 correction=correction,
                 correction_checked=True,
                 defaults={
-                    "user":    correction.user,
-                    "msg":     "तपाइँको सुधार अनुरोध एडमिन द्वारा जाँच गरीयो।",
-                    "level":   level,
+                    "user": correction.user,
+                    "msg": "तपाइँको सुधार अनुरोध एडमिन द्वारा जाँच गरीयो।",
+                    "level": level,
                     "is_viewed": False,
                 },
             )
@@ -668,7 +719,7 @@ def correction_fix_view(request, correction_id, ques_id):
         return redirect("dashboard:correction_detail", correction.level_id)
  
     return render(request, "core/dashboard/correction_fix.html", context)
- 
+
 def show_activity_logs(request):
     logs = CorrectionActivityLog.objects.all().order_by()
     qs1 = logs.filter(action_level_type="P").distinct("action_level")

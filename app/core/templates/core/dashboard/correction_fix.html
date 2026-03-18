@@ -33,7 +33,10 @@
                 {% if correction.user %}
                   <p class="mb-1"><strong>प्रयोगकर्ता:</strong> {{ correction.user.full_name|default:correction.user.email }}</p>
                 {% endif %}
-                <p class="mb-0"><strong>मिति:</strong> {{ correction.created_at|date:"Y-m-d H:i" }}</p>
+                <p class="mb-1"><strong>मिति:</strong> {{ correction.created_at|date:"Y-m-d H:i" }}</p>
+                {% if correction.month %}
+                  <p class="mb-0"><strong>महिना:</strong> {{ correction.get_month_display }}</p>
+                {% endif %}
               </div>
               <span class="badge {% if correction.status == 'P' %}badge-warning{% else %}badge-success{% endif %}">
                 {% if correction.status == 'P' %}पेन्डिङ{% else %}जाँच भयो{% endif %}
@@ -45,25 +48,16 @@
             <hr class="my-2">
             <h6 class="mb-2">संलग्न फाइलहरु:</h6>
             <ul class="list-unstyled mb-0">
-              {# Old single document field #}
               {% if correction.document and correction.document.name %}
               <li class="mb-1">
                 <span class="text-muted" style="font-size:12px;">{{ correction.created_at|date:"Y-m-d" }}</span>
-                —
-                <a href="{{ correction.document.url }}" target="_blank" class="text-primary">
-                  {{ correction.document.name|truncatechars:50 }}
-                </a>
+                — <a href="{{ correction.document.url }}" target="_blank" class="text-primary">{{ correction.document.name|truncatechars:50 }}</a>
               </li>
               {% endif %}
-
-              {# New CorrectionDocument files #}
               {% for doc in correction_documents %}
               <li class="mb-1">
                 <span class="text-muted" style="font-size:12px;">{{ doc.created_at|date:"Y-m-d" }}</span>
-                —
-                <a href="{{ doc.document.url }}" target="_blank" class="text-primary">
-                  {{ doc.get_document_name }}
-                </a>
+                — <a href="{{ doc.document.url }}" target="_blank" class="text-primary">{{ doc.get_document_name }}</a>
               </li>
               {% endfor %}
             </ul>
@@ -73,11 +67,7 @@
           {# ── Question & Answer Edit Form ─────────────────────── #}
           <div class="card-index">
             <div class="option-group text-primary">
-              <p>
-                {% if ques.parent %}
-                  {{ ques.parent.title }}
-                {% endif %}
-              </p>
+              <p>{% if ques.parent %}{{ ques.parent.title }}{% endif %}</p>
               {% if correction.month %}
               <div class="form-row">
                 <div class="col-md-5">
@@ -92,9 +82,7 @@
             </div>
 
             <div class="option-group-actual">
-              <div class="option-group-new">
-                <p>{{ ques.title }}</p>
-              </div>
+              <div class="option-group-new"><p>{{ ques.title }}</p></div>
 
               <form action="{% url 'dashboard:correction_fix' correction.id ques.id %}"
                     method="post" class="c-form" enctype="multipart/form-data">
@@ -105,40 +93,35 @@
                     {% for option in options_data %}
                     <div class="item">
                       <div>
-                        <input class="form-control" type="text"
-                               value="{{ option.option }}" name="title"
+                        <input class="form-control" type="text" value="{{ option.option.title }}"
                                style="background:none;" readonly />
-                        <input class="form-control" type="text"
-                               name="o_id" value="{{ option.option.id }}" hidden />
                       </div>
                       <div>
-                        {% if option.input_type == "fiscal_year" %}
+                        {% if option.field_type == "FY" %}
                           <select class="custom-select" name="ans">
                             {% for fy in option.fy_data %}
                               <option value="{{ fy.name }}"
-                                {% if option.answer.value == fy.name %}selected{% endif %}>
+                                {% if option.answer and option.answer.value == fy.name %}selected{% endif %}>
                                 {{ fy.name }}
                               </option>
                             {% endfor %}
                           </select>
 
-                        {% elif option.input_type == "checkbox" %}
+                        {% elif option.field_type == "B" %}
                           <div class="custom-control custom-checkbox check">
                             <input class="custom-control-input" type="checkbox"
                                    id="check{{ option.option.id }}"
-                                   {% if option.answer.value == "True" %}checked{% endif %}
-                                   did="{{ option.answer.id }}" />
-                            <label class="custom-control-label ml-3"
-                                   for="check{{ option.option.id }}"></label>
+                                   {% if option.answer and option.answer.value == "True" %}checked{% endif %}
+                                   did="{% if option.answer %}{{ option.answer.id }}{% endif %}" />
+                            <label class="custom-control-label ml-3" for="check{{ option.option.id }}"></label>
                           </div>
-                          <input type="text" hidden class="{{ option.answer.id }}"
-                                 name="ans" value="{{ option.answer.value }}" />
+                          <input type="text" hidden class="{% if option.answer %}{{ option.answer.id }}{% endif %}"
+                                 name="ans" value="{% if option.answer %}{{ option.answer.value }}{% endif %}" />
 
-                        {% elif option.input_type == "file" %}
-                          <div class="custom-file mb-1">
+                        {% elif option.field_type == "F" %}
+                          <div class="mb-1">
                             {% if option.document and option.document.document %}
-                              <a href="{{ option.document.document.url }}" target="_blank"
-                                 class="text-primary text-label">
+                              <a href="{{ option.document.document.url }}" target="_blank" class="text-primary">
                                 {{ option.document.get_document_name }}
                               </a>
                             {% else %}
@@ -150,23 +133,24 @@
                                  name="ans" />
                           <label class="d-block mt-1" style="font-size:12px;">नयाँ फाइल:</label>
                           <input class="form-control" name="new_file" type="file" />
-                          <input name="anss" hidden value="{{ option.answer.id }}" />
+                          <input name="anss" hidden value="{% if option.answer %}{{ option.answer.id }}{% endif %}" />
 
                         {% else %}
                           <input class="form-control" type="{{ option.input_type }}"
-                                 placeholder="Answer" value="{{ option.answer.value }}"
+                                 placeholder="Answer"
+                                 value="{% if option.answer %}{{ option.answer.value }}{% endif %}"
                                  name="ans" />
                         {% endif %}
 
                         <input class="form-control" type="text"
-                               value="{{ option.answer.id }}" name="ans_id" hidden />
+                               value="{% if option.answer %}{{ option.answer.id }}{% endif %}"
+                               name="ans_id" hidden />
                       </div>
                     </div>
                     {% endfor %}
                   </div>
                 </div>
 
-                {# ── Admin remarks field ───────────────────────── #}
                 <div class="form-group mt-3">
                   <label><strong>एडमिन कैफियत:</strong></label>
                   <textarea class="form-control" name="remarks" rows="2"
@@ -192,14 +176,15 @@
 
 {% block extra_scripts %}
 <script>
-  // Checkbox toggle
   $('input[type="checkbox"]').each(function() {
     $(this).change(function() {
       let did = $(this).attr("did");
-      if (!$(this).is(":checked")) {
-        $('.c-form').find('.' + did).val("False");
-      } else {
-        $('.c-form').find('.' + did).val("True");
+      if (did) {
+        if (!$(this).is(":checked")) {
+          $('.c-form').find('.' + did).val("False");
+        } else {
+          $('.c-form').find('.' + did).val("True");
+        }
       }
     });
   });
