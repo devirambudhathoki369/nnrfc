@@ -598,53 +598,61 @@ def get_correction_detail(request, level_id):
 def correction_fix_view(request, correction_id, ques_id):
     """
     View for admin/staff to fix a correction request.
-
-    BUG FIX: The original code called Notification.objects.create() every time
-    the form was submitted, even on re-saves, causing duplicate notifications.
-    Now uses get_or_create keyed on (correction, correction_checked=True)
-    so at most one 'checked' notification exists per correction.
+    Shows correction details, attached files (both old and new model),
+    and allows admin to update answer values.
     """
     question   = get_object_or_404(Question, id=ques_id)
     correction = get_object_or_404(SurveyCorrection, id=correction_id)
     level      = correction.level
     options    = question.options.all().order_by("sequence_id")
     options_data = get_options_with_field_types(options, level)
-
+ 
+    # Get files from new CorrectionDocument model
+    from core.models import CorrectionDocument
+    correction_documents = CorrectionDocument.objects.filter(correction=correction).order_by("-created_at")
+ 
     context = {
         "ques": question,
         "correction": correction,
         "options_data": options_data,
+        "correction_documents": correction_documents,
     }
-
+ 
     if request.method == "POST":
         answer_ids = request.POST.getlist("ans_id")
         ans_values = request.POST.getlist("ans")
-
+ 
         with transaction.atomic():
             # Mark correction as checked
             correction.status = "C"
+ 
+            # Save remarks if provided
+            remarks = request.POST.get("remarks", "")
+            if remarks:
+                correction.remarks = remarks
+ 
             correction.save()
-
+ 
             # Update answer values
             for a_id, v in zip(answer_ids, ans_values):
-                Answer.objects.filter(id=a_id).update(value=v)
-
+                if a_id:
+                    Answer.objects.filter(id=a_id).update(value=v)
+ 
             # Update file if a new one was uploaded
             file_ans = request.POST.get("anss")
             file     = request.FILES.get("new_file")
             if file_ans and file:
                 AnswerDocument.objects.filter(answer_id=file_ans).update(document=file)
                 Answer.objects.filter(id=file_ans).update(value=file.name)
-
+ 
             # Update activity logs for this correction's level
             q_options = correction.question.options.all().values_list("id", flat=True)
             CorrectionActivityLog.objects.filter(option_id__in=q_options).update(
                 action_level=correction.level.name,
                 action_level_type=correction.level.type.type,
             )
-
-            # ── Send notification — EXACTLY ONCE per correction ──────────────
-            # get_or_create prevents duplicates if the admin saves multiple times
+ 
+            # Send notification — EXACTLY ONCE per correction
             Notification.objects.get_or_create(
                 correction=correction,
                 correction_checked=True,
@@ -655,12 +663,12 @@ def correction_fix_view(request, correction_id, ques_id):
                     "is_viewed": False,
                 },
             )
-
+ 
         messages.success(request, "Updated Successfully.")
         return redirect("dashboard:correction_detail", correction.level_id)
-
+ 
     return render(request, "core/dashboard/correction_fix.html", context)
-
+ 
 def show_activity_logs(request):
     logs = CorrectionActivityLog.objects.all().order_by()
     qs1 = logs.filter(action_level_type="P").distinct("action_level")

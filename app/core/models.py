@@ -618,3 +618,17 @@ class Notification(AbstractInfo):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class CorrectionDocument(AbstractInfo):
+    correction = models.ForeignKey(
+        SurveyCorrection, on_delete=models.CASCADE, related_name="documents"
+    )
+    document = models.FileField(upload_to="correction-files/")
+
+    def __str__(self):
+        return f"{self.correction.sub} — {self.document.name}"
+
+    def get_document_name(self):
+        import os
+        return os.path.basename(self.document.name)

@@ -1,16 +1,11 @@
-{% extends 'fragments/base.html' %}
-{% load static %}
-{% load devanagari %}
-
-{% block backbtn %}
+{% extends 'fragments/base.html' %} {% load static %} {% load devanagari %} {%
+block backbtn %}
 <div>
   <a href="{% url 'core:homepage' survey_id %}">
     <button class="btn btn-danger">पछाडी जानुहोस</button>
   </a>
 </div>
-{% endblock backbtn %}
-
-{% block content %}
+{% endblock backbtn %} {% block content %}
 <div class="container mt-5">
   <div class="card">
     <div class="card-body pyaxis-32">
@@ -23,8 +18,11 @@
           {% if has_months %}
           <div class="row">
             <div class="form-group col-lg-4">
-              <select class="form-control" id="month_selector"
-                data-url="{% url 'core:check_level_month_data' %}">
+              <select
+                class="form-control"
+                id="month_selector"
+                data-url="{% url 'core:check_level_month_data' %}"
+              >
                 <option value="4">श्रावण</option>
                 <option value="5">भदौ</option>
                 <option value="6">असोज</option>
@@ -40,9 +38,7 @@
               </select>
             </div>
           </div>
-          {% endif %}
-
-          {% if not has_child %}
+          {% endif %} {% if not has_child %}
           <div class="table-responsive mb-3">
             <table class="table-survey">
               <thead>
@@ -75,12 +71,17 @@
             {% endif %}
           </div>
           <div class="text-right mt-3">
-            <button class="btn btn-outline-primary correction-btn" data-toggle="modal"
-              data-target="#correct" data-question="{{ question_obj.id }}">संशोधन सम्बन्धी अनुरोध</button>
+            <button
+              class="btn btn-outline-primary correction-btn"
+              data-toggle="modal"
+              data-target="#correct"
+              data-question="{{ question_obj.id }}"
+            >
+              संशोधन सम्बन्धी अनुरोध
+            </button>
           </div>
 
-          {% else %}
-          {% for child_question in question_option_value %}
+          {% else %} {% for child_question in question_option_value %}
           <div class="table-responsive mb-3">
             <table class="table-survey">
               <thead>
@@ -91,9 +92,7 @@
               <tbody>
                 {% for option in child_question.option_answer %}
                 <tr>
-                  <td>
-                    <div class="px-3 py-2">{{ option.title }}</div>
-                  </td>
+                  <td><div class="px-3 py-2">{{ option.title }}</div></td>
                   <td>
                     <div class="px-3 py-2">
                       {{ option.indicator }} {{ option.answer }}
@@ -115,249 +114,403 @@
             {% endif %}
           </div>
           <div class="text-right mt-3">
-            <button class="btn btn-outline-primary correction-btn" data-toggle="modal"
-              data-target="#correct" data-question="{{ child_question.question.id }}">संशोधन सम्बन्धी अनुरोध</button>
+            <button
+              class="btn btn-outline-primary correction-btn"
+              data-toggle="modal"
+              data-target="#correct"
+              data-question="{{ child_question.question.id }}"
+            >
+              संशोधन सम्बन्धी अनुरोध
+            </button>
           </div>
           <br />
-          {% endfor %}
-          {% endif %}
-
+          {% endfor %} {% endif %}
         </div>
       </div>
     </div>
   </div>
 </div>
-{% endblock content %}
-
-{% block modal %}
-<div class="modal fade modal-01" id="correct" tabindex="-1" role="dialog"
-  aria-labelledby="correct" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
+{% endblock content %} {% block modal %}
+<div
+  class="modal fade modal-01"
+  id="correct"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title" id="correctionModalLongTitle">सुधार अनुरोध गर्नुहोस्</h3>
-        <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+        <h3 class="modal-title">सुधार अनुरोध गर्नुहोस्</h3>
+        <button
+          class="close"
+          type="button"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
-        <div class="form-inline-block align-items-center justify-content-center">
-          <div class="form-group">
-            <label for="subject">विषय</label>
-            <input type="text" id="subject" class="form-control" required />
+        {# ── Previous correction requests (pre-filled data) ────── #}
+        <div id="existing-corrections" class="mb-3" style="display: none">
+          <h6 class="text-primary mb-2">पहिलेका सुधार अनुरोधहरु:</h6>
+          <div id="corrections-list"></div>
+          <hr />
+        </div>
+
+        {# ── New correction form ─────────────────────────────── #}
+        <h6 class="text-muted mb-2">नयाँ सुधार अनुरोध:</h6>
+        <div class="form-group">
+          <label for="subject">विषय</label>
+          <input type="text" id="subject" class="form-control" required />
+        </div>
+        <div class="form-group">
+          <label for="message"
+            >सुधार गर्नुपर्ने विषय यहाँ प्रष्टसँग उल्लेख गर्नुहोस्</label
+          >
+          <textarea
+            class="form-control"
+            id="message"
+            rows="3"
+            placeholder="संशोधन गर्नुपर्ने विषय यहाँ प्रष्टसँग उल्लेख गर्नुहोस्..."
+            required
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label class="d-block">प्रमाण कागजात अपलोड गर्नुहोस्</label>
+          <div class="custom-file custom-file-upload">
+            <input class="custom-file-input" type="file" id="correctionFile" />
+            <label class="custom-file-label" for="correctionFile"
+              >फाइल छान्नुहोस्</label
+            >
           </div>
-          <div class="form-group">
-            <label for="message">सुधार गर्नुपर्ने विषय यहाँ प्रष्टसँग उल्लेख गर्नुहोस्</label>
-            <textarea class="form-control" id="message" rows="3"
-              placeholder="संशोधन गर्नुपर्ने विषय यहाँ प्रष्टसँग उल्लेख गर्नुहोस्..." required></textarea>
-          </div>
-          <div class="form-group">
-            <label for="correctionFile" class="d-block">
-              सुधारका लागि अनुरोध भएको निर्णयको प्रति र अन्य प्रमाण कागजात अपलोड गर्नुहोस्।
-            </label>
-            <div class="custom-file custom-file-upload">
-              <input class="custom-file-input" type="file" id="correctionFile" />
-              <label class="custom-file-label" for="correctionFile"></label>
-            </div>
-          </div>
-          {# Hidden field to store question_id #}
-          <input type="hidden" id="correction_question_id" value="" />
-          <div class="d-flex">
-            <button class="btn btn-danger flex-grow-1 mr-3" type="button"
-              data-dismiss="modal" aria-label="Close">रद्द गर्नुहोस्</button>
-            <button class="btn btn-primary flex-grow-1" type="button"
-              id="send_for_correction"
-              data-url="{% url 'core:send_for_correction' %}">पेश गर्नुहोस्</button>
-          </div>
+        </div>
+
+        <input type="hidden" id="correction_question_id" value="" />
+
+        <div class="d-flex">
+          <button
+            class="btn btn-danger flex-grow-1 mr-3"
+            type="button"
+            data-dismiss="modal"
+          >
+            रद्द गर्नुहोस्
+          </button>
+          <button
+            class="btn btn-primary flex-grow-1"
+            type="button"
+            id="send_for_correction"
+            data-url="{% url 'core:send_for_correction' %}"
+          >
+            पेश गर्नुहोस्
+          </button>
         </div>
       </div>
     </div>
   </div>
 </div>
-{% endblock modal %}
 
-{% block extra_scripts %}
+{# ── Add File Modal (for adding files to existing correction) ──── #}
+<div
+  class="modal fade"
+  id="addFileModal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">फाइल थप्नुहोस्</h5>
+        <button class="close" type="button" data-dismiss="modal">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="custom-file custom-file-upload mb-3">
+          <input class="custom-file-input" type="file" id="addFileInput" />
+          <label class="custom-file-label" for="addFileInput"
+            >फाइल छान्नुहोस्</label
+          >
+        </div>
+        <input type="hidden" id="add_file_correction_id" value="" />
+        <button
+          class="btn btn-primary btn-block"
+          id="submitAddFile"
+          data-url="{% url 'core:add_correction_file' %}"
+        >
+          अपलोड गर्नुहोस्
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock modal %} {% block extra_scripts %}
 <script>
-$(document).ready(function() {
+  $(document).ready(function() {
 
-  // ════════════════════════════════════════
-  // CSRF Setup
-  // ════════════════════════════════════════
-  function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-      var cookies = document.cookie.split(';');
-      for (var i = 0; i < cookies.length; i++) {
-        var cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
+    // ═══════════════════════════════════════
+    // CSRF Setup
+    // ═══════════════════════════════════════
+    function getCookie(name) {
+      var cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+          var cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
         }
       }
+      return cookieValue;
     }
-    return cookieValue;
-  }
-
-  $.ajaxSetup({
-    beforeSend: function(xhr, settings) {
-      if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
-      }
-    }
-  });
-
-  // ════════════════════════════════════════
-  // Month Selector
-  // ════════════════════════════════════════
-  var month_id = "{{ month_id|default_if_none:'' }}";
-  if (month_id && month_id !== "" && month_id !== "None") {
-    $("#month_selector").val(month_id);
-  }
-
-  $("#month_selector").on("change", function(event) {
-    event.preventDefault();
-    var dataurl = $(this).attr("data-url");
-    var question_id = {{ question_id }};
-    var month_value = $(this).val();
-    if (!month_value) return;
-
-    $.ajax({
-      url: dataurl,
-      method: 'POST',
-      data: { 'question_id': question_id, 'month_value': month_value },
-      dataType: 'json',
-      success: function(data) {
-        if (data.has_month_value) {
-          window.location.href = "{% url 'core:filled_question_month' question_id 99999 %}".replace('99999', month_value);
-        } else {
-          window.location.href = "{% url 'core:create_answer' question_id %}";
+    $.ajaxSetup({
+      beforeSend: function(xhr, settings) {
+        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+          xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
         }
-      },
-      error: function(xhr, status, error) {
-        console.error("Month check failed:", status, error);
       }
     });
-  });
 
-  // ════════════════════════════════════════
-  // Correction Modal — Capture question_id
-  // ════════════════════════════════════════
-  $('#correct').on('show.bs.modal', function(event) {
-    var button = $(event.relatedTarget);
-    var qId = button.data('question');
-    $('#correction_question_id').val(qId);
-    console.log("Correction modal opened for question_id:", qId);
-  });
+    // File name display
+    $(".custom-file-input").on("change", function() {
+      var fileName = $(this).val().split("\\").pop();
+      $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+    });
 
-  // Clear form when modal closes
-  $('#correct').on('hidden.bs.modal', function() {
-    $('#subject').val('');
-    $('#message').val('');
-    $('#correctionFile').val('');
-    $('.custom-file-label').text('');
-    $('#correction_question_id').val('');
-  });
-
-  // ════════════════════════════════════════
-  // Send Correction Request
-  // ════════════════════════════════════════
-  $(document).off('click', '#send_for_correction').on('click', '#send_for_correction', function(e) {
-    e.preventDefault();
-
-    var subject = $("#subject").val().trim();
-    var message = $("#message").val().trim();
-    var correctionQuestionId = $("#correction_question_id").val();
-    var month_id_val = $("#month_selector").val();
-
-    // ── Frontend validation ──────────────────────────────
-    if (!subject) {
-      alert("कृपया विषय लेख्नुहोस्।");
-      return;
-    }
-    if (!message) {
-      alert("कृपया सुधार विवरण लेख्नुहोस्।");
-      return;
-    }
-    if (!correctionQuestionId) {
-      alert("प्रश्न चयन गर्न सकिएन। कृपया पेज रिफ्रेस गरेर पुन: प्रयास गर्नुहोस्।");
-      return;
+    // ═══════════════════════════════════════
+    // Month Selector
+    // ═══════════════════════════════════════
+    var month_id = "{{ month_id|default_if_none:'' }}";
+    if (month_id && month_id !== "" && month_id !== "None") {
+      $("#month_selector").val(month_id);
     }
 
-    // ── Build form data ──────────────────────────────────
-    var form_data = new FormData();
-    var up_file = $("#correctionFile")[0].files[0];
+    $("#month_selector").on("change", function(e) {
+      e.preventDefault();
+      var dataurl = $(this).attr("data-url");
+      var question_id = {{ question_id }};
+      var month_value = $(this).val();
+      if (!month_value) return;
+      $.ajax({
+        url: dataurl, method: 'POST',
+        data: {'question_id': question_id, 'month_value': month_value},
+        dataType: 'json',
+        success: function(data) {
+          if (data.has_month_value) {
+            window.location.href = "{% url 'core:filled_question_month' question_id 99999 %}".replace('99999', month_value);
+          } else {
+            window.location.href = "{% url 'core:create_answer' question_id %}";
+          }
+        }
+      });
+    });
 
-    if (up_file) {
-      // Check file size on frontend (5 MB)
-      if (up_file.size > 5242880) {
+    // ═══════════════════════════════════════
+    // Correction Modal — Load existing data
+    // ═══════════════════════════════════════
+    $('#correct').on('show.bs.modal', function(event) {
+      var qId = $(event.relatedTarget).data('question');
+      $('#correction_question_id').val(qId);
+
+      // Clear form
+      $('#subject').val('');
+      $('#message').val('');
+      $('#correctionFile').val('');
+      $('.custom-file-label').text('फाइल छान्नुहोस्');
+
+      // Load existing corrections for this question
+      $.ajax({
+        url: "{% url 'core:get_correction_data' %}",
+        method: "GET",
+        data: {question_id: qId},
+        dataType: "json",
+        success: function(data) {
+          var container = $('#corrections-list');
+          container.empty();
+
+          if (data.corrections && data.corrections.length > 0) {
+            $('#existing-corrections').show();
+
+            data.corrections.forEach(function(corr) {
+              var statusBadge = corr.status_code === 'P'
+                ? '<span class="badge badge-warning">पेन्डिङ</span>'
+                : '<span class="badge badge-success">जाँच भयो</span>';
+
+              var html = '<div class="card card-body p-2 mb-2" style="background:#f8f9fa;">';
+              html += '<div class="d-flex justify-content-between align-items-start mb-1">';
+              html += '<div><strong style="font-size:13px;">' + corr.subject + '</strong>';
+              html += '<br><small class="text-muted">' + corr.date + '</small></div>';
+              html += statusBadge;
+              html += '</div>';
+              html += '<p style="font-size:12px;margin-bottom:5px;">' + corr.message + '</p>';
+
+              // Files list
+              if (corr.files && corr.files.length > 0) {
+                html += '<div style="font-size:12px;">';
+                html += '<strong>फाइलहरु:</strong>';
+                corr.files.forEach(function(f) {
+                  html += '<div class="d-flex align-items-center ml-2 mt-1">';
+                  html += '<span class="text-muted mr-2">' + f.date + '</span> — ';
+                  html += '<a href="' + f.url + '" target="_blank" class="ml-1">' + f.name + '</a>';
+                  html += '</div>';
+                });
+                html += '</div>';
+              }
+
+              // Add file button (only for pending corrections)
+              if (corr.status_code === 'P') {
+                html += '<button class="btn btn-sm btn-outline-primary mt-2 add-file-btn" data-correction-id="' + corr.id + '">';
+                html += '<i class="ic-add"></i> फाइल थप्नुहोस्</button>';
+              }
+
+              html += '</div>';
+              container.append(html);
+            });
+          } else {
+            $('#existing-corrections').hide();
+          }
+        }
+      });
+    });
+
+    // Clear on close
+    $('#correct').on('hidden.bs.modal', function() {
+      $('#existing-corrections').hide();
+      $('#corrections-list').empty();
+    });
+
+    // ═══════════════════════════════════════
+    // Add File to Existing Correction
+    // ═══════════════════════════════════════
+    $(document).on('click', '.add-file-btn', function() {
+      var corrId = $(this).data('correction-id');
+      $('#add_file_correction_id').val(corrId);
+      $('#addFileInput').val('');
+      $('#addFileModal .custom-file-label').text('फाइल छान्नुहोस्');
+      $('#addFileModal').modal('show');
+    });
+
+    $('#submitAddFile').on('click', function() {
+      var corrId = $('#add_file_correction_id').val();
+      var file = $('#addFileInput')[0].files[0];
+
+      if (!file) {
+        alert("कृपया फाइल छान्नुहोस्।");
+        return;
+      }
+      if (file.size > 5242880) {
         alert("फाइल साइज ५ MB भन्दा बढी हुनु हुँदैन।");
         return;
       }
-      // Check file extension on frontend
-      var ext = up_file.name.split('.').pop().toLowerCase();
-      var allowed = ['pdf', 'docs', 'docx', 'jpeg', 'jpg', 'png', 'svg', 'xlsx', 'xls'];
-      if (allowed.indexOf(ext) === -1) {
-        alert("यो फाइल प्रकार अनुमति छैन। (Allowed: " + allowed.join(', ') + ")");
-        return;
-      }
-      form_data.append("filename", up_file);
-    }
 
-    form_data.append("subject", subject);
-    form_data.append("message", message);
-    form_data.append("question_id", correctionQuestionId);
-    form_data.append("month_id", month_id_val || "");
+      var formData = new FormData();
+      formData.append("correction_id", corrId);
+      formData.append("file", file);
 
-    // ── Disable button to prevent double-click ───────────
-    var $btn = $(this);
-    $btn.prop('disabled', true).text('पठाउँदै...');
+      var $btn = $(this);
+      $btn.prop('disabled', true).text('अपलोड हुँदैछ...');
 
-    $.ajax({
-      url: $btn.attr("data-url"),
-      method: "POST",
-      data: form_data,
-      processData: false,
-      contentType: false,
-      dataType: "json",
-      success: function(data) {
-        $btn.prop('disabled', false).text('पेश गर्नुहोस्');
-        if (data.success) {
-          $('#correct').modal('hide');
-          if (typeof showMsg === 'function') {
-            showMsg("संशोधन अनुरोध सफलतापूर्वक पठाइयो!");
+      $.ajax({
+        url: $btn.attr("data-url"),
+        method: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: "json",
+        success: function(data) {
+          $btn.prop('disabled', false).text('अपलोड गर्नुहोस्');
+          if (data.success) {
+            $('#addFileModal').modal('hide');
+            // Refresh the corrections list
+            var qId = $('#correction_question_id').val();
+            // Re-trigger the modal load
+            if (typeof showMsg === 'function') {
+              showMsg("फाइल सफलतापूर्वक थपियो!");
+            } else {
+              alert("फाइल सफलतापूर्वक थपियो!");
+            }
+            // Reload correction data
+            $('.correction-btn[data-question="' + qId + '"]').trigger('click');
           } else {
-            alert("संशोधन अनुरोध सफलतापूर्वक पठाइयो!");
+            alert(data.message || "फाइल अपलोड गर्न सकिएन।");
           }
-        } else {
-          alert(data.message || "त्रुटि भयो।");
+        },
+        error: function() {
+          $btn.prop('disabled', false).text('अपलोड गर्नुहोस्');
+          alert("त्रुटि भयो।");
         }
-      },
-      error: function(xhr) {
-        $btn.prop('disabled', false).text('पेश गर्नुहोस्');
-        try {
-          var resp = JSON.parse(xhr.responseText);
-          alert(resp.message || "त्रुटि भयो। कृपया पुन: प्रयास गर्नुहोस्।");
-        } catch(parseErr) {
-          if (xhr.status === 413) {
-            alert("फाइल साइज ५ MB भन्दा बढी हुनु हुँदैन।");
-          } else if (xhr.status === 403) {
-            alert("अनुमति छैन। कृपया पुन: लगइन गर्नुहोस्।");
-          } else {
-            alert("त्रुटि भयो (Status: " + xhr.status + ")। कृपया पुन: प्रयास गर्नुहोस्।");
-          }
-        }
-      }
+      });
     });
-  });
 
-  // ════════════════════════════════════════
-  // Show file name on select
-  // ════════════════════════════════════════
-  $(".custom-file-input").on("change", function() {
-    var fileName = $(this).val().split("\\").pop();
-    $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
-  });
+    // ═══════════════════════════════════════
+    // Submit New Correction Request
+    // ═══════════════════════════════════════
+    $(document).off('click', '#send_for_correction').on('click', '#send_for_correction', function(e) {
+      e.preventDefault();
+      var subject = $("#subject").val().trim();
+      var message = $("#message").val().trim();
+      var correctionQuestionId = $("#correction_question_id").val();
+      var month_id_val = $("#month_selector").val();
 
-});
+      if (!subject) { alert("कृपया विषय लेख्नुहोस्।"); return; }
+      if (!message) { alert("कृपया सुधार विवरण लेख्नुहोस्।"); return; }
+      if (!correctionQuestionId) { alert("प्रश्न ID फेला परेन। कृपया पेज रिफ्रेस गर्नुहोस्।"); return; }
+
+      var form_data = new FormData();
+      var up_file = $("#correctionFile")[0].files[0];
+
+      if (up_file) {
+        if (up_file.size > 5242880) { alert("फाइल साइज ५ MB भन्दा बढी हुनु हुँदैन।"); return; }
+        var ext = up_file.name.split('.').pop().toLowerCase();
+        var allowed = ['pdf','docs','docx','jpeg','jpg','png','svg','xlsx','xls'];
+        if (allowed.indexOf(ext) === -1) { alert("यो फाइल प्रकार अनुमति छैन।"); return; }
+        form_data.append("filename", up_file);
+      }
+
+      form_data.append("subject", subject);
+      form_data.append("message", message);
+      form_data.append("question_id", correctionQuestionId);
+      form_data.append("month_id", month_id_val || "");
+
+      var $btn = $(this);
+      $btn.prop('disabled', true).text('पठाउँदै...');
+
+      $.ajax({
+        url: $btn.attr("data-url"),
+        method: "POST",
+        data: form_data,
+        processData: false,
+        contentType: false,
+        dataType: "json",
+        success: function(data) {
+          $btn.prop('disabled', false).text('पेश गर्नुहोस्');
+          if (data.success) {
+            $('#correct').modal('hide');
+            if (typeof showMsg === 'function') {
+              showMsg("संशोधन अनुरोध सफलतापूर्वक पठाइयो!");
+            } else {
+              alert("संशोधन अनुरोध सफलतापूर्वक पठाइयो!");
+            }
+          } else {
+            alert(data.message || "त्रुटि भयो।");
+          }
+        },
+        error: function(xhr) {
+          $btn.prop('disabled', false).text('पेश गर्नुहोस्');
+          try {
+            var resp = JSON.parse(xhr.responseText);
+            alert(resp.message || "त्रुटि भयो।");
+          } catch(e) {
+            alert("त्रुटि भयो (Status: " + xhr.status + ")।");
+          }
+        }
+      });
+    });
+
+  });
 </script>
 {% endblock extra_scripts %}

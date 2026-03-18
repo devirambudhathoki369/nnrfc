@@ -11,7 +11,9 @@ from core.views import (
     register_SimpleComplaint,
     send_for_correction,
     check_level_month_data,
-    register_EvaluationComplaint
+    register_EvaluationComplaint,
+    get_correction_data,
+    add_correction_file,
 )
 
 from user_mgmt.accounts.views import LoginUserView
@@ -56,6 +58,9 @@ urlpatterns = [
     
     path("survey/complaint/evaluationform/", register_EvaluationComplaint, name="register_EvaluationComplaintForm"),
     path("pdf-generate/<int:pk>/", PdfGenerateView.as_view(), name="pdf_generate"),
+
+    path("ajax/get_correction_data", get_correction_data, name="get_correction_data"),
+    path("ajax/add_correction_file", add_correction_file, name="add_correction_file"),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
