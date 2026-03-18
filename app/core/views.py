@@ -931,10 +931,12 @@ class FileCreateView():
 @login_required
 def get_correction_data(request):
     """
-    AJAX GET: Returns existing correction requests and their files
-    for a specific question and user's level.
+    AJAX GET: Returns existing correction requests and their files.
+    Accepts: question_id (required), month (optional)
     """
     question_id = request.GET.get("question_id")
+    month = request.GET.get("month", "")
+ 
     if not question_id:
         return JsonResponse({"corrections": []})
  
@@ -942,40 +944,60 @@ def get_correction_data(request):
     if not user_level:
         return JsonResponse({"corrections": []})
  
-    corrections = SurveyCorrection.objects.filter(
-        question_id=question_id,
-        level=user_level,
-    ).order_by("-created_at")
+    # Base filter
+    filters = {
+        "question_id": question_id,
+        "level": user_level,
+    }
+ 
+    # Filter by month if provided
+    if month and month not in ("", "null", "undefined", "None"):
+        try:
+            filters["month"] = int(month)
+        except (ValueError, TypeError):
+            pass
+ 
+    corrections = SurveyCorrection.objects.filter(**filters).order_by("-created_at")
  
     data = []
     for corr in corrections:
         files = []
  
-        # Get files from NEW CorrectionDocument model
+        # Files from NEW CorrectionDocument model
         try:
             from core.models import CorrectionDocument
             docs = CorrectionDocument.objects.filter(correction=corr)
             for doc in docs:
                 files.append({
                     "id": doc.id,
-                    "name": os.path.basename(doc.document.name),
-                    "url": doc.document.url,
-                    "date": corr.created_at.strftime("%Y-%m-%d"),
+                    "name": os.path.basename(doc.document.name) if doc.document else "",
+                    "url": doc.document.url if doc.document else "",
+                    "date": doc.created_at.strftime("%Y-%m-%d"),
                 })
         except Exception as e:
-            logger.error(f"Error loading CorrectionDocument: {e}")
+            logger.error(f"CorrectionDocument load error: {e}")
  
-        # Also include OLD single document field if it has data
-        if corr.document and corr.document.name:
-            try:
+        # Files from OLD single document field
+        try:
+            if corr.document and corr.document.name:
                 files.append({
                     "id": 0,
                     "name": os.path.basename(corr.document.name),
                     "url": corr.document.url,
                     "date": corr.created_at.strftime("%Y-%m-%d"),
                 })
-            except (ValueError, Exception):
-                pass
+        except (ValueError, Exception):
+            pass
+ 
+        # Month display
+        month_display = ""
+        if corr.month:
+            month_names = {
+                1: "वैशाख", 2: "ज्येष्ठ", 3: "असार", 4: "श्रावण",
+                5: "भदौ", 6: "असोज", 7: "कार्तिक", 8: "मंसिर",
+                9: "पौष", 10: "माघ", 11: "फागुन", 12: "चैत्र",
+            }
+            month_display = month_names.get(corr.month, "")
  
         data.append({
             "id": corr.id,
@@ -984,7 +1006,10 @@ def get_correction_data(request):
             "status": "जाँच भयो" if corr.status == "C" else "पेन्डिङ",
             "status_code": corr.status,
             "date": corr.created_at.strftime("%Y-%m-%d %H:%M"),
+            "month": corr.month,
+            "month_display": month_display,
             "files": files,
+            "file_count": len(files),
         })
  
     return JsonResponse({"corrections": data})
