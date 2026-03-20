@@ -80,113 +80,246 @@ class DashboardIndexView(LoginRequiredMixin, generic.ListView):
 
 class DashBoardHome(LoginRequiredMixin, TemplateView):
     template_name = "core/dashboard/dashboard_home.html"
- 
-    def _get_filled_level_ids(self, question, levels):
-        children = Question.objects.filter(parent=question.id)
-        target_options = (
-            Option.objects.filter(question__in=children)
-            if children.exists()
-            else question.options.all()
+
+    # ─────────────────────────────────────────────────────────────────
+    # OPTIMIZED CORE METHOD: Build question status using BULK queries
+    # Old: 7 questions × 759 levels = 5,313 DB queries
+    # New: ~5 DB queries total regardless of data size
+    # ─────────────────────────────────────────────────────────────────
+
+    def _build_question_status_all(self, fiscal, level_type, province_filter=None):
+        """
+        Get fill status for ALL questions across ALL surveys for a level type.
+        Uses bulk queries — no N+1 problem.
+        """
+        # 1. Get all surveys and questions (1 query each)
+        surveys = Survey.objects.filter(fiscal_year=fiscal, level=level_type)
+        questions = list(
+            Question.objects.filter(survey__in=surveys, parent__isnull=True)
+            .select_related('survey', 'department')
+            .order_by("survey__name", "sequence_id")
         )
-        filled_ids = set()
-        for level in levels:
-            if Answer.objects.filter(option__in=target_options, created_by_level=level.id).exists():
-                filled_ids.add(level.id)
-        return filled_ids
- 
-    def _build_question_status(self, survey, level_type, province_filter=None):
-        if not survey:
-            return [], 0
-        questions = survey.questions.filter(parent__isnull=True).order_by("sequence_id")
-        levels = Level.objects.filter(type__type=level_type)
+
+        if not questions:
+            return [], 0, surveys
+
+        # 2. Get all levels (1 query)
+        levels_qs = Level.objects.filter(type__type=level_type)
         if province_filter:
-            levels = levels.filter(province_level=province_filter)
-        total = levels.count()
+            levels_qs = levels_qs.filter(province_level=province_filter)
+        total_levels = levels_qs.count()
+        level_id_set = set(levels_qs.values_list('id', flat=True))
+
+        if total_levels == 0:
+            return [], 0, surveys
+
+        question_ids = [q.id for q in questions]
+
+        # 3. Get ALL child question IDs in one query
+        child_rows = Question.objects.filter(
+            parent_id__in=question_ids
+        ).values_list('parent_id', 'id')
+
+        child_map = {}
+        for parent_id, child_id in child_rows:
+            child_map.setdefault(parent_id, []).append(child_id)
+
+        # 4. Get ALL option IDs grouped by question — collect which
+        #    question IDs to query (children if exist, else self)
+        query_question_ids = []
+        q_to_source = {}  # question_id → list of source question_ids for options
+
+        for q in questions:
+            if q.id in child_map:
+                source_ids = child_map[q.id]
+            else:
+                source_ids = [q.id]
+            q_to_source[q.id] = source_ids
+            query_question_ids.extend(source_ids)
+
+        # One query: get all options for all relevant questions
+        option_rows = Option.objects.filter(
+            question_id__in=query_question_ids
+        ).values_list('id', 'question_id')
+
+        # Build: question_id → set of option_ids
+        source_to_options = {}
+        all_option_ids = set()
+        for opt_id, q_id in option_rows:
+            source_to_options.setdefault(q_id, set()).add(opt_id)
+            all_option_ids.add(opt_id)
+
+        # Map parent question → its option IDs
+        q_option_map = {}
+        for q in questions:
+            opts = set()
+            for src_id in q_to_source[q.id]:
+                opts.update(source_to_options.get(src_id, set()))
+            q_option_map[q.id] = opts
+
+        # 5. ONE BIG QUERY: get all (option_id, level_id) answer pairs
+        filled_pairs = set(
+            Answer.objects.filter(
+                option_id__in=all_option_ids,
+                created_by_level_id__in=level_id_set,
+            ).values_list('option_id', 'created_by_level_id')
+        )
+
+        # 6. Count in Python (instant — just set lookups)
         data = []
         for q in questions:
-            filled_ids = self._get_filled_level_ids(q, levels)
-            fc = len(filled_ids)
+            opt_ids = q_option_map.get(q.id, set())
+            # Find which levels answered at least one option of this question
+            filled_level_ids = set()
+            for level_id in level_id_set:
+                for opt_id in opt_ids:
+                    if (opt_id, level_id) in filled_pairs:
+                        filled_level_ids.add(level_id)
+                        break  # This level is filled, skip remaining options
+
+            fc = len(filled_level_ids)
             data.append({
                 "question": q,
+                "survey_name": q.survey.name,
                 "filled_count": fc,
-                "not_filled_count": total - fc,
-                "total": total,
-                "percentage": round((fc / total * 100), 1) if total > 0 else 0,
+                "not_filled_count": total_levels - fc,
+                "total": total_levels,
+                "percentage": round((fc / total_levels * 100), 1) if total_levels > 0 else 0,
             })
-        return data, total
- 
-    def _get_my_progress(self, survey, user_level):
-        """Get fill progress for a specific level."""
-        if not survey:
+
+        return data, total_levels, surveys
+
+    # ─────────────────────────────────────────────────────────────────
+    # OPTIMIZED: Get my progress across ALL surveys
+    # ─────────────────────────────────────────────────────────────────
+
+    def _get_my_progress(self, user, fiscal):
+        """
+        Get fill progress for current user across ALL their surveys.
+        Uses bulk queries.
+        """
+        try:
+            level_type = user.level.type.type
+            user_level_id = user.level.id
+        except AttributeError:
             return 0, 0, 0
-        questions = survey.questions.filter(parent__isnull=True)
-        total = questions.count()
+
+        surveys = Survey.objects.filter(fiscal_year=fiscal, level=level_type)
+
+        # Get questions (filtered by department for province users)
+        q_filter = {"survey__in": surveys, "parent__isnull": True}
+        if user.department and level_type == "P":
+            q_filter["department"] = user.department
+
+        questions = list(Question.objects.filter(**q_filter).values_list('id', flat=True))
+        total = len(questions)
         if total == 0:
             return 0, 0, 0
+
+        # Get child map in one query
+        child_map = {}
+        for parent_id, child_id in Question.objects.filter(
+            parent_id__in=questions
+        ).values_list('parent_id', 'id'):
+            child_map.setdefault(parent_id, []).append(child_id)
+
+        # Get source question IDs for options
+        source_ids = []
+        q_to_source = {}
+        for q_id in questions:
+            srcs = child_map.get(q_id, [q_id])
+            q_to_source[q_id] = srcs
+            source_ids.extend(srcs)
+
+        # Get all option IDs in one query
+        opt_rows = Option.objects.filter(
+            question_id__in=source_ids
+        ).values_list('id', 'question_id')
+
+        src_to_opts = {}
+        all_opts = set()
+        for opt_id, q_id in opt_rows:
+            src_to_opts.setdefault(q_id, set()).add(opt_id)
+            all_opts.add(opt_id)
+
+        # Get all answered option IDs for this user's level in one query
+        answered_opts = set(
+            Answer.objects.filter(
+                option_id__in=all_opts,
+                created_by_level_id=user_level_id,
+            ).values_list('option_id', flat=True)
+        )
+
+        # Count filled questions
         filled = 0
-        for q in questions:
-            children = Question.objects.filter(parent=q.id)
-            opts = Option.objects.filter(question__in=children) if children.exists() else q.options.all()
-            if Answer.objects.filter(option__in=opts, created_by_level=user_level.id).exists():
+        for q_id in questions:
+            opts = set()
+            for src_id in q_to_source[q_id]:
+                opts.update(src_to_opts.get(src_id, set()))
+            if opts & answered_opts:  # Set intersection — any match = filled
                 filled += 1
+
         pct = round((filled / total * 100), 1)
         return total, filled, pct
- 
+
+    # ─────────────────────────────────────────────────────────────────
+    # Helper: Get corrections with remarks
+    # ─────────────────────────────────────────────────────────────────
+
     def _get_my_corrections_with_remarks(self, user_level):
-        """Get corrections with admin remarks for this level."""
         return SurveyCorrection.objects.filter(
             level=user_level
-        ).order_by("-created_at")[:10]
- 
+        ).select_related('question', 'user').order_by("-created_at")[:10]
+
+    # ─────────────────────────────────────────────────────────────────
+    # Helper: Get relevant surveys for user
+    # ─────────────────────────────────────────────────────────────────
+
     def _get_relevant_surveys(self, fiscal, user):
-        """Get surveys relevant to this user's level and department."""
         try:
             level_type = user.level.type.type
         except AttributeError:
             return Survey.objects.none()
- 
+
         surveys = Survey.objects.filter(fiscal_year=fiscal, level=level_type)
- 
-        # Province users with department: filter to surveys with their dept questions
+
         if user.department and level_type == "P":
             survey_ids = Question.objects.filter(
                 department=user.department,
-                survey__level=level_type,
+                survey__in=surveys,
                 parent__isnull=True,
             ).values_list('survey_id', flat=True).distinct()
             surveys = surveys.filter(id__in=survey_ids)
- 
+
         return surveys
- 
+
+    # ─────────────────────────────────────────────────────────────────
+    # MAIN: get_context_data
+    # ─────────────────────────────────────────────────────────────────
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
- 
-        # Get active fiscal year
+
+        # Active fiscal year
         fiscal = FiscalYear.objects.filter(active_fy=True).first()
         if not fiscal:
             context["error"] = "कुनै सक्रिय आर्थिक वर्ष फेला परेन।"
             return context
- 
+
         context["fiscal_year"] = fiscal
- 
-        # Get user's level info
+
+        # User level info
         try:
             user_level = user.level
             user_level_type = user_level.type.type if user_level else None
         except AttributeError:
             user_level = None
             user_level_type = None
- 
-        # Get surveys
-        p_survey = Survey.objects.filter(fiscal_year=fiscal, level="P").first()
-        l_survey = Survey.objects.filter(fiscal_year=fiscal, level="L").first()
-        context["p_survey"] = p_survey
-        context["l_survey"] = l_survey
- 
-        # User's own surveys
+
+        # User's surveys for quick actions
         context["my_surveys"] = self._get_relevant_surveys(fiscal, user)
- 
+
         # ════════════════════════════════════════
         # ADMIN / SUPERUSER / OFFICE HEAD
         # ════════════════════════════════════════
@@ -194,112 +327,121 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
             context["user_type"] = "admin"
             context["province_count"] = Level.objects.filter(type__type="P").count()
             context["local_count"] = Level.objects.filter(type__type="L").count()
- 
-            l_status, l_total = self._build_question_status(l_survey, "L")
-            p_status, p_total = self._build_question_status(p_survey, "P")
+
+            # All questions across all surveys — bulk optimized
+            l_status, l_total, l_surveys = self._build_question_status_all(fiscal, "L")
+            p_status, p_total, p_surveys = self._build_question_status_all(fiscal, "P")
+
             context["l_question_status"] = l_status
             context["l_total_levels"] = l_total
             context["p_question_status"] = p_status
             context["p_total_levels"] = p_total
- 
-            total_count = 0
-            if p_survey:
-                total_count += p_survey.questions.filter(parent__isnull=True).count()
-            if l_survey:
-                total_count += l_survey.questions.filter(parent__isnull=True).count()
-            context["count"] = total_count
- 
-            context["recent_corrections"] = SurveyCorrection.objects.order_by("-created_at")[:5]
+            context["count"] = len(l_status) + len(p_status)
+
+            context["recent_corrections"] = (
+                SurveyCorrection.objects
+                .select_related('level', 'user', 'question')
+                .order_by("-created_at")[:5]
+            )
             return context
- 
+
         # ════════════════════════════════════════
-        # PROVINCE USER (staff or non-staff)
+        # PROVINCE USER
         # ════════════════════════════════════════
         if user_level_type == "P":
             context["user_type"] = "province"
             context["user_level"] = user_level
- 
-            # My progress
-            if p_survey:
-                total, filled, pct = self._get_my_progress(p_survey, user_level)
-                context["count"] = total
-                context["my_filled"] = filled
-                context["my_progress"] = pct
- 
-            # My corrections with admin remarks
+
+            # My progress across all surveys — bulk optimized
+            total, filled, pct = self._get_my_progress(user, fiscal)
+            context["count"] = total
+            context["my_filled"] = filled
+            context["my_progress"] = pct
+
+            # Corrections with remarks
             context["my_corrections"] = self._get_my_corrections_with_remarks(user_level)
- 
-            # My complaints
+
+            # Complaints
             context["my_complaints"] = Complaint.objects.filter(
                 level=user_level
             ).order_by("-created_at")[:5]
- 
-            # Local levels under this province
-            l_status, l_total = self._build_question_status(
-                l_survey, "L", province_filter=user_level
+
+            # Local levels under this province — bulk optimized
+            l_status, l_total, _ = self._build_question_status_all(
+                fiscal, "L", province_filter=user_level
             )
             context["l_question_status"] = l_status
             context["l_total_levels"] = l_total
- 
-            # New suchak notifications (indicators for this user's department)
+
+            # Department-specific suchak
             if user.department:
-                context["my_suchak"] = Question.objects.filter(
-                    department=user.department,
-                    survey__fiscal_year=fiscal,
-                    survey__level="P",
-                    parent__isnull=True,
-                ).order_by("-created_at")[:10]
- 
+                context["my_suchak"] = (
+                    Question.objects.filter(
+                        department=user.department,
+                        survey__fiscal_year=fiscal,
+                        survey__level="P",
+                        parent__isnull=True,
+                    )
+                    .select_related('survey', 'department')
+                    .order_by("survey__name", "sequence_id")
+                )
+
             return context
- 
+
         # ════════════════════════════════════════
-        # LOCAL LEVEL USER (staff or non-staff)
+        # LOCAL LEVEL USER
         # ════════════════════════════════════════
         if user_level_type == "L":
             context["user_type"] = "local"
             context["user_level"] = user_level
- 
-            # My progress
-            if l_survey:
-                total, filled, pct = self._get_my_progress(l_survey, user_level)
-                context["count"] = total
-                context["my_filled"] = filled
-                context["my_progress"] = pct
- 
-            # My corrections with admin remarks
+
+            # My progress across all surveys — bulk optimized
+            total, filled, pct = self._get_my_progress(user, fiscal)
+            context["count"] = total
+            context["my_filled"] = filled
+            context["my_progress"] = pct
+
+            # Corrections with remarks
             context["my_corrections"] = self._get_my_corrections_with_remarks(user_level)
- 
-            # My complaints
+
+            # Complaints
             context["my_complaints"] = Complaint.objects.filter(
                 level=user_level
             ).order_by("-created_at")[:5]
- 
-            # New suchak notifications (local level indicators)
-            context["my_suchak"] = Question.objects.filter(
-                survey__fiscal_year=fiscal,
-                survey__level="L",
-                parent__isnull=True,
-            ).order_by("-created_at")[:10]
- 
+
+            # All suchak for local level
+            context["my_suchak"] = (
+                Question.objects.filter(
+                    survey__fiscal_year=fiscal,
+                    survey__level="L",
+                    parent__isnull=True,
+                )
+                .select_related('survey', 'department')
+                .order_by("survey__name", "sequence_id")
+            )
+
             return context
- 
+
         # ════════════════════════════════════════
-        # STAFF WITH ROLES (no level)
+        # STAFF (no level, has roles)
         # ════════════════════════════════════════
         if user.is_staff:
             context["user_type"] = "staff"
-            p_status, p_total = self._build_question_status(p_survey, "P")
+
+            p_status, p_total, _ = self._build_question_status_all(fiscal, "P")
             context["p_question_status"] = p_status
             context["p_total_levels"] = p_total
             context["province_count"] = Level.objects.filter(type__type="P").count()
-            context["count"] = p_survey.questions.filter(parent__isnull=True).count() if p_survey else 0
+            context["count"] = len(p_status)
             return context
- 
+
         # ════════════════════════════════════════
         # FALLBACK
         # ════════════════════════════════════════
         context["error"] = "तपाईंको खाता कुनै तहसँग जोडिएको छैन।"
         return context
+
+        
 class IndexCreateView(LoginRequiredMixin, CreateView):
     model = Question
     template_name = "core/dashboard/index.html"

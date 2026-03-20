@@ -283,7 +283,7 @@
                 </div>
               
                 <div class="item last">
-                  <button type="button"q-id="{{q.id}}" class="btn btn-icon-only addOption">
+                  <button type="button" q-id="{{q.id}}" class="btn btn-icon-only addOption">
                     <i class="ic-add" style="color: #8f8f8f"></i>
                   </button>
                   <div>
@@ -343,7 +343,9 @@
            <div class="text-right mt-4">
             <button type="button" data-toggle="modal" data-target="#exampleModal2" 
             class="btn btn-info mr-2 add-index"><i class="ic-add mr-1"></i> थप सूचक</button>
-            <a href="{% url 'dashboard:home' %}"><button type="button" class="btn btn-outline-blue mr-2 publish">समाप्त</button></a>
+            {# FIX: Was <a href="dashboard:home"> "समाप्त" which navigated away WITHOUT saving. #}
+            {# Now matches the update page pattern — submits the form with SweetAlert confirm. #}
+            <button type="button" class="btn btn-blue mr-2 publish-submit">पेश गर्नुहोस्</button>
           </div>
         </div>
         </div>
@@ -356,6 +358,8 @@
 </Fragment>
 
 {% endblock content %} {% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
   $(document).on("click", ".q-click", function () {
     $(this).closest(".untitled").hide();
@@ -383,14 +387,11 @@
         $(".new-group").show();
         $(".no-group").hide();
         $(".q-name").show();
-
-       
     }
     else{
       $(".new-group").hide();
       $(".no-group").show();
       $(".q-name").hide();
-     
     }
    
   });
@@ -431,7 +432,7 @@
 
     }
     else{
-      $('.p-error').show().delay(1300).fadeOut('slow');;
+      $('.p-error').show().delay(1300).fadeOut('slow');
     }
     
   });
@@ -467,8 +468,10 @@
                   </button>
                 </div>`;
 
-    var title = $(this).closest(".options").find("input[name='title']")    
-    if (title.val() != ""){
+    {# FIX: Check the LAST otitle input has a value before adding a new row #}
+    var allTitles = $(this).closest(".options").find("input.otitle");
+    var lastTitle = allTitles.last();
+    if (lastTitle.length && lastTitle.val() !== ""){
         $(this).closest(".options").find('.opt').append(option);
     }
     else
@@ -477,13 +480,6 @@
        error.show();
        error.delay(1300).fadeOut('slow');
     }
-   // options = $('.options').find('.otitle').length
-   // if(options > 1){
-     // $('.per-switch').show();
-    //}
-    //else{
-    //  $('.per-switch').hide();
-    //}
   });
 
   $(document).on("click", '.d-option', function () {
@@ -496,14 +492,12 @@
   });
 
   $(document).on("click", ".new-group", function(){
-    //$('.all-groups').append(group);
     var quesTitle = $(this).closest('.card-index').find('.q-title').val();
  
     var inputs1 = $(this).closest('.card-index').find('.ftypes');
     var inputs2  = $(this).closest('.card-index').find('.otitle');
     var nume = $(this).closest('.card-index').find('input[name="n"]').val();
     var deno = $(this).closest('.card-index').find('input[name="d"').val();
-    //var calcField = $(this).closest('.card-index').find('input[name="is_calc_field"').val();
     var optionTitles = []
     var fieldTypes = []
     var isFile = 0;
@@ -526,7 +520,6 @@
           ques_title: quesTitle,
           n:nume,
           d:deno,
-          //is_calc_field:calcField
     }
     $.ajax({ 
         url: "{% url 'dashboard:option_create' ques.id %}",
@@ -545,7 +538,6 @@
           }
         else{
            $(".fail-create").show().delay(2500).fadeOut('slow');
-
         } 
         }, 
      });
@@ -554,9 +546,10 @@
   
 </script>
 <script>
+// ─── "शेभ गर्नुहोस्" — saves options via AJAX (existing behavior, unchanged) ───
 $("body").on("submit", ".group-form", function(e){
   e.preventDefault();
-  url = $(this).attr('action')
+  var url = $(this).attr('action');
   $.ajax({ 
     url: url,
     type: 'POST',
@@ -564,40 +557,98 @@ $("body").on("submit", ".group-form", function(e){
     processData: false, 
     contentType: false, 
     success: function (data){
-    if(data['success']){
-           location.href = data["url"]
-          }
-    else{
-          $(".fail-create").show().delay(2500).fadeOut('slow');
-         } 
-         }, 
-     });
-})
+      if(data['success']){
+        location.href = data["url"];
+      }
+      else{
+        $(".fail-create").show().delay(2500).fadeOut('slow');
+      } 
+    }, 
+  });
+});
 
 
- $("body").on("submit", "#qForm", function(e) {
-        e.preventDefault();
-        url=$(this).attr('action')          
-        $.ajax({
+// ─── FIX: "पेश गर्नुहोस्" — submits form data via AJAX with SweetAlert confirm ───
+// Previously was "समाप्त" which was just an <a> link to dashboard:home
+// that navigated away WITHOUT saving any data.
+$(document).on("click", ".publish-submit", function(e) {
+    e.preventDefault();
+    
+    Swal.fire({
+        title: 'पेश गर्नुहुन्छ?',
+        text: 'के तपाईं यो सूचक पेश गर्न चाहानुहुन्छ?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'हो, पेश गर्नुहोस्',
+        cancelButtonText: 'रद्द गर्नुहोस्'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            var $form = $(".group-form");
+            var url = $form.attr('action');
+            $.ajax({ 
+                url: url,
+                type: 'POST',
+                data: new FormData($form[0]),
+                processData: false, 
+                contentType: false, 
+                success: function (data){
+                    if(data['success']){
+                        Swal.fire({
+                            title: 'सफल!',
+                            text: 'सूचक सफलतापूर्वक पेश गरियो।',
+                            icon: 'success',
+                            confirmButtonText: 'ठीक छ'
+                        }).then(function() {
+                            location.href = data["url"];
+                        });
+                    }
+                    else{
+                        Swal.fire({
+                            title: 'त्रुटि!',
+                            text: 'डाटा सेभ गर्न सकिएन। कृपया जाँच गर्नुहोस्।',
+                            icon: 'error',
+                            confirmButtonText: 'ठीक छ'
+                        });
+                    } 
+                },
+                error: function() {
+                    Swal.fire({
+                        title: 'त्रुटि!',
+                        text: 'सर्भरमा समस्या भयो। कृपया पुन: प्रयास गर्नुहोस्।',
+                        icon: 'error',
+                        confirmButtonText: 'ठीक छ'
+                    });
+                }
+            });
+        }
+    });
+});
+
+
+// ─── "नयाँ सूचक थप्नुहोस" modal form ───
+$("body").on("submit", "#qForm", function(e) {
+    e.preventDefault();
+    url=$(this).attr('action');
+    $.ajax({
         url: url,
         type: 'POST',           
         data: new FormData(this),
         processData: false,
         contentType: false,
         success: function (data) {
-        if(data['success']){
-          location.href = data['url']
-        }
-        else if($("input").next('p').length) $("input").nextAll('p').remove();
-          for (var error in data) {
-            var input = $("input[name='"+ error +"']");
-            input.after('<p class="error" id='+error +'-error for='+ error +'><span>'+ data[error] +'</span></p>');
-          }
-              
-            },
-          });
-         
-      });
+            if(data['success']){
+              location.href = data['url'];
+            }
+            else if($("input").next('p').length) $("input").nextAll('p').remove();
+              for (var error in data) {
+                var input = $("input[name='"+ error +"']");
+                input.after('<p class="error" id='+error +'-error for='+ error +'><span>'+ data[error] +'</span></p>');
+              }
+        },
+    });
+});
 </script>
 
 {% endblock extra_scripts %}

@@ -150,8 +150,8 @@
                       />
                     </div>
 
-                  <!-- NEW: विभाग/संस्था/मन्त्रालय -->
-                  <div class="form-group">
+                  {# FIX #4: Only show department dropdown for Province level (P), hide for Local (L) #}
+                  <div class="form-group department-field" {% if survey.level == 'L' %}style="display: none;"{% endif %}>
                     <label>विभाग/संस्था/मन्त्रालय</label>
                     <select name="department" class="form-control">
                       <option value="">--- छान्नुहोस् ---</option>
@@ -161,7 +161,7 @@
                     </select>
                   </div>
 
-                  <!-- NEW: Full Marks -->
+                  <!-- Full Marks -->
                   <div class="form-group">
                     <label>पूर्णाङ्क (Full Marks)</label>
                     <input
@@ -274,7 +274,10 @@
               <tr>
                 <th>क्रम संख्या</th>
                 <th>सूचक</th>
+                {# FIX #4: Only show department column header for Province level #}
+                {% if survey.level == 'P' %}
                 <th>विभाग/संस्था/मन्त्रालय</th>
+                {% endif %}
                 <th>Full marks</th>
                 <th>सूचकहरु</th>
                 <th class="text-right">कार्य</th>
@@ -285,7 +288,10 @@
               <tr>
               <td>{{forloop.counter}}</td>
               <td>{{question.title|truncatewords:5}}</td>
+              {# FIX #4: Only show department column for Province level #}
+              {% if survey.level == 'P' %}
               <td>{{question.department}}</td>
+              {% endif %}
               <td>{{question.full_marks}}</td>
               {% if question.children_questions.all.count < 1 %}
                 <td>{{question.count}}1</td>
@@ -357,14 +363,6 @@ $(document).on("click", ".update-q", function(){
       type:"GET",
       success:function(data){
         $(".index-update").html(data);
-         {% comment %} $('.update-form').find(".month-r").prop("checked", false);
-         $('.update-form').find('.title-i').val(data['title']);
-         $('.update-form').find('.seq').val(data['sequence_id']);
-         $('.update-form').find('.departments').empty();
-         $('.update-form').find(`.departments option[value="${data['depart']}"]`).prop('selected', true);
-         if(data['month_requires']){
-           $('.update-form').find(".month-r").prop("checked", true)
-         } {% endcomment %}
       }
     })
 })
