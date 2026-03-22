@@ -641,71 +641,72 @@ def check_level_month_data(request):
     return JsonResponse(data)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Send for Correction (AJAX POST)
-# FIX #2: Only ONE definition — the final version that updates existing
-#         pending corrections and uses CorrectionDocument for files.
-# ─────────────────────────────────────────────────────────────────────────────
-
 @csrf_exempt
 @login_required
 def send_for_correction(request):
+    """
+    Creates ONE correction per question+level (not per month).
+    If pending correction exists, updates it.
+    Files go to CorrectionDocument model.
+    Only sends the "नयाँ सुधार अनुमति सूचक" notification — NOT the "सुधार अनुरोध प्राप्त" one.
+    """
     if request.method != "POST":
         return JsonResponse({"success": False, "message": "Invalid method."}, status=405)
-
+ 
     subject = request.POST.get("subject", "").strip()
     message = request.POST.get("message", "").strip()
-    month = request.POST.get("month_id", "")
     question_id = request.POST.get("question_id", "")
-
+ 
     if not subject:
         return JsonResponse({"success": False, "message": "कृपया विषय लेख्नुहोस्।"})
     if not message:
         return JsonResponse({"success": False, "message": "कृपया सुधार विवरण लेख्नुहोस्।"})
     if not question_id:
         return JsonResponse({"success": False, "message": "प्रश्न ID फेला परेन।"})
-
+ 
+    # Parse month (optional, stored for reference but NOT used to create separate corrections)
+    month = request.POST.get("month_id", "")
     try:
         month_val = int(month) if month and month not in ("", "null", "undefined") else None
     except (ValueError, TypeError):
         month_val = None
-
+ 
     current_user = request.user
     user_level = current_user.level
-
+ 
+    # Validate file
     document = request.FILES.get("filename")
     if document:
         if document.size > MAX_UPLOAD_SIZE:
-            return JsonResponse({"success": False, "message": "फाइल साइज ५ MB भन्दा बढी।"})
+            return JsonResponse({"success": False, "message": "फाइल साइज १० MB भन्दा बढी हुनु हुँदैन।"})
         if not validate_file(document.name):
             return JsonResponse({"success": False, "message": "यो फाइल प्रकार अनुमति छैन।"})
-
+ 
     try:
         question_obj = Question.objects.get(pk=question_id)
     except (Question.DoesNotExist, ValueError):
         return JsonResponse({"success": False, "message": "प्रश्न फेला परेन।"})
-
+ 
     try:
-        # Check if there's already a PENDING correction for this question+level+month
-        existing_filter = {
-            "question": question_obj,
-            "level": user_level,
-            "status": "P",
-        }
-        if month_val is not None:
-            existing_filter["month"] = month_val
-
-        existing = SurveyCorrection.objects.filter(**existing_filter).order_by("-created_at").first()
-
+        # Check if PENDING correction already exists for this question+level
+        # (NOT per month — one correction per question per level)
+        existing = SurveyCorrection.objects.filter(
+            question=question_obj,
+            level=user_level,
+            status="P",
+        ).order_by("-created_at").first()
+ 
         if existing:
-            # UPDATE existing correction with new message
+            # Update existing correction
             existing.sub = subject
             existing.msg = message
+            if month_val is not None:
+                existing.month = month_val
             existing.save()
             correction = existing
             action_msg = "सुधार अनुरोध अपडेट भयो।"
         else:
-            # CREATE new correction
+            # Create new correction
             correction = SurveyCorrection.objects.create(
                 sub=subject,
                 msg=message,
@@ -715,89 +716,155 @@ def send_for_correction(request):
                 month=month_val,
             )
             action_msg = "संशोधन अनुरोध सफलतापूर्वक पठाइयो।"
-
-        # Save file to CorrectionDocument (always add, never replace)
+ 
+        # Save file to CorrectionDocument
         if document:
             from core.models import CorrectionDocument
             CorrectionDocument.objects.create(
                 correction=correction,
                 document=document,
             )
-
-        # FIX #2: ONE notification per question+level — get_or_create prevents duplicates
-        Notification.objects.get_or_create(
-            question=question_obj,
-            level=user_level,
-            correction_checked=False,
-            defaults={
-                "user": current_user,
-                "msg": f"{user_level.name} बाट सुधार अनुरोध प्राप्त भयो।",
-                "is_viewed": False,
-            },
-        )
-
+ 
         return JsonResponse({
             "success": True,
             "message": action_msg,
             "correction_id": correction.id,
         })
-
+ 
     except Exception as e:
         logger.error(f"Correction error: {e}", exc_info=True)
         return JsonResponse({"success": False, "message": f"त्रुटि: {str(e)}"})
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Add Correction File (AJAX POST)
-# FIX #2: Only ONE definition — uses _validate_uploaded_file helper
-# ─────────────────────────────────────────────────────────────────────────────
-
+ 
+ 
 @csrf_exempt
 @login_required
 def add_correction_file(request):
     """
-    AJAX POST: Add a new file to an existing correction request.
+    Add file to existing correction + notify admin.
     """
     if request.method != "POST":
         return JsonResponse({"success": False, "message": "Invalid method."}, status=405)
-
+ 
     correction_id = request.POST.get("correction_id")
     file = request.FILES.get("file")
-
+ 
     if not correction_id or not file:
         return JsonResponse({"success": False, "message": "Correction ID र फाइल आवश्यक छ।"})
-
-    # Validate file
-    is_valid, error_resp = _validate_uploaded_file(file)
-    if not is_valid:
-        return error_resp
-
+ 
+    if file.size > MAX_UPLOAD_SIZE:
+        return JsonResponse({"success": False, "message": "फाइल साइज १० MB भन्दा बढी हुनु हुँदैन।"})
+    if not validate_file(file.name):
+        return JsonResponse({"success": False, "message": "यो फाइल प्रकार अनुमति छैन।"})
+ 
     try:
         correction = SurveyCorrection.objects.get(id=correction_id)
-
-        # Only allow adding files to own corrections
+ 
         if correction.level != request.user.level:
             return JsonResponse({"success": False, "message": "अनुमति छैन।"})
-
+ 
         from core.models import CorrectionDocument
         doc = CorrectionDocument.objects.create(
             correction=correction,
             document=file,
         )
-
+ 
+        # ── Notify admin that new file was added ──
+        Notification.objects.create(
+            user=request.user,
+            msg=f"{request.user.level.name} ले सुधार अनुरोधमा नयाँ फाइल थप्नुभयो।",
+            question=correction.question,
+            level=request.user.level,
+            is_viewed=False,
+            correction_checked=False,
+        )
+ 
         return JsonResponse({
             "success": True,
             "file": {
                 "id": doc.id,
-                "name": doc.get_document_name(),
+                "name": os.path.basename(doc.document.name),
                 "url": doc.document.url,
                 "date": doc.created_at.strftime("%Y-%m-%d"),
             }
         })
     except SurveyCorrection.DoesNotExist:
         return JsonResponse({"success": False, "message": "Correction फेला परेन।"})
-
-
+    except Exception as e:
+        logger.error(f"add_correction_file error: {e}", exc_info=True)
+        return JsonResponse({"success": False, "message": str(e)})
+ 
+ 
+@login_required
+def get_correction_data(request):
+    """
+    Returns ALL corrections for a question+level (not filtered by month).
+    Each correction has its files from both old and new model.
+    """
+    question_id = request.GET.get("question_id")
+    if not question_id:
+        return JsonResponse({"corrections": []})
+ 
+    user_level = request.user.level
+    if not user_level:
+        return JsonResponse({"corrections": []})
+ 
+    # Get ALL corrections for this question+level (no month filter)
+    corrections = SurveyCorrection.objects.filter(
+        question_id=question_id,
+        level=user_level,
+    ).order_by("-created_at")
+ 
+    month_names = {
+        1: "वैशाख", 2: "ज्येष्ठ", 3: "असार", 4: "श्रावण",
+        5: "भदौ", 6: "असोज", 7: "कार्तिक", 8: "मंसिर",
+        9: "पौष", 10: "माघ", 11: "फागुन", 12: "चैत्र",
+    }
+ 
+    data = []
+    for corr in corrections:
+        files = []
+ 
+        # New CorrectionDocument files
+        try:
+            from core.models import CorrectionDocument
+            for doc in CorrectionDocument.objects.filter(correction=corr).order_by("created_at"):
+                if doc.document and doc.document.name:
+                    files.append({
+                        "id": doc.id,
+                        "name": os.path.basename(doc.document.name),
+                        "url": doc.document.url,
+                        "date": doc.created_at.strftime("%Y-%m-%d"),
+                    })
+        except Exception:
+            pass
+ 
+        # Old single document field
+        try:
+            if corr.document and corr.document.name:
+                files.append({
+                    "id": 0,
+                    "name": os.path.basename(corr.document.name),
+                    "url": corr.document.url,
+                    "date": corr.created_at.strftime("%Y-%m-%d"),
+                })
+        except (ValueError, Exception):
+            pass
+ 
+        data.append({
+            "id": corr.id,
+            "subject": corr.sub,
+            "message": corr.msg,
+            "status": "जाँच भयो" if corr.status == "C" else "पेन्डिङ",
+            "status_code": corr.status,
+            "date": corr.created_at.strftime("%Y-%m-%d %H:%M"),
+            "month": corr.month,
+            "month_display": month_names.get(corr.month, ""),
+            "remarks": corr.remarks or "",
+            "files": files,
+            "file_count": len(files),
+        })
+ 
+    return JsonResponse({"corrections": data})
 # ─────────────────────────────────────────────────────────────────────────────
 # Register Simple Complaint (गुनासो)
 # FIX #1: Gracefully handle missing user.level for province users
@@ -885,84 +952,6 @@ def register_EvaluationComplaint(request):
         messages.success(request, "तपाईंको मूल्याङ्कन गुनासो सफलतापूर्वक दर्ता भयो।")
 
     return JsonResponse({"success": True})
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Get Correction Data (AJAX GET)
-# ─────────────────────────────────────────────────────────────────────────────
-
-@login_required
-def get_correction_data(request):
-    question_id = request.GET.get("question_id")
-    month = request.GET.get("month", "")
-
-    if not question_id:
-        return JsonResponse({"corrections": []})
-
-    user_level = request.user.level
-    if not user_level:
-        return JsonResponse({"corrections": []})
-
-    filters = {"question_id": question_id, "level": user_level}
-    if month and month not in ("", "null", "undefined", "None"):
-        try:
-            filters["month"] = int(month)
-        except (ValueError, TypeError):
-            pass
-
-    corrections = SurveyCorrection.objects.filter(**filters).order_by("-created_at")
-
-    month_names = {
-        1: "वैशाख", 2: "ज्येष्ठ", 3: "असार", 4: "श्रावण",
-        5: "भदौ", 6: "असोज", 7: "कार्तिक", 8: "मंसिर",
-        9: "पौष", 10: "माघ", 11: "फागुन", 12: "चैत्र",
-    }
-
-    data = []
-    for corr in corrections:
-        files = []
-
-        # NEW CorrectionDocument files
-        try:
-            from core.models import CorrectionDocument
-            for doc in CorrectionDocument.objects.filter(correction=corr):
-                if doc.document and doc.document.name:
-                    files.append({
-                        "id": doc.id,
-                        "name": os.path.basename(doc.document.name),
-                        "url": doc.document.url,
-                        "date": doc.created_at.strftime("%Y-%m-%d"),
-                    })
-        except Exception:
-            pass
-
-        # OLD single document field
-        try:
-            if corr.document and corr.document.name:
-                files.append({
-                    "id": 0,
-                    "name": os.path.basename(corr.document.name),
-                    "url": corr.document.url,
-                    "date": corr.created_at.strftime("%Y-%m-%d"),
-                })
-        except (ValueError, Exception):
-            pass
-
-        data.append({
-            "id": corr.id,
-            "subject": corr.sub,
-            "message": corr.msg,
-            "status": "जाँच भयो" if corr.status == "C" else "पेन्डिङ",
-            "status_code": corr.status,
-            "date": corr.created_at.strftime("%Y-%m-%d %H:%M"),
-            "month": corr.month,
-            "month_display": month_names.get(corr.month, ""),
-            "remarks": corr.remarks or "",
-            "files": files,
-            "file_count": len(files),
-        })
-
-    return JsonResponse({"corrections": data})
 
 
 # ─────────────────────────────────────────────────────────────────────────────

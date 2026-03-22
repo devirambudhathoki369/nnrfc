@@ -32,6 +32,14 @@ def create_correction_notification(sender, instance, created, **kwargs):
         user = instance.user
         msg = f"नयाँ सुधार अनुमति सूचक प्रयोगकर्ता {user} द्वारा पठाइएको छ।"
         level = instance.level
-        Notification.objects.create(
-            user=user, msg=msg, correction=instance, level=level
+        Notification.objects.get_or_create(
+            question=instance.question,
+            level=level,
+            correction_checked=False,
+            defaults={
+                "user": user,
+                "msg": msg,
+                "correction": instance,
+                "is_viewed": False,
+            },
         )
