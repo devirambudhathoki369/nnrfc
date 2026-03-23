@@ -357,6 +357,11 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
             context["count"] = total
             context["my_filled"] = filled
             context["my_progress"] = pct
+            context["my_remaining"] = total - filled  # NEW: remaining count
+
+            # Department name for display
+            if user.department:
+                context["user_department_name"] = user.department.name  # NEW
 
             # Corrections with remarks
             context["my_corrections"] = self._get_my_corrections_with_remarks(user_level)

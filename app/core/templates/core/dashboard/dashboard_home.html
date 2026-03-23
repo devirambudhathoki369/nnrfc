@@ -53,52 +53,82 @@
       </div>
     </div>
 
-    {% if l_question_status %}
-    <div class="card card-body mb-3">
-      <h5><span class="text-danger">स्थानीय तह</span> — {{ l_survey.name }} <small class="text-muted">({{ l_total_levels }} कार्यालय)</small></h5>
-      <div class="table-responsive">
-        <table class="table table-bordered table-hover mb-0" id="admin_local_table">
-          <thead class="thead-light">
-            <tr><th style="width:5%;">क्र.स</th><th>सूचक</th><th class="text-center" style="width:8%;">पूर्णांक</th><th class="text-center" style="width:12%;">भरेको</th><th class="text-center" style="width:12%;">नभरेको</th><th class="text-center" style="width:12%;">प्रगति</th></tr>
-          </thead>
-          <tbody>
-            {% for item in l_question_status %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
-              <td style="font-size:13px;">{{ item.question.title|truncatechars:80 }}</td>
-              <td class="text-center">{% if item.question.full_marks %}<span class="badge badge-info">{{ item.question.full_marks }}</span>{% else %}—{% endif %}</td>
-              <td class="text-center"><a href="{% url 'dashboard:question_fill_detail' item.question.id 'filled' %}" class="btn btn-sm btn-success" style="min-width:45px;">{{ item.filled_count }}</a></td>
-              <td class="text-center"><a href="{% url 'dashboard:question_fill_detail' item.question.id 'not_filled' %}" class="btn btn-sm btn-danger" style="min-width:45px;">{{ item.not_filled_count }}</a></td>
-              <td class="text-center"><span style="font-size:12px;font-weight:600;">{{ item.percentage }}%</span></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% endif %}
+    {# ── Level Tabs ─────────────────────────────────────── #}
+    {% if p_question_status or l_question_status %}
+    <ul class="nav nav-tabs mb-3" id="levelTab" role="tablist">
+      <li class="nav-item">
+        <a class="nav-link active" id="province-tab" data-toggle="tab" href="#provincePane" role="tab" aria-controls="provincePane" aria-selected="true">
+          <span class="" style="color:black">प्रदेश तह</span>
+          {% if p_question_status %}<span class="badge badge-primary ml-1">{{ p_total_levels }}</span>{% endif %}
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" id="local-tab" data-toggle="tab" href="#localPane" role="tab" aria-controls="localPane" aria-selected="false">
+          <span class="" style="color:black">स्थानीय तह</span>
+          {% if l_question_status %}<span class="badge badge-danger ml-1">{{ l_total_levels }}</span>{% endif %}
+        </a>
+      </li>
+    </ul>
 
-    {% if p_question_status %}
-    <div class="card card-body mb-3">
-      <h5><span class="text-primary">प्रदेश तह</span> — {{ p_survey.name }} <small class="text-muted">({{ p_total_levels }} प्रदेश)</small></h5>
-      <div class="table-responsive">
-        <table class="table table-bordered table-hover mb-0" id="admin_province_table">
-          <thead class="thead-light">
-            <tr><th style="width:5%;">क्र.स</th><th>सूचक</th><th class="text-center" style="width:8%;">पूर्णांक</th><th class="text-center" style="width:12%;">भरेको</th><th class="text-center" style="width:12%;">नभरेको</th><th class="text-center" style="width:12%;">प्रगति</th></tr>
-          </thead>
-          <tbody>
-            {% for item in p_question_status %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
-              <td style="font-size:13px;">{{ item.question.title|truncatechars:80 }}</td>
-              <td class="text-center">{% if item.question.full_marks %}<span class="badge badge-info">{{ item.question.full_marks }}</span>{% else %}—{% endif %}</td>
-              <td class="text-center"><a href="{% url 'dashboard:question_fill_detail' item.question.id 'filled' %}" class="btn btn-sm btn-success" style="min-width:45px;">{{ item.filled_count }}</a></td>
-              <td class="text-center"><a href="{% url 'dashboard:question_fill_detail' item.question.id 'not_filled' %}" class="btn btn-sm btn-danger" style="min-width:45px;">{{ item.not_filled_count }}</a></td>
-              <td class="text-center"><span style="font-size:12px;font-weight:600;">{{ item.percentage }}%</span></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+    <div class="tab-content" id="levelTabContent">
+      {# ── Province Tab (default active) ── #}
+      <div class="tab-pane fade show active" id="provincePane" role="tabpanel" aria-labelledby="province-tab">
+        {% if p_question_status %}
+        <div class="card card-body mb-3">
+          <h5><span class="text-primary">प्रदेश तह</span> — {{ p_survey.name }} <small class="text-muted">({{ p_total_levels }} प्रदेश)</small></h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover mb-0" id="admin_province_table">
+              <thead class="thead-light">
+                <tr><th style="width:5%;">क्र.स</th><th>सूचक</th><th class="text-center" style="width:8%;">पूर्णांक</th><th class="text-center" style="width:12%;">भरेको</th><th class="text-center" style="width:12%;">नभरेको</th><th class="text-center" style="width:12%;">प्रगति</th></tr>
+              </thead>
+              <tbody>
+                {% for item in p_question_status %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td style="font-size:13px;">{{ item.question.title|truncatechars:80 }}</td>
+                  <td class="text-center">{% if item.question.full_marks %}<span class="badge badge-info">{{ item.question.full_marks }}</span>{% else %}—{% endif %}</td>
+                  <td class="text-center"><a href="{% url 'dashboard:question_fill_detail' item.question.id 'filled' %}" class="btn btn-sm btn-success" style="min-width:45px;">{{ item.filled_count }}</a></td>
+                  <td class="text-center"><a href="{% url 'dashboard:question_fill_detail' item.question.id 'not_filled' %}" class="btn btn-sm btn-danger" style="min-width:45px;">{{ item.not_filled_count }}</a></td>
+                  <td class="text-center"><span style="font-size:12px;font-weight:600;">{{ item.percentage }}%</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% else %}
+        <div class="card card-body text-center text-muted py-4 mb-3">प्रदेश तहको कुनै डाटा भेटिएन।</div>
+        {% endif %}
+      </div>
+
+      {# ── Local Tab ── #}
+      <div class="tab-pane fade" id="localPane" role="tabpanel" aria-labelledby="local-tab">
+        {% if l_question_status %}
+        <div class="card card-body mb-3">
+          <h5><span class="text-danger">स्थानीय तह</span> — {{ l_survey.name }} <small class="text-muted">({{ l_total_levels }} कार्यालय)</small></h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover mb-0" id="admin_local_table">
+              <thead class="thead-light">
+                <tr><th style="width:5%;">क्र.स</th><th>सूचक</th><th class="text-center" style="width:8%;">पूर्णांक</th><th class="text-center" style="width:12%;">भरेको</th><th class="text-center" style="width:12%;">नभरेको</th><th class="text-center" style="width:12%;">प्रगति</th></tr>
+              </thead>
+              <tbody>
+                {% for item in l_question_status %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td style="font-size:13px;">{{ item.question.title|truncatechars:80 }}</td>
+                  <td class="text-center">{% if item.question.full_marks %}<span class="badge badge-info">{{ item.question.full_marks }}</span>{% else %}—{% endif %}</td>
+                  <td class="text-center"><a href="{% url 'dashboard:question_fill_detail' item.question.id 'filled' %}" class="btn btn-sm btn-success" style="min-width:45px;">{{ item.filled_count }}</a></td>
+                  <td class="text-center"><a href="{% url 'dashboard:question_fill_detail' item.question.id 'not_filled' %}" class="btn btn-sm btn-danger" style="min-width:45px;">{{ item.not_filled_count }}</a></td>
+                  <td class="text-center"><span style="font-size:12px;font-weight:600;">{{ item.percentage }}%</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% else %}
+        <div class="card card-body text-center text-muted py-4 mb-3">स्थानीय तहको कुनै डाटा भेटिएन।</div>
+        {% endif %}
       </div>
     </div>
     {% endif %}
@@ -120,34 +150,29 @@
     {% elif user_type == "province" %}
 
     <div class="row mb-3">
-      <div class="col-lg-3 col-md-6 mb-3">
+      <div class="col-lg-4 col-md-4 mb-3">
         <div class="card card-body text-center h-100">
-          <p class="text-muted small mb-1">कुल सूचकहरु</p>
+          <p class="text-muted small mb-1">जम्मा सूचक संख्या</p>
           <h2 class="mb-0">{{ count|default:"0" }}</h2>
         </div>
       </div>
-      <div class="col-lg-3 col-md-6 mb-3">
+      <div class="col-lg-4 col-md-4 mb-3">
         <div class="card card-body text-center h-100">
-          <p class="text-muted small mb-1">पूर्ण भएको</p>
+          <p class="text-muted small mb-1">प्रविष्टि भएको</p>
           <h2 class="mb-0 text-success">{{ my_filled|default:"0" }}</h2>
         </div>
       </div>
-      <div class="col-lg-3 col-md-6 mb-3">
+      <div class="col-lg-4 col-md-4 mb-3">
         <div class="card card-body text-center h-100">
-          <p class="text-muted small mb-1">मेरो प्रगति</p>
-          <h2 class="mb-0 {% if my_progress >= 75 %}text-success{% elif my_progress >= 40 %}text-warning{% else %}text-danger{% endif %}">{{ my_progress|default:"0" }}%</h2>
-        </div>
-      </div>
-      <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card card-body text-center h-100">
-          <p class="text-muted small mb-1">आ.व.</p>
-          <h2 class="mb-0 text-primary">{{ fiscal_year.name }}</h2>
+          <p class="text-muted small mb-1">प्रविष्टि हुन बाँकी</p>
+          <h2 class="mb-0 text-danger">{{ my_remaining|default:"0" }}</h2>
         </div>
       </div>
     </div>
 
-    {# Quick actions #}
+    {# कार्य सम्पादन सूचक title + Quick actions #}
     <div class="card card-body mb-3">
+      <h5 class="mb-2">{% if user_department_name %}{{ user_department_name }}का {% else %}{% endif %}कार्य सम्पादन सूचकहरु</h5>
       <div class="d-flex flex-wrap" style="gap:10px;">
         {% for s in my_surveys %}
           <a href="{% url 'core:homepage' s.id %}" class="btn btn-primary">{{ s.name }} भर्नुहोस्</a>
@@ -155,10 +180,11 @@
       </div>
     </div>
 
-    {# New suchak for my department #}
-    {% if my_suchak %}
+    {# Suchak for my department #}
+    {% comment %} {% if my_suchak %}
     <div class="card card-body mb-3" style="border-left:3px solid #17a2b8;">
-      <h5 class="text-info mb-2">मेरो विभागका सूचकहरु</h5>
+      <h5 class="text-info mb-2">{% if user_department_name %}{{ user_department_name }}का सूचकहरु{% else %}सूचकहरु{% endif %}</h5>
+      <p class="text-muted mb-2" style="font-size:13px;">निम्न सूचकहरुको प्रगति प्रविष्टि गर्नुहोस्</p>
       <ul class="list-unstyled mb-0">
         {% for q in my_suchak %}
         <li class="mb-1" style="font-size:13px;">
@@ -169,7 +195,7 @@
         {% endfor %}
       </ul>
     </div>
-    {% endif %}
+    {% endif %} {% endcomment %}
 
     {# Corrections with admin remarks #}
     {% if my_corrections %}
@@ -207,7 +233,7 @@
     {% endif %}
 
     {# Local levels under my province #}
-    {% if l_question_status %}
+    {% comment %} {% if l_question_status %}
     <div class="card card-body mb-3">
       <h5>मेरो प्रदेशका स्थानीय तह <small class="text-muted">({{ l_total_levels }})</small></h5>
       <div class="table-responsive">
@@ -229,7 +255,7 @@
         </table>
       </div>
     </div>
-    {% endif %}
+    {% endif %} {% endcomment %}
 
 
     {# ═══════════════ LOCAL LEVEL USER ═══════════════ #}
@@ -360,11 +386,20 @@
 <script>
 $(document).ready(function() {
   if ($.fn.DataTable) {
-    $('#admin_local_table, #admin_province_table').each(function() {
-      $(this).DataTable({
-        "language": {"search": "खोज्नुहोस्:", "lengthMenu": "_MENU_ प्रति पेज"},
-        "pageLength": 25, "order": [[0, "asc"]]
-      });
+    // Initialize DataTable only when tab is shown (fixes rendering issues with hidden tables)
+    $('#admin_province_table').DataTable({
+      "language": {"search": "खोज्नुहोस्:", "lengthMenu": "_MENU_ प्रति पेज"},
+      "pageLength": 25, "order": [[0, "asc"]]
+    });
+
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+      var target = $(e.target).attr("href");
+      if (target === '#localPane' && !$.fn.DataTable.isDataTable('#admin_local_table')) {
+        $('#admin_local_table').DataTable({
+          "language": {"search": "खोज्नुहोस्:", "lengthMenu": "_MENU_ प्रति पेज"},
+          "pageLength": 25, "order": [[0, "asc"]]
+        });
+      }
     });
   }
 });
