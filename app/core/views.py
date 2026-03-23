@@ -129,9 +129,12 @@ def SurveyList(request):
     except AttributeError:
         survey_list = Survey.objects.all()
 
+    fiscal_year = FiscalYear.objects.filter(active_fy=True).first()
+
     context = {
         "survey_list": survey_list,
         "questions": Question.objects.all(),
+        "fiscal_year": fiscal_year,
     }
     return render(request, "core/survey.html", context)
 
