@@ -55,11 +55,12 @@
                 {% endfor %}
               </tbody>
             </table>
+            {# ── FIX: Show uploaded files (AnswerDocument objects) ── #}
             {% if files %}
             <p class="mt-3 mb-1 font-bold">संलग्नहरु</p>
             <ul class="list list-bullet text-primary des mb-3">
-              {% for file in files %}
-              <li><a href="{{ file.url }}" target="_blank">{{ file.name }}</a></li>
+              {% for doc in files %}
+              <li><a href="{{ doc.document.url }}" target="_blank">{{ doc.document.name }}</a></li>
               {% endfor %}
             </ul>
             {% endif %}
@@ -87,11 +88,12 @@
                 {% endfor %}
               </tbody>
             </table>
+            {# ── FIX: Show uploaded files for child questions (AnswerDocument objects) ── #}
             {% if child_question.files %}
             <p class="mt-3 mb-1 font-bold">संलग्नहरु</p>
             <ul class="list list-bullet text-primary des mb-3">
-              {% for file in child_question.files %}
-              <li><a href="{{ file.document.url }}" target="_blank">{{ file.document.name }}</a></li>
+              {% for doc in child_question.files %}
+              <li><a href="{{ doc.document.url }}" target="_blank">{{ doc.document.name }}</a></li>
               {% endfor %}
             </ul>
             {% endif %}
@@ -247,7 +249,6 @@ $(document).ready(function() {
       data: {question_id: questionId},
       dataType: "json",
       success: function(data) {
-        console.log("Correction data for Q" + questionId + ":", data);
         var container = $('#' + containerId);
         container.empty();
 
@@ -268,6 +269,12 @@ $(document).ready(function() {
             html += '<small class="text-muted">' + corr.date + '</small>';
             html += '<p style="font-size:12px;margin:3px 0;">' + corr.message + '</p>';
 
+            // Show admin remarks if available
+            if (corr.remarks) {
+              html += '<div class="alert alert-info py-1 px-2 mb-1" style="font-size:12px;">';
+              html += '<strong>एडमिन कैफियत:</strong> ' + corr.remarks + '</div>';
+            }
+
             if (corr.files && corr.files.length > 0) {
               html += '<div style="font-size:12px;"><strong>फाइलहरु:</strong>';
               corr.files.forEach(function(f) {
@@ -284,7 +291,7 @@ $(document).ready(function() {
         }
       },
       error: function(xhr, status, error) {
-        console.error("Failed to load corrections for Q" + questionId + ":", status, error, xhr.responseText);
+        console.error("Failed to load corrections for Q" + questionId + ":", status, error);
       }
     });
   }
@@ -313,7 +320,6 @@ $(document).ready(function() {
       data: {question_id: qId},
       dataType: "json",
       success: function(data) {
-        console.log("Modal correction data:", data);
         var container = $('#corrections-list');
         container.empty();
 
@@ -329,6 +335,12 @@ $(document).ready(function() {
             h += '<div><strong style="font-size:13px;">' + corr.subject + '</strong>';
             h += '<br><small class="text-muted">' + corr.date + '</small></div>' + statusBadge + '</div>';
             h += '<p style="font-size:12px;margin-bottom:5px;">' + corr.message + '</p>';
+
+            // Show admin remarks in modal too
+            if (corr.remarks) {
+              h += '<div class="alert alert-info py-1 px-2 mb-1" style="font-size:12px;">';
+              h += '<strong>एडमिन कैफियत:</strong> ' + corr.remarks + '</div>';
+            }
 
             if (corr.files && corr.files.length > 0) {
               h += '<div style="font-size:12px;"><strong>फाइलहरु:</strong>';
@@ -350,8 +362,7 @@ $(document).ready(function() {
           $('#existing-corrections').hide();
         }
       },
-      error: function(xhr, status, error) {
-        console.error("Modal correction load failed:", status, error, xhr.responseText);
+      error: function() {
         $('#existing-corrections').hide();
       }
     });

@@ -6,9 +6,8 @@
   class="btn btn-danger"
   data-toggle="modal"
   data-target="#complaintModalCenter"
-  {% comment %} href="{% url 'core:register_complaint' %}" {% endcomment %}
 >
-  गुनासो दर्ता गर्नुहोस्
+  गुनासो/पुनरावलोकन दर्ता गर्नुहोस्
 </button>
 <div
   class="modal fade modal-01"
@@ -22,7 +21,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3 class="modal-title" id="complaintModalLongTitle">
-         तपाईंको गुनासो दर्ता गर्नुहोस्
+         तपाईंको गुनासो/पुनरावलोकन दर्ता गर्नुहोस्
         </h3>
         <button
           class="close"
@@ -171,29 +170,45 @@
             />
           </div>
           <div class="form-group">
-            <label class="form-label" for="customFile" class="d-block"
+            <label class="form-label" for="evalCustomFile" class="d-block"
               >गुनासोसँग सम्बन्धित प्रमाण अपलोड गर्नुहोस्</label
             >
             <div class="custom-file custom-file-upload invalid-feedback">
               <input
                 class="custom-file-input"
                 type="file"
-                id="customFile"
+                id="evalCustomFile"
                 name="document"
                 required
-              /><label class="custom-file-label" for="customFile"> </label>
+              /><label class="custom-file-label" for="evalCustomFile"> </label>
             </div>
           </div>
           <div class="d-flex">
             <button class="btn btn-danger flex-grow-1 mr-3" type="button" data-dismiss="modal">
               रद्द गर्नुहोस्</button
-            ><button class="btn btn-primary flex-grow-1" type="submit" id="btnClick">
+            ><button class="btn btn-primary flex-grow-1" type="submit" id="evalBtnClick">
               पेश गर्नुहोस्
             </button>
           </div>
         </form>
 
 
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Confirmation modal for duplicate punarbalokan ── #}
+<div class="modal fade" id="duplicateEvalConfirm" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-body text-center py-4">
+        <h5 class="mb-3">पुनरावलोकन अनुरोध</h5>
+        <p>तपाईंले पहिले नै यस सूचकको लागि पुनरावलोकन अनुरोध प्रविष्टि गरिसक्नु भएको छ। के फेरि पुनरावलोकन गर्न चाहानुहुन्छ?</p>
+        <div class="d-flex justify-content-center" style="gap:10px;">
+          <button class="btn btn-danger px-4" type="button" id="cancelDuplicateEval" data-dismiss="modal">रद्द गर्नुहोस्</button>
+          <button class="btn btn-primary px-4" type="button" id="confirmDuplicateEval">हो, पेश गर्नुहोस्</button>
+        </div>
       </div>
     </div>
   </div>
@@ -225,116 +240,162 @@
 
 {% block extra_scripts %}
 <script>
-$('#simpleComplaintForm').on('submit', function(e){
-  event.preventDefault();
- 
-  formdata = new FormData($('#simpleComplaintForm')[0]);
+$(document).ready(function() {
 
-  var csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value;
-  
-  $.ajax({
-    type: "POST",
-    url: '{% url "core:register_SimpleComplaintForm" %}',
-    data: formdata,
-    beforeSend: function(xhr, settings){
-                          xhr.setRequestHeader("X-CSRFToken", csrftoken);
-                      },
-    cache: false,
-    contentType: false,
-    processData: false,
-    enctype: 'multipart/form-data',
-
-    success: function(response){
-      $("#sub").val("");
-      $("#msg").val("");
-      $("#document").val("");
-      if (response.success === true){
-        statusMsg = "Your Simple Complaint Has Been Registered Successfully."
-        $("#successMsg ").text(statusMsg );
-        window.location.href = "{% url 'core:survey_list' %}"
+  // ═══════════════════════════════════════
+  // CSRF setup
+  // ═══════════════════════════════════════
+  function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      var cookies = document.cookie.split(';');
+      for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
       }
-      else if(response.invalid_file){
-        alert(response.message);
+    }
+    return cookieValue;
+  }
+  var csrftoken = getCookie('csrftoken');
+  $.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+      if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+        xhr.setRequestHeader("X-CSRFToken", csrftoken);
       }
     }
   });
-});
-</script>
 
-
-<script>
-$('#evaluationComplaintForm').on('submit', function(e){
-  event.preventDefault();
- 
-  formdata = new FormData($('#evaluationComplaintForm')[0]);
-
-  var csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value;
-  
-  $.ajax({
-    type: "POST",
-    url: '{% url "core:register_EvaluationComplaintForm" %}',
-    data: formdata,
-    beforeSend: function(xhr, settings){
-                          xhr.setRequestHeader("X-CSRFToken", csrftoken);
-                      },
-    cache: false,
-    contentType: false,
-    processData: false,
-    enctype: 'multipart/form-data',
-
-    success: function(response){
-      $("#subject").val("");
-      $("#questions").val("");
-      $("#score_obtained").val("");
-      $("#reason").val("");
-      $("#expected_score").val("");
-      $("#document").val("");
-      if (response.success === true){
-        statusMsg = "Your Evaluation Complaint Has Been Registered Successfully."
-        $("#successMsg ").text(statusMsg );
-        window.location.href = "{% url 'core:survey_list' %}"
-      }
-      else if(response.invalid_file){
-        alert(response.message);
-      }
-    }
+  // ═══════════════════════════════════════
+  // File name display
+  // ═══════════════════════════════════════
+  $(".custom-file-input").on("change", function() {
+    var fileName = $(this).val().split("\\").pop();
+    $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
   });
-});
-</script>
 
-
-
-<script>
-// Add the following code if you want the name of the file appear on select
-$(".custom-file-input").on("change", function() {
-  var fileName = $(this).val().split("\\").pop();
-  $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
-});
-</script>
-
-
-
-
-<script>
-$(':radio[name="complaint_type"]').change(function() {
+  // ═══════════════════════════════════════
+  // Toggle complaint type forms
+  // ═══════════════════════════════════════
+  $(':radio[name="complaint_type"]').change(function() {
     var choosenForm = $(this).filter(':checked').val();
-
-    if(choosenForm === "simpleComplaintValue"){
-        $("#simpleComplaintForm").show();
-        $("#evaluationComplaintForm").hide();
-        
-    }else{
-        $("#simpleComplaintForm").hide();
-        $("#evaluationComplaintForm").show();
+    if (choosenForm === "simpleComplaintValue") {
+      $("#simpleComplaintForm").show();
+      $("#evaluationComplaintForm").hide();
+    } else {
+      $("#simpleComplaintForm").hide();
+      $("#evaluationComplaintForm").show();
     }
-});
-</script>
-
-<script>
-$('#questions option').each(function() {
-  var optionText = this.text;
-  var newOption = optionText.substring(0,60);
-  $(this).text(newOption + '..');
   });
+
+  // Truncate question options text
+  $('#questions option').each(function() {
+    var optionText = this.text;
+    if (optionText.length > 60) {
+      $(this).text(optionText.substring(0, 60) + '..');
+    }
+  });
+
+  // ═══════════════════════════════════════
+  // Simple Complaint (Gunaso) Submit
+  // ═══════════════════════════════════════
+  $('#simpleComplaintForm').on('submit', function(e) {
+    e.preventDefault();
+
+    var formdata = new FormData($('#simpleComplaintForm')[0]);
+
+    $.ajax({
+      type: "POST",
+      url: '{% url "core:register_SimpleComplaintForm" %}',
+      data: formdata,
+      cache: false,
+      contentType: false,
+      processData: false,
+      enctype: 'multipart/form-data',
+      success: function(response) {
+        $("#sub").val("");
+        $("#msg").val("");
+        $("#document").val("");
+        if (response.success === true) {
+          alert("तपाईंको गुनासो सफलतापूर्वक दर्ता भयो।");
+          window.location.href = "{% url 'core:survey_list' %}";
+        } else if (response.invalid_file) {
+          alert(response.message);
+        } else {
+          alert(response.message || "त्रुटि भयो।");
+        }
+      }
+    });
+  });
+
+  // ═══════════════════════════════════════
+  // Evaluation Complaint (Punarbalokan) Submit
+  // with duplicate check
+  // ═══════════════════════════════════════
+  var pendingEvalFormData = null;
+
+  function submitEvaluationForm(formdata) {
+    $.ajax({
+      type: "POST",
+      url: '{% url "core:register_EvaluationComplaintForm" %}',
+      data: formdata,
+      cache: false,
+      contentType: false,
+      processData: false,
+      enctype: 'multipart/form-data',
+      success: function(response) {
+        $("#subject").val("");
+        $("#questions").val("");
+        $("#score_obtained").val("");
+        $("#reason").val("");
+        $("#expected_score").val("");
+        $("#evalCustomFile").val("");
+        $(".custom-file-label").text("");
+        if (response.success === true) {
+          alert("तपाईंको मूल्याङ्कन पुनरावलोकन अनुरोध सफलतापूर्वक दर्ता भयो।");
+          window.location.href = "{% url 'core:survey_list' %}";
+        } else if (response.invalid_file) {
+          alert(response.message);
+        } else if (response.duplicate_exists) {
+          // Server says duplicate exists — show confirmation
+          pendingEvalFormData = formdata;
+          $('#complaintModalCenter').modal('hide');
+          setTimeout(function() {
+            $('#duplicateEvalConfirm').modal('show');
+          }, 400);
+        } else {
+          alert(response.message || "त्रुटि भयो।");
+        }
+      }
+    });
+  }
+
+  $('#evaluationComplaintForm').on('submit', function(e) {
+    e.preventDefault();
+    var formdata = new FormData($('#evaluationComplaintForm')[0]);
+    // Add check_duplicate flag — server will check first
+    formdata.append("check_duplicate", "1");
+    submitEvaluationForm(formdata);
+  });
+
+  // User confirmed — submit with force flag
+  $('#confirmDuplicateEval').on('click', function() {
+    if (pendingEvalFormData) {
+      // Remove old check_duplicate and add force flag
+      pendingEvalFormData.delete("check_duplicate");
+      pendingEvalFormData.append("force_submit", "1");
+      $('#duplicateEvalConfirm').modal('hide');
+      submitEvaluationForm(pendingEvalFormData);
+      pendingEvalFormData = null;
+    }
+  });
+
+  $('#cancelDuplicateEval').on('click', function() {
+    pendingEvalFormData = null;
+  });
+
+});
 </script>
 {% endblock extra_scripts %}

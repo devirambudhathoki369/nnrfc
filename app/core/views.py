@@ -109,25 +109,15 @@ def _validate_uploaded_file(file_data):
 
 @login_required
 def SurveyList(request):
-    """
-    Shows survey cards for the logged-in user.
-    - Users with roles → redirected to dashboard
-    - Superusers → redirected to dashboard
-    - Province users WITH a department → only see surveys that have
-      at least one question assigned to their department
-    - Local level users → see all surveys for their level
-    """
     user = request.user
 
-    # Users with roles or superusers go straight to dashboard
     if user.roles.exists() or user.is_superuser:
         return redirect('dashboard:dashboard')
 
     try:
-        user_level_type = user.level.type.type  # "P" or "L"
+        user_level_type = user.level.type.type
         survey_list = Survey.objects.filter(level=user_level_type)
 
-        # Province users with a department: filter surveys by department
         if user.department and user_level_type == "P":
             survey_ids = Question.objects.filter(
                 department=user.department,
@@ -147,7 +137,7 @@ def SurveyList(request):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Index View — Shows list of questions/indicators inside a survey
+# Index View
 # ─────────────────────────────────────────────────────────────────────────────
 
 class IndexView(LoginRequiredMixin, ListView):
@@ -164,7 +154,7 @@ class IndexView(LoginRequiredMixin, ListView):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Question Detail View (unused but kept for compatibility)
+# Question Detail View
 # ─────────────────────────────────────────────────────────────────────────────
 
 class QuestionaireDetailView(LoginRequiredMixin, TemplateView):
@@ -181,7 +171,7 @@ class QuestionaireDetailView(LoginRequiredMixin, TemplateView):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Answer Create View — Form to fill an indicator
+# Answer Create View
 # ─────────────────────────────────────────────────────────────────────────────
 
 class AnswerCreateView(LoginRequiredMixin, CreateView):
@@ -190,7 +180,6 @@ class AnswerCreateView(LoginRequiredMixin, CreateView):
     fields = ["month", "value"]
 
     def _build_options_data(self, options):
-        """Build the options data list for template context."""
         options_data = []
         for option in options:
             if option.field_type == "FY":
@@ -228,7 +217,6 @@ class AnswerCreateView(LoginRequiredMixin, CreateView):
         context["question_title"] = question_obj.title
         context["survey_id"] = survey_id
 
-        # Build child question options
         child_options = []
         if child_questions.exists():
             context["has_child"] = True
@@ -246,7 +234,6 @@ class AnswerCreateView(LoginRequiredMixin, CreateView):
         context["child_questions"] = child_questions
         context["child_options"] = child_options
 
-        # Build parent question options
         options = (
             Option.objects.filter(question=question_id)
             .exclude(field_type="F")
@@ -263,6 +250,7 @@ class AnswerCreateView(LoginRequiredMixin, CreateView):
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Answer Detail View — Shows filled answers for an indicator
+# FIX: Now also shows uploaded files properly
 # ─────────────────────────────────────────────────────────────────────────────
 
 class AnswerDetailView(LoginRequiredMixin, TemplateView):
@@ -283,7 +271,6 @@ class AnswerDetailView(LoginRequiredMixin, TemplateView):
         context["month_id"] = month_id
         context["has_child"] = False
 
-        # Get fill survey for current user's level
         try:
             fill_survey_id = FillSurvey.objects.filter(
                 survey=survey_id, level_id=current_user.level
@@ -348,7 +335,7 @@ class AnswerDetailView(LoginRequiredMixin, TemplateView):
 
                 question_option["option_answer"] = option_answer_pair
 
-                # Get attached files
+                # ── FIX: Get attached files (AnswerDocument objects) ──
                 child_files = []
                 if file_option.exists():
                     file_optn = file_option[0]
@@ -364,7 +351,7 @@ class AnswerDetailView(LoginRequiredMixin, TemplateView):
                                 option=file_optn.id, fill_survey=fill_survey_id
                             ).first()
                         if answer_obj:
-                            child_files = AnswerDocument.objects.filter(answer=answer_obj.id)
+                            child_files = list(AnswerDocument.objects.filter(answer=answer_obj.id))
                     except Exception as e:
                         logger.error(f"Error fetching files for child question: {e}")
 
@@ -422,7 +409,7 @@ class AnswerDetailView(LoginRequiredMixin, TemplateView):
                     "indicator": OPTION_FIELD_INDICATOR.get(option.field_type, ""),
                 })
 
-            # Get attached files
+            # ── FIX: Get attached files as AnswerDocument objects with .document ──
             if file_option.exists():
                 file_optn = file_option[0]
                 try:
@@ -437,8 +424,7 @@ class AnswerDetailView(LoginRequiredMixin, TemplateView):
                             option=file_optn.id, fill_survey=fill_survey_id
                         ).first()
                     if answer_obj:
-                        doc_files = AnswerDocument.objects.filter(answer=answer_obj.id)
-                        files = [f.document for f in doc_files]
+                        files = list(AnswerDocument.objects.filter(answer=answer_obj.id))
                 except Exception as e:
                     logger.error(f"Error fetching uploaded files: {e}")
 
@@ -475,7 +461,6 @@ def submit_answer(request):
         files = request.FILES
         current_user = request.user
 
-        # ── Validate: file required but not uploaded ─────────────────────
         if file_required and len(files) <= 0:
             return JsonResponse({
                 "success": False,
@@ -486,7 +471,6 @@ def submit_answer(request):
         survey = question_obj.survey
         answers = json.loads(submitted_answers)
 
-        # ── Validate: answer data ────────────────────────────────────────
         for answer in answers:
             if answer.get("is_valid") is False:
                 return JsonResponse({
@@ -495,7 +479,6 @@ def submit_answer(request):
                     "invalid_data": True,
                 })
 
-        # ── Get or create FillSurvey ─────────────────────────────────────
         try:
             fill_survey = FillSurvey.objects.get(
                 survey=survey, level_id=current_user.level
@@ -505,19 +488,16 @@ def submit_answer(request):
                 survey=survey, level_id=current_user.level
             )
 
-        # ── Process file uploads ─────────────────────────────────────────
         if files:
             for file_key in files:
                 try:
                     question_id_from_file = int(file_key.replace("f", ""))
                     file_data = files[file_key]
 
-                    # Validate extension and size
                     is_valid, error_resp = _validate_uploaded_file(file_data)
                     if not is_valid:
                         return error_resp
 
-                    # Find the File-type option for this question
                     try:
                         option_field_file = get_file_option_field(question_id_from_file)
                     except (IndexError, Option.DoesNotExist, Exception):
@@ -543,7 +523,6 @@ def submit_answer(request):
                     logger.error(f"File key parsing error for '{file_key}': {e}")
                     continue
 
-        # ── Save regular answers ─────────────────────────────────────────
         for answer in answers:
             try:
                 option_obj = Option.objects.get(id=answer["option_id"])
@@ -563,7 +542,6 @@ def submit_answer(request):
                     "invalid_data": True,
                 })
 
-        # ── Save fiscal year answers ─────────────────────────────────────
         if fy_answers:
             for fy_ans in fy_answers:
                 try:
@@ -641,15 +619,14 @@ def check_level_month_data(request):
     return JsonResponse(data)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Send for Correction (Samsodhan)
+# Sends ONE notification to admin
+# ─────────────────────────────────────────────────────────────────────────────
+
 @csrf_exempt
 @login_required
 def send_for_correction(request):
-    """
-    Creates ONE correction per question+level (not per month).
-    If pending correction exists, updates it.
-    Files go to CorrectionDocument model.
-    Only sends the "नयाँ सुधार अनुमति सूचक" notification — NOT the "सुधार अनुरोध प्राप्त" one.
-    """
     if request.method != "POST":
         return JsonResponse({"success": False, "message": "Invalid method."}, status=405)
  
@@ -664,7 +641,6 @@ def send_for_correction(request):
     if not question_id:
         return JsonResponse({"success": False, "message": "प्रश्न ID फेला परेन।"})
  
-    # Parse month (optional, stored for reference but NOT used to create separate corrections)
     month = request.POST.get("month_id", "")
     try:
         month_val = int(month) if month and month not in ("", "null", "undefined") else None
@@ -674,11 +650,10 @@ def send_for_correction(request):
     current_user = request.user
     user_level = current_user.level
  
-    # Validate file
     document = request.FILES.get("filename")
     if document:
         if document.size > MAX_UPLOAD_SIZE:
-            return JsonResponse({"success": False, "message": "फाइल साइज १० MB भन्दा बढी हुनु हुँदैन।"})
+            return JsonResponse({"success": False, "message": "फाइल साइज ५ MB भन्दा बढी हुनु हुँदैन।"})
         if not validate_file(document.name):
             return JsonResponse({"success": False, "message": "यो फाइल प्रकार अनुमति छैन।"})
  
@@ -688,8 +663,6 @@ def send_for_correction(request):
         return JsonResponse({"success": False, "message": "प्रश्न फेला परेन।"})
  
     try:
-        # Check if PENDING correction already exists for this question+level
-        # (NOT per month — one correction per question per level)
         existing = SurveyCorrection.objects.filter(
             question=question_obj,
             level=user_level,
@@ -697,7 +670,6 @@ def send_for_correction(request):
         ).order_by("-created_at").first()
  
         if existing:
-            # Update existing correction
             existing.sub = subject
             existing.msg = message
             if month_val is not None:
@@ -706,7 +678,6 @@ def send_for_correction(request):
             correction = existing
             action_msg = "सुधार अनुरोध अपडेट भयो।"
         else:
-            # Create new correction
             correction = SurveyCorrection.objects.create(
                 sub=subject,
                 msg=message,
@@ -717,13 +688,25 @@ def send_for_correction(request):
             )
             action_msg = "संशोधन अनुरोध सफलतापूर्वक पठाइयो।"
  
-        # Save file to CorrectionDocument
         if document:
             from core.models import CorrectionDocument
             CorrectionDocument.objects.create(
                 correction=correction,
                 document=document,
             )
+ 
+        # ── Send ONE notification to admin ──
+        Notification.objects.get_or_create(
+            correction=correction,
+            correction_checked=False,
+            defaults={
+                "user": current_user,
+                "msg": f"{user_level.name} ले सुधार अनुरोध पठाउनुभयो: {subject}",
+                "question": question_obj,
+                "level": user_level,
+                "is_viewed": False,
+            },
+        )
  
         return JsonResponse({
             "success": True,
@@ -736,12 +719,14 @@ def send_for_correction(request):
         return JsonResponse({"success": False, "message": f"त्रुटि: {str(e)}"})
  
  
+# ─────────────────────────────────────────────────────────────────────────────
+# Add file to existing correction
+# FIX: Sends proper correction notification (not a generic one)
+# ─────────────────────────────────────────────────────────────────────────────
+
 @csrf_exempt
 @login_required
 def add_correction_file(request):
-    """
-    Add file to existing correction + notify admin.
-    """
     if request.method != "POST":
         return JsonResponse({"success": False, "message": "Invalid method."}, status=405)
  
@@ -752,7 +737,7 @@ def add_correction_file(request):
         return JsonResponse({"success": False, "message": "Correction ID र फाइल आवश्यक छ।"})
  
     if file.size > MAX_UPLOAD_SIZE:
-        return JsonResponse({"success": False, "message": "फाइल साइज १० MB भन्दा बढी हुनु हुँदैन।"})
+        return JsonResponse({"success": False, "message": "फाइल साइज ५ MB भन्दा बढी हुनु हुँदैन।"})
     if not validate_file(file.name):
         return JsonResponse({"success": False, "message": "यो फाइल प्रकार अनुमति छैन।"})
  
@@ -768,15 +753,29 @@ def add_correction_file(request):
             document=file,
         )
  
-        # ── Notify admin that new file was added ──
-        Notification.objects.create(
-            user=request.user,
-            msg=f"{request.user.level.name} ले सुधार अनुरोधमा नयाँ फाइल थप्नुभयो।",
-            question=correction.question,
-            level=request.user.level,
-            is_viewed=False,
+        # ── FIX: Send proper correction-linked notification ──
+        # Update existing notification if present, or create new one linked to correction
+        existing_notif = Notification.objects.filter(
+            correction=correction,
             correction_checked=False,
-        )
+        ).first()
+
+        if existing_notif:
+            # Update existing notification so admin sees updated info
+            existing_notif.is_viewed = False
+            existing_notif.msg = f"{request.user.level.name} ले सुधार अनुरोधमा नयाँ फाइल थप्नुभयो: {correction.sub}"
+            existing_notif.save()
+        else:
+            # Create new notification linked to the correction
+            Notification.objects.create(
+                user=request.user,
+                msg=f"{request.user.level.name} ले सुधार अनुरोधमा नयाँ फाइल थप्नुभयो: {correction.sub}",
+                question=correction.question,
+                level=request.user.level,
+                is_viewed=False,
+                correction_checked=False,
+                correction=correction,
+            )
  
         return JsonResponse({
             "success": True,
@@ -796,10 +795,6 @@ def add_correction_file(request):
  
 @login_required
 def get_correction_data(request):
-    """
-    Returns ALL corrections for a question+level (not filtered by month).
-    Each correction has its files from both old and new model.
-    """
     question_id = request.GET.get("question_id")
     if not question_id:
         return JsonResponse({"corrections": []})
@@ -808,7 +803,6 @@ def get_correction_data(request):
     if not user_level:
         return JsonResponse({"corrections": []})
  
-    # Get ALL corrections for this question+level (no month filter)
     corrections = SurveyCorrection.objects.filter(
         question_id=question_id,
         level=user_level,
@@ -824,7 +818,6 @@ def get_correction_data(request):
     for corr in corrections:
         files = []
  
-        # New CorrectionDocument files
         try:
             from core.models import CorrectionDocument
             for doc in CorrectionDocument.objects.filter(correction=corr).order_by("created_at"):
@@ -838,7 +831,6 @@ def get_correction_data(request):
         except Exception:
             pass
  
-        # Old single document field
         try:
             if corr.document and corr.document.name:
                 files.append({
@@ -865,9 +857,11 @@ def get_correction_data(request):
         })
  
     return JsonResponse({"corrections": data})
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Register Simple Complaint (गुनासो)
-# FIX #1: Gracefully handle missing user.level for province users
+# FIX: Now sends notification to admin
 # ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
@@ -878,7 +872,6 @@ def register_SimpleComplaint(request):
     sub = request.POST.get("sub", None)
     msg = request.POST.get("msg", None)
 
-    # FIX #1: Check that user has a valid level before proceeding
     user_level = getattr(request.user, 'level', None)
     if not user_level:
         return JsonResponse({
@@ -905,6 +898,16 @@ def register_SimpleComplaint(request):
             complaint_file=complaint_file,
         )
         complaint.save()
+
+        # ── NEW: Send notification to admin ──
+        Notification.objects.create(
+            user=request.user,
+            msg=f"{user_level.name} ले नयाँ गुनासो दर्ता गर्नुभयो: {sub}",
+            level=user_level,
+            is_viewed=False,
+            correction_checked=False,
+        )
+
         messages.success(request, "तपाईंको गुनासो सफलतापूर्वक दर्ता भयो।")
         return JsonResponse({"success": True, "message": "तपाईंको गुनासो सफलतापूर्वक दर्ता भयो।"})
     except Exception as e:
@@ -917,41 +920,91 @@ def register_SimpleComplaint(request):
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Register Evaluation Complaint (मूल्याङ्कन पुनरावलोकन)
+# FIX: Duplicate check + notification to admin
 # ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
 def register_EvaluationComplaint(request):
-    if request.method == "POST":
-        questions = request.POST.get("questions", None)
+    if request.method != "POST":
+        return JsonResponse({"success": False, "message": "Invalid request method."}, status=405)
+
+    questions = request.POST.get("questions", None)
+    subject = request.POST.get("subject", None)
+    score_obtained = request.POST.get("score_obtained", None)
+    reason = request.POST.get("reason", None)
+    expected_score = request.POST.get("expected_score", None)
+    check_duplicate = request.POST.get("check_duplicate", None)
+    force_submit = request.POST.get("force_submit", None)
+
+    if not questions:
+        return JsonResponse({"success": False, "message": "कृपया सूचक छान्नुहोस्।"})
+
+    try:
         question_obj = Question.objects.get(pk=questions)
-        subject = request.POST.get("subject", None)
-        score_obtained = request.POST.get("score_obtained", None)
-        reason = request.POST.get("reason", None)
-        expected_score = request.POST.get("expected_score", None)
+    except Question.DoesNotExist:
+        return JsonResponse({"success": False, "message": "सूचक फेला परेन।"})
 
-        file_upload = request.FILES.get("document", None)
-        if file_upload:
-            is_valid, error_resp = _validate_uploaded_file(file_upload)
-            if not is_valid:
-                return JsonResponse({
-                    "message": "यो फाइल प्रकार अनुमति छैन। (Invalid file type)",
-                    "invalid_file": True,
-                })
+    user_level = getattr(request.user, 'level', None)
+    if not user_level:
+        return JsonResponse({
+            "success": False,
+            "message": "तपाईंको खाता कुनै तहसँग जोडिएको छैन।",
+        })
 
+    # ── Duplicate check: if check_duplicate flag set, check first ──
+    if check_duplicate and not force_submit:
+        existing = AppraisalReviewRequest.objects.filter(
+            question_id=question_obj,
+            level=user_level,
+        ).exists()
+        if existing:
+            return JsonResponse({
+                "success": False,
+                "duplicate_exists": True,
+                "message": "तपाईंले पहिले नै यस सूचकको लागि पुनरावलोकन अनुरोध प्रविष्टि गरिसक्नु भएको छ।",
+            })
+
+    file_upload = request.FILES.get("document", None)
+    if file_upload:
+        is_valid, error_resp = _validate_uploaded_file(file_upload)
+        if not is_valid:
+            return JsonResponse({
+                "success": False,
+                "message": "यो फाइल प्रकार अनुमति छैन। (Invalid file type)",
+                "invalid_file": True,
+            })
+
+    try:
         complaint = AppraisalReviewRequest(
             question_id=question_obj,
             subject=subject,
             score_obtained=score_obtained,
             reason=reason,
             expected_score=expected_score,
-            level=request.user.level,
+            level=user_level,
             user=request.user,
             file_upload=file_upload,
         )
         complaint.save()
-        messages.success(request, "तपाईंको मूल्याङ्कन गुनासो सफलतापूर्वक दर्ता भयो।")
 
-    return JsonResponse({"success": True})
+        # ── NEW: Send notification to admin ──
+        Notification.objects.create(
+            user=request.user,
+            msg=f"{user_level.name} ले मूल्याङ्कन पुनरावलोकन अनुरोध गर्नुभयो: {subject}",
+            level=user_level,
+            is_viewed=False,
+            correction_checked=False,
+        )
+
+        messages.success(request, "तपाईंको मूल्याङ्कन पुनरावलोकन अनुरोध सफलतापूर्वक दर्ता भयो।")
+        return JsonResponse({"success": True})
+
+    except Exception as e:
+        logger.error(f"Error registering evaluation complaint: {e}", exc_info=True)
+        return JsonResponse({
+            "success": False,
+            "message": f"दर्ता गर्न सकिएन। (Error: {str(e)})",
+        })
 
 
 # ─────────────────────────────────────────────────────────────────────────────
