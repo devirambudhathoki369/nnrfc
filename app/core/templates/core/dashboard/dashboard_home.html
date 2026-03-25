@@ -21,7 +21,11 @@
       <div class="col-lg-3 col-md-6 mb-3">
         <div class="card card-body text-center h-100">
           <p class="text-muted small mb-1">कुल सूचकहरु</p>
-          <h2 class="mb-0">{{ count|default:"0" }}</h2>
+          <h5 class="mb-0">
+            प्रदेश {{ province_question_count|default:"0" }}
+            <span class="text-muted px-1">|</span>
+            स्थानीय {{ local_question_count|default:"0" }}
+          </h5>
         </div>
       </div>
       <div class="col-lg-3 col-md-6 mb-3">
@@ -38,7 +42,7 @@
       </div>
       <div class="col-lg-3 col-md-6 mb-3">
         <div class="card card-body text-center h-100">
-          <p class="text-muted small mb-1">चालु आ.व.</p>
+          <p class="text-muted small mb-1">चालु आब</p>
           <h2 class="mb-0 text-primary">{{ fiscal_year.name }}</h2>
         </div>
       </div>
@@ -126,7 +130,7 @@
 
     {% if recent_corrections %}
     <div class="card card-body mb-3">
-      <h5>हालैका सुधार अनुरोध</h5>
+      <h5>सुधारका लागि प्राप्त भएका अनुरोध</h5>
       {% for corr in recent_corrections %}
       <div class="d-flex justify-content-between mb-2 pb-2" style="border-bottom:1px solid #eee;">
         <div style="flex:1;"><strong style="font-size:13px;">{{ corr.sub }}</strong><br><small class="text-muted">{{ corr.level }} — {{ corr.created_at|timesince }} अघि</small></div>
@@ -155,7 +159,7 @@
       </div>
       <div class="col-lg-4 col-md-4 mb-3">
         <div class="card card-body text-center h-100">
-          <p class="text-muted small mb-1">प्रविष्टि हुन बाँकी</p>
+          <p class="text-muted small mb-1">भर्न बाँकी सूचक</p>
           <h2 class="mb-0 text-danger">{{ my_remaining|default:"0" }}</h2>
         </div>
       </div>
@@ -170,6 +174,31 @@
         {% endfor %}
       </div>
     </div>
+
+    {% if l_question_status %}
+    <div class="card card-body mb-3">
+      <h5 class="mb-3">सम्बन्धित प्रदेशका स्थानीय तह{% if province_name %} - {{ province_name }}{% endif %} <small class="text-muted">({{ l_total_levels }})</small></h5>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover mb-0">
+          <thead class="thead-light">
+            <tr><th style="width:5%;">क्र.स</th><th>सूचक</th><th class="text-center" style="width:8%;">पूर्णांक</th><th class="text-center" style="width:12%;">भरेको</th><th class="text-center" style="width:12%;">नभरेको</th><th class="text-center" style="width:12%;">प्रगति</th></tr>
+          </thead>
+          <tbody>
+            {% for item in l_question_status %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td style="font-size:13px;">{{ item.question.title|truncatechars:80 }}</td>
+              <td class="text-center">{% if item.question.full_marks %}<span class="badge badge-info">{{ item.question.full_marks }}</span>{% else %}—{% endif %}</td>
+              <td class="text-center"><span class="badge badge-success">{{ item.filled_count }}</span></td>
+              <td class="text-center"><span class="badge badge-danger">{{ item.not_filled_count }}</span></td>
+              <td class="text-center">{{ item.percentage }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
 
     {# Suchak for my department #}
     {% comment %} {% if my_suchak %}
@@ -191,7 +220,7 @@
     {# Corrections with admin remarks #}
     {% if my_corrections %}
     <div class="card card-body mb-3" style="border-left:3px solid #ffc107;">
-      <h5 class="text-warning mb-2">मेरा सुधार अनुरोध र एडमिन कैफियत</h5>
+      <h5 class="text-warning mb-2"> सुधार अनुरोध र एडमिन कैफियत</h5>
       {% for corr in my_corrections %}
       <div class="mb-2 pb-2" style="border-bottom:1px solid #eee;">
         <div class="d-flex justify-content-between">
@@ -213,7 +242,7 @@
     {# My complaints #}
     {% if my_complaints %}
     <div class="card card-body mb-3">
-      <h5 class="mb-2">मेरा गुनासोहरु</h5>
+      <h5 class="mb-2"> गुनासोहरु</h5>
       {% for comp in my_complaints %}
       <div class="d-flex justify-content-between mb-2">
         <span style="font-size:13px;">{{ comp.sub }}</span>
@@ -227,22 +256,28 @@
     {% elif user_type == "local" %}
 
     <div class="row mb-3">
-      <div class="col-lg-4 col-md-6 mb-3">
+      <div class="col-lg-3 col-md-6 mb-3">
         <div class="card card-body text-center h-100">
-          <p class="text-muted small mb-1">कुल सूचकहरु</p>
+          <p class="text-muted small mb-1">जम्मा सूचक संख्या</p>
           <h2 class="mb-0">{{ count|default:"0" }}</h2>
         </div>
       </div>
-      <div class="col-lg-4 col-md-6 mb-3">
+      <div class="col-lg-3 col-md-6 mb-3">
         <div class="card card-body text-center h-100">
-          <p class="text-muted small mb-1">पूर्ण भएको</p>
+          <p class="text-muted small mb-1">भरेको</p>
           <h2 class="mb-0 text-success">{{ my_filled|default:"0" }}</h2>
         </div>
       </div>
-      <div class="col-lg-4 col-md-6 mb-3">
+      <div class="col-lg-3 col-md-6 mb-3">
         <div class="card card-body text-center h-100">
-          <p class="text-muted small mb-1">मेरो प्रगति</p>
-          <h2 class="mb-0 {% if my_progress >= 75 %}text-success{% elif my_progress >= 40 %}text-warning{% else %}text-danger{% endif %}">{{ my_progress|default:"0" }}%</h2>
+          <p class="text-muted small mb-1">भर्न बाँकी</p>
+          <h2 class="mb-0 text-danger">{{ my_remaining|default:"0" }}</h2>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card card-body text-center h-100">
+          <p class="text-muted small mb-1">आर्थिक वर्ष</p>
+          <h2 class="mb-0 text-primary">{{ fiscal_year.name }}</h2>
         </div>
       </div>
     </div>
@@ -257,24 +292,46 @@
     </div>
 
     {# Suchak for local level #}
-    {% if my_suchak %}
+    {% if local_question_rows %}
     <div class="card card-body mb-3" style="border-left:3px solid #17a2b8;">
-      <h5 class="text-info mb-2">मेरा सूचकहरु</h5>
-      <ul class="list-unstyled mb-0">
-        {% for q in my_suchak %}
-        <li class="mb-1" style="font-size:13px;">
-          <span class="badge badge-info mr-1">{% if q.full_marks %}{{ q.full_marks }}{% else %}—{% endif %}</span>
-          {{ q.title|truncatechars:70 }}
-        </li>
-        {% endfor %}
-      </ul>
+      <h5 class="text-info mb-3">स्थानीय तहका सूचकहरु</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover mb-0">
+          <thead class="thead-light">
+            <tr>
+              <th style="width:5%;">क्र.स</th>
+              <th>सूचक</th>
+              <th style="width:18%;">सर्भे</th>
+              <th class="text-center" style="width:12%;">पूर्णांक</th>
+              <th class="text-center" style="width:12%;">स्थिति</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in local_question_rows %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td style="font-size:13px;">{{ item.question.title|truncatechars:90 }}</td>
+              <td style="font-size:13px;">{{ item.survey_name }}</td>
+              <td class="text-center">{% if item.question.full_marks %}<span class="badge badge-info">{{ item.question.full_marks }}</span>{% else %}—{% endif %}</td>
+              <td class="text-center">
+                {% if item.is_completed %}
+                <span class="badge badge-success">पूरा भयो</span>
+                {% else %}
+                <span class="badge badge-danger">बाँकी</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
     {% endif %}
 
     {# Corrections with admin remarks #}
     {% if my_corrections %}
     <div class="card card-body mb-3" style="border-left:3px solid #ffc107;">
-      <h5 class="text-warning mb-2">मेरा सुधार अनुरोध र एडमिन कैफियत</h5>
+      <h5 class="text-warning mb-2"> सुधार अनुरोध र एडमिन कैफियत</h5>
       {% for corr in my_corrections %}
       <div class="mb-2 pb-2" style="border-bottom:1px solid #eee;">
         <div class="d-flex justify-content-between">
@@ -296,7 +353,7 @@
     {# My complaints #}
     {% if my_complaints %}
     <div class="card card-body mb-3">
-      <h5 class="mb-2">मेरा गुनासोहरु</h5>
+      <h5 class="mb-2"> गुनासोहरु</h5>
       {% for comp in my_complaints %}
       <div class="d-flex justify-content-between mb-2">
         <span style="font-size:13px;">{{ comp.sub }}</span>

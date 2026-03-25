@@ -262,6 +262,82 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
         pct = round((filled / total * 100), 1)
         return total, filled, pct
 
+    def _build_level_question_completion(self, user, fiscal):
+        """
+        Build per-question completion status for the current user's level.
+        """
+        try:
+            user_level = user.level
+            level_type = user_level.type.type
+        except AttributeError:
+            return [], 0, 0
+
+        q_filter = {
+            "survey__fiscal_year": fiscal,
+            "survey__level": level_type,
+            "parent__isnull": True,
+        }
+        if user.department and level_type == "P":
+            q_filter["department"] = user.department
+
+        questions = list(
+            Question.objects.filter(**q_filter)
+            .select_related("survey", "department")
+            .order_by("survey__name", "sequence_id")
+        )
+        if not questions:
+            return [], 0, 0
+
+        question_ids = [q.id for q in questions]
+        child_map = {}
+        for parent_id, child_id in Question.objects.filter(
+            parent_id__in=question_ids
+        ).values_list("parent_id", "id"):
+            child_map.setdefault(parent_id, []).append(child_id)
+
+        source_ids = []
+        q_to_source = {}
+        for q in questions:
+            srcs = child_map.get(q.id, [q.id])
+            q_to_source[q.id] = srcs
+            source_ids.extend(srcs)
+
+        source_to_opts = {}
+        all_option_ids = set()
+        for opt_id, q_id in Option.objects.filter(
+            question_id__in=source_ids
+        ).values_list("id", "question_id"):
+            source_to_opts.setdefault(q_id, set()).add(opt_id)
+            all_option_ids.add(opt_id)
+
+        answered_opts = set()
+        if all_option_ids:
+            answered_opts = set(
+                Answer.objects.filter(
+                    option_id__in=all_option_ids,
+                    created_by_level_id=user_level.id,
+                ).values_list("option_id", flat=True)
+            )
+
+        rows = []
+        filled_count = 0
+        for q in questions:
+            option_ids = set()
+            for src_id in q_to_source[q.id]:
+                option_ids.update(source_to_opts.get(src_id, set()))
+            is_completed = bool(option_ids and option_ids & answered_opts)
+            if is_completed:
+                filled_count += 1
+            rows.append(
+                {
+                    "question": q,
+                    "survey_name": q.survey.name,
+                    "is_completed": is_completed,
+                }
+            )
+
+        return rows, len(rows), filled_count
+
     # ─────────────────────────────────────────────────────────────────
     # Helper: Get corrections with remarks
     # ─────────────────────────────────────────────────────────────────
@@ -337,6 +413,8 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
             context["p_question_status"] = p_status
             context["p_total_levels"] = p_total
             context["count"] = len(l_status) + len(p_status)
+            context["province_question_count"] = len(p_status)
+            context["local_question_count"] = len(l_status)
 
             context["recent_corrections"] = (
                 SurveyCorrection.objects
@@ -351,6 +429,7 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
         if user_level_type == "P":
             context["user_type"] = "province"
             context["user_level"] = user_level
+            context["province_name"] = user_level.name
 
             # My progress across all surveys — bulk optimized
             total, filled, pct = self._get_my_progress(user, fiscal)
@@ -399,12 +478,16 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
         if user_level_type == "L":
             context["user_type"] = "local"
             context["user_level"] = user_level
+            context["province_name"] = (
+                user_level.province_level.name if user_level.province_level else ""
+            )
 
             # My progress across all surveys — bulk optimized
             total, filled, pct = self._get_my_progress(user, fiscal)
             context["count"] = total
             context["my_filled"] = filled
             context["my_progress"] = pct
+            context["my_remaining"] = total - filled
 
             # Corrections with remarks
             context["my_corrections"] = self._get_my_corrections_with_remarks(user_level)
@@ -424,6 +507,13 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
                 .select_related('survey', 'department')
                 .order_by("survey__name", "sequence_id")
             )
+            local_question_rows, local_total, local_filled = self._build_level_question_completion(
+                user, fiscal
+            )
+            context["local_question_rows"] = local_question_rows
+            context["count"] = local_total
+            context["my_filled"] = local_filled
+            context["my_remaining"] = local_total - local_filled
 
             return context
 
