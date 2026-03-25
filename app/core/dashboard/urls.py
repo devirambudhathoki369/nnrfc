@@ -94,7 +94,7 @@ urlpatterns = [
         "get-question-options/<int:q_id>/",
         get_question_options,
         name="q_options",
-    ),
+    ),  
     path(
         "index-option-add/<int:ques_id>/",
         AddMoreIndexToSurvey.as_view(),

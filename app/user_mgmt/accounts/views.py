@@ -389,3 +389,28 @@ class UserPasswordResetRequestView(FormView):
             return redirect('password_reset_done')
 
         return JsonResponse({"success": True, "msg": self.success_message})
+
+def admin_change_user_password(request, user_id):
+    """Admin changes password for a specific user — no current password required."""
+    if request.method == "POST":
+        try:
+            target_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return JsonResponse({"success": False, "msg": "प्रयोगकर्ता फेला परेन।"})
+
+        new_password     = request.POST.get("new_password", "").strip()
+        confirm_password = request.POST.get("confirm_password", "").strip()
+
+        if len(new_password) < 8:
+            return JsonResponse({"success": False, "new_password": "पासवर्ड कम्तिमा ८ अक्षर हुनुपर्छ।"})
+
+        if new_password != confirm_password:
+            return JsonResponse({"success": False, "confirm_password": "पासवर्डहरू मेल खाएनन्।"})
+
+        target_user.set_password(new_password)
+        target_user.is_first_login = False  # clear first-login flag if set
+        target_user.save()
+
+        return JsonResponse({"success": True, "msg": "पासवर्ड सफलतापूर्वक परिवर्तन गरियो।"})
+
+    return JsonResponse({"success": False, "msg": "Invalid request."})

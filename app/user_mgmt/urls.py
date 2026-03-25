@@ -13,6 +13,7 @@ from user_mgmt.accounts.views import (
     get_level_departments,
     get_levels,
     registration_view,
+    admin_change_user_password,
     LoginUserView,
     UserLogoutView
 )
@@ -38,6 +39,7 @@ urlpatterns = [
     path("department-list/", DepartmentListView.as_view(), name="depart_list"),
     path("department-update/<int:pk>/", DepartmentUpdateView.as_view(), name="depart_update"),
     path("department-delete/<int:department_id>/", delete_department, name="depart_delete"),
+    path('user/<int:user_id>/change-password/', admin_change_user_password, name='change_password'),
     # path(
     #     "change/password/",
     #     UserPasswordChangeView.as_view(

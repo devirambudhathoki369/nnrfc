@@ -169,7 +169,7 @@ class QuestionaireDetailView(LoginRequiredMixin, TemplateView):
         question_id = self.kwargs.get("pk")
         context["parent"] = Question.objects.get(pk=question_id)
         context["children"] = Question.objects.filter(parent__id=question_id)
-        context["title"] = Question.objects.all()
+        context["title"] = Question.objects.all()   
         return context
 
 
