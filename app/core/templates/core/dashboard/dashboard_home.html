@@ -44,15 +44,6 @@
       </div>
     </div>
 
-    <div class="card card-body mb-3">
-      <div class="d-flex flex-wrap" style="gap:10px;">
-        <a href="{% url 'dashboard:survey_list' %}" class="btn btn-primary">सर्वेक्षण सूची</a>
-        <a href="{% url 'dashboard:master_configuration' %}" class="btn btn-outline-secondary">कन्फिगरेसन</a>
-        <a href="{% url 'user_mgmt:user_list' %}" class="btn btn-outline-dark">प्रयोगकर्ताहरु</a>
-        <a href="{% url 'report:reports' %}" class="btn btn-outline-info">प्रतिवेदनहरु</a>
-      </div>
-    </div>
-
     {# ── Level Tabs ─────────────────────────────────────── #}
     {% if p_question_status or l_question_status %}
     <ul class="nav nav-tabs mb-3" id="levelTab" role="tablist">
@@ -231,32 +222,6 @@
       {% endfor %}
     </div>
     {% endif %}
-
-    {# Local levels under my province #}
-    {% comment %} {% if l_question_status %}
-    <div class="card card-body mb-3">
-      <h5>मेरो प्रदेशका स्थानीय तह <small class="text-muted">({{ l_total_levels }})</small></h5>
-      <div class="table-responsive">
-        <table class="table table-bordered table-sm mb-0">
-          <thead class="thead-light">
-            <tr><th>क्र.स</th><th>सूचक</th><th class="text-center">भरेको</th><th class="text-center">नभरेको</th><th class="text-center">%</th></tr>
-          </thead>
-          <tbody>
-            {% for item in l_question_status %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
-              <td style="font-size:13px;">{{ item.question.title|truncatechars:60 }}</td>
-              <td class="text-center"><span class="badge badge-success">{{ item.filled_count }}</span></td>
-              <td class="text-center"><span class="badge badge-danger">{{ item.not_filled_count }}</span></td>
-              <td class="text-center" style="font-size:12px;">{{ item.percentage }}%</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% endif %} {% endcomment %}
-
 
     {# ═══════════════ LOCAL LEVEL USER ═══════════════ #}
     {% elif user_type == "local" %}
