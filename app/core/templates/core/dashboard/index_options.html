@@ -1,12 +1,31 @@
 {% extends 'fragments/dashboard/base.html' %} {% load static %} 
 
  {% block title-bar %}
-  <div class="header-page">
-    <h1>कार्य सम्पादन सूचक</h1>
-     <a href="{% url 'dashboard:home' %}"><button class="btn btn-icon-only">
-        <i class="ic-close-circular-filled text-danger"></i>
-      </button>
-    </a>
+  <div class="header-page" style="display: flex; justify-content: space-between; align-items: center;">
+    
+      <h1>कार्य सम्पादन सूचक</h1>
+
+      <a href="{% url 'dashboard:home' %}" style="text-decoration: none;">
+          <div style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              padding: 8px 14px;
+              border-radius: 20px;
+              background: #f5f5f5;
+              transition: all 0.3s ease;
+              font-size: 14px;
+              color: #333;
+          "
+          onmouseover="this.style.background='#e0e0e0'"
+          onmouseout="this.style.background='#f5f5f5'">
+              
+              <i class="fas fa-arrow-left" style="font-size: 14px;"></i>
+              <span>कार्य सम्पादन सूचकमा फर्कनुहोस्</span>
+          
+          </div>
+      </a>
+
   </div>
 {% endblock title-bar %}
 {% block content %}
