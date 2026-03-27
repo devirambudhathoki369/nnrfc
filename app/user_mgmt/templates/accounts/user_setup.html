@@ -1,684 +1,646 @@
-{% extends 'fragments/dashboard/base.html' %} {% load static %} {% block user-list %}
+{% extends 'fragments/dashboard/base.html' %}
+{% load static %}
+
+{% block user-list %}
 <div class="header-page">
   <h1>प्रयोगकर्ता सेटअप</h1>
 </div>
-{% endblock user-list %} {% block content %}
+{% endblock user-list %}
 
+{% block content %}
 <Fragment>
   <div class="inner screen-user-setup">
     <div class="container">
       <div class="container">
 
-       <!-- Delete Confirmation Modal -->
-       <div
-        class="modal mymodal modal-01"
-        id="deleteModal"
-        tabindex="-1"
-        role="dialog"
-      >
-        <div class="modal-dialog" role="document">
-          <div class="modal-content">
-            <div class="modal-header align-items-center">
-              <h5 class="modal-title">प्रयोगकर्ताको पुष्टिकरण मेटाउनुहोस्</h5>
-              <button
-                type="button"
-                class="close"
-                data-dismiss="modal"
-                aria-label="Close"
-              >
-                <span
-                  aria-hidden="true"
-                  class="ic-close-circular-filled text-danger h5"
-                ></span>
-              </button>
-            </div>
-            <form action="" method="POST" class="delete-form">
-              {% csrf_token %}
-              <div class="modal-body">
-                <label class="d-block">के तपाईं पक्का डिलिट गर्न चाहनुहुन्छ?</label>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-dismiss="modal">
-                  रद्द गर्नुहोस्
+        <!-- ══════════════════════════════════════════════
+             Delete Confirmation Modal
+        ══════════════════════════════════════════════ -->
+        <div class="modal mymodal modal-01" id="deleteModal" tabindex="-1" role="dialog">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header align-items-center">
+                <h5 class="modal-title">प्रयोगकर्ता मेटाउने पुष्टिकरण</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true" class="ic-close-circular-filled text-danger h5"></span>
                 </button>
-                <button type="submit" class="btn btn-danger">डिलिट गर्नुहोस्</button>
               </div>
-            </form>
+              <form action="" method="POST" class="delete-form">
+                {% csrf_token %}
+                <div class="modal-body">
+                  <label class="d-block">के तपाईं पक्का यो प्रयोगकर्ता मेटाउन चाहनुहुन्छ?</label>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-light" data-dismiss="modal">रद्द गर्नुहोस्</button>
+                  <button type="submit" class="btn btn-danger">मेटाउनुहोस्</button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
 
-       <!-- Admin Change Password Modal (no current password needed) -->
-       <div
-        class="modal mymodal modal-01"
-        id="adminChangePasswordModal"
-        tabindex="-1"
-        role="dialog"
-      >
-        <div class="modal-dialog" role="document">
-          <div class="modal-content">
-            <div class="modal-header align-items-center">
-              <h5 class="modal-title">पासवर्ड परिवर्तन गर्नुहोस्</h5>
-              <button
-                type="button"
-                class="close"
-                data-dismiss="modal"
-                aria-label="Close"
-              >
-                <span
-                  aria-hidden="true"
-                  class="ic-close-circular-filled text-danger h5"
-                ></span>
-              </button>
-            </div>
-            <form id="adminChangePasswordForm" method="POST">
-              {% csrf_token %}
-              <div class="modal-body">
-                <p class="mb-3 text-muted cp-user-name"></p>
-                <div class="form-group">
-                  <label>नयाँ पासवर्ड</label>
-                  <input
-                    type="password"
-                    class="form-control"
-                    name="new_password"
-                    placeholder="नयाँ पासवर्ड टाइप गर्नुहोस्"
-                    required
-                    minlength="8"
-                  />
-                  <p class="error-msg text-danger small" id="new-password-error"></p>
-                </div>
-                <div class="form-group">
-                  <label>पासवर्ड पुष्टि गर्नुहोस्</label>
-                  <input
-                    type="password"
-                    class="form-control"
-                    name="confirm_password"
-                    placeholder="पासवर्ड पुन: टाइप गर्नुहोस्"
-                    required
-                    minlength="8"
-                  />
-                  <p class="error-msg text-danger small" id="confirm-password-error"></p>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-dismiss="modal">
-                  रद्द गर्नुहोस्
+        <!-- ══════════════════════════════════════════════
+             Admin Change Password Modal
+        ══════════════════════════════════════════════ -->
+        <div class="modal mymodal modal-01" id="adminChangePasswordModal" tabindex="-1" role="dialog">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header align-items-center">
+                <h5 class="modal-title">पासवर्ड परिवर्तन गर्नुहोस्</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true" class="ic-close-circular-filled text-danger h5"></span>
                 </button>
-                <button type="submit" class="btn btn-success">पासवर्ड परिवर्तन गर्नुहोस्</button>
               </div>
-            </form>
+              <form id="adminChangePasswordForm" method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                  <p class="mb-3 text-muted cp-user-name"></p>
+                  <div class="form-group">
+                    <label>नयाँ पासवर्ड</label>
+                    <input type="password" class="form-control" name="new_password"
+                      placeholder="नयाँ पासवर्ड टाइप गर्नुहोस्" required minlength="8" />
+                    <p class="error-msg text-danger small" id="new-password-error"></p>
+                  </div>
+                  <div class="form-group">
+                    <label>पासवर्ड पुष्टि गर्नुहोस्</label>
+                    <input type="password" class="form-control" name="confirm_password"
+                      placeholder="पासवर्ड पुन: टाइप गर्नुहोस्" required minlength="8" />
+                    <p class="error-msg text-danger small" id="confirm-password-error"></p>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-light" data-dismiss="modal">रद्द गर्नुहोस्</button>
+                  <button type="submit" class="btn btn-success">पासवर्ड परिवर्तन गर्नुहोस्</button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
 
-      <ul class="tab-01 nav nav-pills" id="pills-tab" role="tablist">
-        <li class="nav-item">
-          <a
-            class="nav-link active"
-            id="pills-userTabOne-tab"
-            data-toggle="pill"
-            href="#pills-userTabOne"
-            role="tab"
-            aria-controls="pills-userTabOne"
-            aria-selected="true"
-            >प्रदेश</a
-          >
-        </li>
-        <li class="nav-item">
-          <a
-            class="nav-link"
-            id="pills-userTabTwo-tab"
-            data-toggle="pill"
-            href="#pills-userTabTwo"
-            role="tab"
-            aria-controls="pills-userTabTwo"
-            aria-selected="false"
-            >स्थानीय तह</a
-          >
-        </li>
-      </ul>
-      <div class="tab-content" id="pills-tabContent">
+        <!-- ══════════════════════════════════════════════
+             Tab Navigation
+        ══════════════════════════════════════════════ -->
+        <ul class="tab-01 nav nav-pills" id="pills-tab" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" id="pills-userTabOne-tab" data-toggle="pill" href="#pills-userTabOne" role="tab"
+              aria-controls="pills-userTabOne" aria-selected="true">प्रदेश</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="pills-userTabTwo-tab" data-toggle="pill" href="#pills-userTabTwo" role="tab"
+              aria-controls="pills-userTabTwo" aria-selected="false">स्थानीय तह</a>
+          </li>
+        </ul>
 
-        <!-- ============ Province Tab ============ -->
-        <div
-          class="tab-pane fade show active"
-          id="pills-userTabOne"
-          role="tabpanel"
-          aria-labelledby="pills-userTabOne-tab"
-        >
-        <div class="card card-body p-users">
-           <div class="user-add-form">
-           {% user_can_add request 'users' as create %}
-            {% if create %}
-          <form action="{% url 'user_mgmt:staff_create' %}" id="provinceUserForm" method="post">
-            {% csrf_token %}
-            <h6 class="mb-2">प्रयोगकर्ताको विवरण</h6>
+        <div class="tab-content" id="pills-tabContent">
 
-            <div class="row">
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>प्रदेश</label>
-                <select name="level" class="form-control select2">
-                    <option value="">छान्नुहोस्...</option>
-                    {% for p in provinces %}
-                    <option value="{{p.pk}}">{{p}}</option>
-                    {% endfor %}
-                </select>
-              </div>
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>विभाग/संस्था/मन्त्रालय</label>
-                <select name="department" class="form-control">
-                  <option value="">छान्नुहोस्...</option>
-                  {% for depart in departments %}
-                  <option value="{{depart.pk}}">{{depart}}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>कार्यालयको ईमेल</label>
-                <input
-                  class="form-control"
-                  type="text"
-                  name="email"
-                  placeholder="टाइप गर्नुहोस्"
-                />
-              </div>
-              {% if user.is_superuser %}
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>प्रयोगकर्ताको भूमिका</label>
-                <select name="user_role" class="form-control">
-                  <option value="">छान्नुहोस्...</option>
-                  {% for role in roles %}
-                  <option value="{{role.pk}}">{{role}}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              {% endif %}
+          <!-- ══════════════════════════════════════════
+               Province Tab
+          ══════════════════════════════════════════ -->
+          <div class="tab-pane fade show active" id="pills-userTabOne" role="tabpanel"
+            aria-labelledby="pills-userTabOne-tab">
+            <div class="card card-body p-users">
+
+              <!-- Add Form -->
+              <div class="user-add-form">
+                {% user_can_add request 'users' as create %}
+                {% if create %}
+                <form action="{% url 'user_mgmt:staff_create' %}" id="provinceUserForm" method="post">
+                  {% csrf_token %}
+                  <h6 class="mb-2">प्रयोगकर्ताको विवरण</h6>
+                  <div class="row">
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>प्रदेश</label>
+                      <select name="level" class="form-control select2">
+                        <option value="">छान्नुहोस्...</option>
+                        {% for p in provinces %}
+                        <option value="{{ p.pk }}">{{ p }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>विभाग/संस्था/मन्त्रालय</label>
+                      <select name="department" class="form-control">
+                        <option value="">छान्नुहोस्...</option>
+                        {% for depart in departments %}
+                        <option value="{{ depart.pk }}">{{ depart }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>कार्यालयको ईमेल</label>
+                      <input class="form-control" type="email" name="email" placeholder="office@example.com" />
+                    </div>
+                    {% if user.is_superuser %}
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>प्रयोगकर्ताको भूमिका</label>
+                      <select name="user_role" class="form-control">
+                        <option value="">छान्नुहोस्...</option>
+                        {% for role in roles %}
+                        <option value="{{ role.pk }}">{{ role }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    {% endif %}
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>प्रयोगकर्ताको पुरा नाम</label>
+                      <input class="form-control" type="text" name="full_name" placeholder="टाइप गर्नुहोस्" />
+                    </div>
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>
+                        प्रयोगकर्ताको व्यक्तिगत ईमेल
+                        <small class="text-muted">(प्रमाण-पत्र यहाँ पठाइनेछ)</small>
+                      </label>
+                      <input class="form-control" type="email" name="personal_email"
+                        placeholder="personal@example.com" />
+                    </div>
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>प्रयोगकर्ताको मोबाइल नम्बर</label>
+                      <input class="form-control" type="number" name="mobile_num" placeholder="नम्बर टाइप गर्नुहोस्"
+                        pattern="[7-9]{1}[0-9]{9}" title="कृपया १०-अङ्कको मोबाइल नम्बर दिनुहोस्" />
+                    </div>
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>पद</label>
+                      <select name="post" class="form-control">
+                        <option value="">छान्नुहोस्...</option>
+                        {% for post in posts %}
+                        <option value="{{ post.pk }}">{{ post }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>पासवर्ड <span class="text-danger">*</span></label>
+                      <input class="form-control" type="password" name="password" placeholder="पासवर्ड टाइप गर्नुहोस्"
+                        minlength="8" required />
+                      <p class="error text-danger small" id="p-password-error"></p>
+                    </div>
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>पासवर्ड पुष्टि गर्नुहोस् <span class="text-danger">*</span></label>
+                      <input class="form-control" type="password" name="confirm_password"
+                        placeholder="पासवर्ड पुन: टाइप गर्नुहोस्" minlength="8" required />
+                      <p class="error text-danger small" id="p-confirm-password-error"></p>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <button type="submit" class="btn btn-success btn-icon p-submit">
+                      <i class="ic-add"></i>
+                      प्रयोगकर्ता थप्नुहोस्
+                    </button>
+                  </div>
+                </form>
+                {% endif %}
+              </div><!-- /user-add-form -->
+
+              <!-- Edit Form Placeholder -->
+              <div class="user-edit-form"></div>
+
+            </div><!-- /card -->
+
+            <!-- Email failure notice -->
+            <div class="option-group-new email-send" style="border:none; display:none;">
+              <span class="text-warning">
+                <i class="ic-warning mr-1"></i>
+                प्रयोगकर्ता सिर्जना भयो तर ईमेल पठाउन सकिएन। कृपया म्यानुअल रूपमा पासवर्ड दिनुहोस्।
+              </span>
             </div>
-            <div class="row">
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>प्रयोगकर्ताको पुरा नाम</label>
-                <input
-                  class="form-control"
-                  type="text"
-                  name="full_name"
-                  placeholder="टाइप गर्नुहोस्"
-                />
-              </div>
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>प्रयोगकर्ताको व्यक्तिगत ईमेल</label>
-                <input
-                  class="form-control"
-                  type="email"
-                  name="personal_email"
-                  placeholder="टाइप गर्नुहोस्"
-                />
-              </div>
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>प्रयोगकर्ताको मोबाइल नम्बर</label>
-                <input
-                  class="form-control"
-                  type="number"
-                  name="mobile_num"
-                  placeholder="नम्बर टाइप गर्नुहोस्"
-                  pattern="[7-9]{1}[0-9]{9}"
-                  title="Please enter Phone number as Landline Area Code with 9-10 digit or Mobile number of 10 digit within 0-9"
-                />
-              </div>
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>पद</label>
-                <select name="post" class="form-control">
-                  <option value="">छान्नुहोस्...</option>
-                  {% for post in posts %}
-                  <option value="{{post.pk}}">{{post}}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="text-right">
-              <button type="submit" class="btn btn-success btn-icon p-submit">
-                <i class="ic-add"></i>
-                प्रयोगकर्ता थप्नुहोस्
-              </button>
-            </div>
-          </form>
-          {% endif %}
-          </div>
 
-          <div class="user-edit-form"></div>
-        </div>
-
-        <div class="option-group-new email-send" style="border: none; display:none;">
-          <span class="text-info">Email Sending Failed..............</span>
-        </div>
-
-          <div class="card card-body mt-3">
-            <div class="table-responsive p-table">
-              <table class="table table-02 table-xl" id="table1">
-                <thead>
-                  <tr>
-                    <th>प्रयोगकर्ताको पुरा नाम</th>
-                    <th>प्रयोगकर्ताको भूमिका</th>
-                    <th>प्रदेश</th>
-                    <th>विभाग/संस्था/मन्त्रालय</th>
-                    <th>कार्यालयको ईमेल</th>
-                    <th>प्रयोगकर्ताको व्यक्तिगत ईमेल</th>
-                    <th>प्रयोगकर्ताको मोबाइल नम्बर</th>
-                    <th>पद</th>
-                    <th class="text-right">कार्य</th>
-                  </tr>
-                </thead>
-                <tbody>
-                {% for u in p_users %}
-                  <tr>
-                    <td>{{u.full_name}}</td>
-                    <td>
-                    {% for role in u.roles.all %}
-                    {{role}}{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                    </td>
-                    <td>{{u.level}}</td>
-                    <td>{{u.department}}</td>
-                    <td>{{u.email}}</td>
-                    <td>{{u.personal_email}}</td>
-                    <td>{{u.mobile_num}}</td>
-                    <td>{{u.post}}</td>
-                    <td class="text-right">
+            <!-- Users Table -->
+            <div class="card card-body mt-3">
+              <div class="table-responsive p-table">
+                <table class="table table-02 table-xl" id="table1">
+                  <thead>
+                    <tr>
+                      <th>पुरा नाम</th>
+                      <th>भूमिका</th>
+                      <th>प्रदेश</th>
+                      <th>विभाग/संस्था</th>
+                      <th>कार्यालय ईमेल</th>
+                      <th>व्यक्तिगत ईमेल</th>
+                      <th>मोबाइल</th>
+                      <th>पद</th>
+                      <th class="text-right" style="width:100px; white-space:nowrap;">कार्य</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for u in p_users %}
+                    <tr>
+                      <td>{{ u.full_name }}</td>
+                      <td>
+                        {% for role in u.roles.all %}
+                        {{ role }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                      </td>
+                      <td>{{ u.level }}</td>
+                      <td>{{ u.department }}</td>
+                      <td>{{ u.email }}</td>
+                      <td>{{ u.personal_email }}</td>
+                      <td>{{ u.mobile_num }}</td>
+                      <td>{{ u.post }}</td>
+                      <td class="text-right" style="white-space:nowrap;">
                         {% user_can_change request 'users' as update %}
                         {% if update %}
-                        <a
-                          href="#"
-                          data-url="{% url 'user_mgmt:user_edit' u.id %}"
-                          title="Edit"
-                          class="mr-2 text-coolGray600 edit-user"
-                        >
+                        <a href="#" data-url="{% url 'user_mgmt:user_edit' u.id %}" title="सम्पादन"
+                          class="mr-2 text-coolGray600 edit-user">
                           <i class="ic-edit"></i>
                         </a>
-                        <a
-                          href="#"
-                          data-url="{% url 'user_mgmt:change_password' u.id %}"
-                          data-name="{{u.full_name}}"
-                          data-toggle="modal"
-                          data-target="#adminChangePasswordModal"
-                          title="पासवर्ड परिवर्तन"
-                          class="mr-2 text-coolGray600 change-password-btn"
-                        >
+                        <a href="#" data-url="{% url 'user_mgmt:change_password' u.id %}" data-name="{{ u.full_name }}"
+                          data-toggle="modal" data-target="#adminChangePasswordModal" title="पासवर्ड परिवर्तन"
+                          class="mr-2 text-coolGray600 change-password-btn">
                           <i class="ic-lock"></i>
                         </a>
                         {% endif %}
                         {% user_can_delete request 'users' as delete %}
                         {% if delete %}
-                        <a href="#" url="{% url 'user_mgmt:user_delete' u.id %}"
-                        data-toggle="modal"
-                        data-target="#deleteModal"
-                        title="Delete" class="text-coolGray600 d-role">
+                        <a href="#" url="{% url 'user_mgmt:user_delete' u.id %}" data-toggle="modal"
+                          data-target="#deleteModal" title="मेटाउनुहोस्" class="text-coolGray600 d-role">
                           <i class="ic-delete"></i>
                         </a>
                         {% endif %}
-                    </td>
-                  </tr>
-                {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+                      </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="9" class="text-center text-muted">कुनै प्रदेश प्रयोगकर्ता फेला परेन।</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div><!-- /card table -->
 
-        <!-- ============ Local Level Tab ============ -->
-        <div
-          class="tab-pane fade"
-          id="pills-userTabTwo"
-          role="tabpanel"
-          aria-labelledby="pills-userTabTwo-tab"
-        >
-          <div class="card card-body l-users">
-           <div class="l-user-add-form">
-           {% user_can_add request 'users' as create %}
-            {% if create %}
-          <form action="{% url 'user_mgmt:staff_create' %}" id="localUserForm" method="post">
-            {% csrf_token %}
-            <h6 class="mb-2">प्रयोगकर्ताको विवरण</h6>
+          </div><!-- /pills-userTabOne -->
 
-            <div class="row">
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>स्थानीय तह</label>
-                <select name="level" class="form-control select2">
-                  <option value="">छान्नुहोस्...</option>
-                  {% for l in l_levels %}
-                  <option value="{{l.pk}}">{{l}}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>कार्यालयको ईमेल</label>
-                <input
-                  class="form-control"
-                  type="text"
-                  name="email"
-                  placeholder="टाइप गर्नुहोस्"
-                />
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>प्रयोगकर्ताको पुरा नाम</label>
-                <input
-                  class="form-control"
-                  type="text"
-                  name="full_name"
-                  placeholder="टाइप गर्नुहोस्"
-                />
-              </div>
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>प्रयोगकर्ताको व्यक्तिगत ईमेल</label>
-                <input
-                  class="form-control"
-                  type="email"
-                  name="personal_email"
-                  placeholder="टाइप गर्नुहोस्"
-                />
-              </div>
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>प्रयोगकर्ताको मोबाइल नम्बर</label>
-                <input
-                  class="form-control"
-                  type="number"
-                  name="mobile_num"
-                  placeholder="नम्बर टाइप गर्नुहोस्"
-                  pattern="[7-9]{1}[0-9]{9}"
-                  title="Please enter Phone number as Landline Area Code with 9-10 digit or Mobile number of 10 digit within 0-9"
-                />
-              </div>
-              <div class="col-lg-3 col-md-6 form-group">
-                <label>पद</label>
-                <select name="post" class="form-control">
-                  <option value="">छान्नुहोस्...</option>
-                  {% for p in posts %}
-                  <option value="{{p.pk}}">{{p}}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="text-right">
-              <button type="submit" class="btn btn-success btn-icon l-submit">
-                <i class="ic-add"></i>
-                प्रयोगकर्ता थप्नुहोस्
-              </button>
-            </div>
-          </form>
-          {% endif %}
-          </div>
 
-          <div class="l-user-edit-form"></div>
+          <!-- ══════════════════════════════════════════
+               Local Level Tab
+          ══════════════════════════════════════════ -->
+          <div class="tab-pane fade" id="pills-userTabTwo" role="tabpanel" aria-labelledby="pills-userTabTwo-tab">
+            <div class="card card-body l-users">
 
-          <div class="option-group-new l-email-send" style="border: none; display:none;">
-            <span class="text-info">Email Sending Failed .............</span>
-          </div>
+              <!-- Add Form -->
+              <div class="l-user-add-form">
+                {% user_can_add request 'users' as create %}
+                {% if create %}
+                <form action="{% url 'user_mgmt:staff_create' %}" id="localUserForm" method="post">
+                  {% csrf_token %}
+                  <h6 class="mb-2">प्रयोगकर्ताको विवरण</h6>
+                  <div class="row">
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>स्थानीय तह</label>
+                      <select name="level" class="form-control select2">
+                        <option value="">छान्नुहोस्...</option>
+                        {% for l in l_levels %}
+                        <option value="{{ l.pk }}">{{ l }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>कार्यालयको ईमेल</label>
+                      <input class="form-control" type="email" name="email" placeholder="office@example.com" />
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>प्रयोगकर्ताको पुरा नाम</label>
+                      <input class="form-control" type="text" name="full_name" placeholder="टाइप गर्नुहोस्" />
+                    </div>
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>
+                        प्रयोगकर्ताको व्यक्तिगत ईमेल
+                        <small class="text-muted">(प्रमाण-पत्र यहाँ पठाइनेछ)</small>
+                      </label>
+                      <input class="form-control" type="email" name="personal_email"
+                        placeholder="personal@example.com" />
+                    </div>
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>प्रयोगकर्ताको मोबाइल नम्बर</label>
+                      <input class="form-control" type="number" name="mobile_num" placeholder="नम्बर टाइप गर्नुहोस्"
+                        pattern="[7-9]{1}[0-9]{9}" title="कृपया १०-अङ्कको मोबाइल नम्बर दिनुहोस्" />
+                    </div>
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>पद</label>
+                      <select name="post" class="form-control">
+                        <option value="">छान्नुहोस्...</option>
+                        {% for p in posts %}
+                        <option value="{{ p.pk }}">{{ p }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>पासवर्ड <span class="text-danger">*</span></label>
+                      <input class="form-control" type="password" name="password" placeholder="पासवर्ड टाइप गर्नुहोस्"
+                        minlength="8" required />
+                      <p class="error text-danger small" id="l-password-error"></p>
+                    </div>
+                    <div class="col-lg-3 col-md-6 form-group">
+                      <label>पासवर्ड पुष्टि गर्नुहोस् <span class="text-danger">*</span></label>
+                      <input class="form-control" type="password" name="confirm_password"
+                        placeholder="पासवर्ड पुन: टाइप गर्नुहोस्" minlength="8" required />
+                      <p class="error text-danger small" id="l-confirm-password-error"></p>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <button type="submit" class="btn btn-success btn-icon l-submit">
+                      <i class="ic-add"></i>
+                      प्रयोगकर्ता थप्नुहोस्
+                    </button>
+                  </div>
+                </form>
+                {% endif %}
+              </div><!-- /l-user-add-form -->
 
-          <div class="card card-body mt-3">
-            <div class="table-responsive l-table">
-              <table class="table table-02 table-xl" id="table2">
-                <thead>
-                  <tr>
-                    <th>प्रयोगकर्ताको पुरा नाम</th>
-                    <th>स्थानीय तह</th>
-                    <th>कार्यालयको ईमेल</th>
-                    <th>प्रयोगकर्ताको व्यक्तिगत ईमेल</th>
-                    <th>प्रयोगकर्ताको मोबाइल नम्बर</th>
-                    <th>पद</th>
-                    <th class="text-right">कार्य</th>
-                  </tr>
-                </thead>
-                <tbody>
-                {% for u in l_users %}
-                  <tr>
-                    <td>{{u.full_name}}</td>
-                    <td>{{u.level}}</td>
-                    <td>{{u.email}}</td>
-                    <td>{{u.personal_email}}</td>
-                    <td>{{u.mobile_num}}</td>
-                    <td>{{u.post}}</td>
-                    <td class="text-right">
-                        {% user_can_change request 'users' as update %}
-                        {% if update %}
-                        <a
-                          href="#"
-                          data-url="{% url 'user_mgmt:user_edit' u.id %}"
-                          title="Edit"
-                          class="mr-2 text-coolGray600 l-edit-user"
-                        >
-                          <i class="ic-edit"></i>
-                        </a>
-                        <a
-                          href="#"
-                          data-url="{% url 'user_mgmt:change_password' u.id %}"
-                          data-name="{{u.full_name}}"
-                          data-toggle="modal"
-                          data-target="#adminChangePasswordModal"
-                          title="पासवर्ड परिवर्तन"
-                          class="mr-2 text-coolGray600 change-password-btn"
-                        >
-                          <i class="ic-lock"></i>
-                        </a>
-                        {% endif %}
-                        {% user_can_delete request 'users' as delete %}
-                        {% if delete %}
-                        <a href="#" url="{% url 'user_mgmt:user_delete' u.id %}"
-                        data-toggle="modal"
-                        data-target="#deleteModal"
-                        title="Delete" class="text-coolGray600 d-role">
-                          <i class="ic-delete"></i>
-                        </a>
-                        {% endif %}
-                    </td>
-                  </tr>
-                {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+              <!-- Edit Form Placeholder -->
+              <div class="l-user-edit-form"></div>
+
+              <!-- Email failure notice -->
+              <div class="option-group-new l-email-send" style="border:none; display:none;">
+                <span class="text-warning">
+                  <i class="ic-warning mr-1"></i>
+                  प्रयोगकर्ता सिर्जना भयो तर ईमेल पठाउन सकिएन। कृपया म्यानुअल रूपमा पासवर्ड दिनुहोस्।
+                </span>
+              </div>
+
+              <!-- Users Table -->
+              <div class="card card-body mt-3">
+                <div class="table-responsive l-table">
+                  <table class="table table-02 table-xl" id="table2">
+                    <thead>
+                      <tr>
+                        <th>पुरा नाम</th>
+                        <th>स्थानीय तह</th>
+                        <th>कार्यालय ईमेल</th>
+                        <th>व्यक्तिगत ईमेल</th>
+                        <th>मोबाइल</th>
+                        <th>पद</th>
+                        <th class="text-right" style="width:100px; white-space:nowrap;">कार्य</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for u in l_users %}
+                      <tr>
+                        <td>{{ u.full_name }}</td>
+                        <td>{{ u.level }}</td>
+                        <td>{{ u.email }}</td>
+                        <td>{{ u.personal_email }}</td>
+                        <td>{{ u.mobile_num }}</td>
+                        <td>{{ u.post }}</td>
+                        <td class="text-right" style="white-space:nowrap;">
+                          {% user_can_change request 'users' as update %}
+                          {% if update %}
+                          <a href="#" data-url="{% url 'user_mgmt:user_edit' u.id %}" title="सम्पादन"
+                            class="mr-2 text-coolGray600 l-edit-user">
+                            <i class="ic-edit"></i>
+                          </a>
+                          <a href="#" data-url="{% url 'user_mgmt:change_password' u.id %}"
+                            data-name="{{ u.full_name }}" data-toggle="modal" data-target="#adminChangePasswordModal"
+                            title="पासवर्ड परिवर्तन" class="mr-2 text-coolGray600 change-password-btn">
+                            <i class="ic-lock"></i>
+                          </a>
+                          {% endif %}
+                          {% user_can_delete request 'users' as delete %}
+                          {% if delete %}
+                          <a href="#" url="{% url 'user_mgmt:user_delete' u.id %}" data-toggle="modal"
+                            data-target="#deleteModal" title="मेटाउनुहोस्" class="text-coolGray600 d-role">
+                            <i class="ic-delete"></i>
+                          </a>
+                          {% endif %}
+                        </td>
+                      </tr>
+                      {% empty %}
+                      <tr>
+                        <td colspan="7" class="text-center text-muted">कुनै स्थानीय तह प्रयोगकर्ता फेला परेन।</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div><!-- /card table -->
+
+            </div><!-- /card l-users -->
+          </div><!-- /pills-userTabTwo -->
+
+        </div><!-- /tab-content -->
       </div>
     </div>
   </div>
 </Fragment>
 {% endblock content %}
 
+
 {% block extra_scripts %}
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-$(document).ready(function () {
+  $(document).ready(function () {
 
-    // ──────────────────────────────────────────────
-    // Plugins initializer (Select2 + DataTable)
-    // ──────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
+    // Initialise Select2 + DataTables (idempotent — safe to re-call)
+    // ─────────────────────────────────────────────────────────────
     function initializeComponents() {
-        $('.select2').select2({
-            placeholder: "खोज्नुहोस् वा छान्नुहोस्",
-            allowClear: true,
-            width: '100%'
+      $('.select2').select2({
+        placeholder: "खोज्नुहोस् वा छान्नुहोस्",
+        allowClear: true,
+        width: '100%',
+      });
+      if (!$.fn.DataTable.isDataTable('#table1')) {
+        $('#table1').DataTable({
+          language: { search: "खोज्नुहोस्:" },
+          scrollX: true,
+          autoWidth: false,
+          columnDefs: [{ targets: -1, className: "dt-nowrap" }],
         });
-        if (!$.fn.DataTable.isDataTable('#table1')) {
-            $('#table1').DataTable({ "language": { "search": "खोज्नुहोस्:" } });
-        }
-        if (!$.fn.DataTable.isDataTable('#table2')) {
-            $('#table2').DataTable({ "language": { "search": "खोज्नुहोस्:" } });
-        }
+      }
+      if (!$.fn.DataTable.isDataTable('#table2')) {
+        $('#table2').DataTable({
+          language: { search: "खोज्नुहोस्:" },
+          scrollX: true,
+          autoWidth: false,
+          columnDefs: [{ targets: -1, className: "dt-nowrap" }],
+        });
+      }
     }
     initializeComponents();
 
-    // ──────────────────────────────────────────────
-    // Toast message helper
-    // ──────────────────────────────────────────────
-    const showMsg = (msg, icon) => {
-        Swal.fire({
-            toast: true,
-            icon: icon || "success",
-            title: msg,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-            didOpen: (toast) => {
-                toast.addEventListener("mouseenter", Swal.stopTimer);
-                toast.addEventListener("mouseleave", Swal.resumeTimer);
-            },
-        });
-    };
 
-    // ──────────────────────────────────────────────
-    // Province User Form Submit
-    // ──────────────────────────────────────────────
-    $(document).on("submit", "#provinceUserForm", function (e) {
+    // ─────────────────────────────────────────────────────────────
+    // Toast helper
+    // ─────────────────────────────────────────────────────────────
+    function showMsg(msg, icon) {
+      Swal.fire({
+        toast: true,
+        icon: icon || "success",
+        title: msg,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3500,
+        timerProgressBar: true,
+        didOpen: function (toast) {
+          toast.addEventListener("mouseenter", Swal.stopTimer);
+          toast.addEventListener("mouseleave", Swal.resumeTimer);
+        },
+      });
+    }
+
+
+    // ─────────────────────────────────────────────────────────────
+    // Generic AJAX form handler
+    // Handles both create forms (province + local) identically.
+    // ─────────────────────────────────────────────────────────────
+    function handleUserFormSubmit(formSelector, addFormSelector, tableSelector, emailBannerSelector) {
+      $(document).on("submit", formSelector, function (e) {
         e.preventDefault();
-        let form = $(this);
-        $.ajax({
-            url: form.attr("action"),
-            type: "POST",
-            data: new FormData(this),
-            processData: false,
-            contentType: false,
-            success: function (data) {
-                if (data.success) {
-                    $(".user-add-form").load(location.href + " .user-add-form", function () {
-                        initializeComponents();
-                    });
-                    $(".p-table").load(location.href + " .p-table", function () {
-                        initializeComponents();
-                    });
-                    showMsg(data.msg);
-                } else {
-                    form.find(".error-msg, .error").remove();
-                    for (var key in data) {
-                        let field = form.find("[name='" + key + "']");
-                        field.after('<p class="error text-danger small">' + data[key] + '</p>');
-                    }
-                }
-                if (data.email_failed) {
-                    $(".email-send").animate({ "opacity": "show", top: "100" }, 500).delay(1300).fadeOut('slow');
-                }
-            },
-        });
-    });
-
-    // ──────────────────────────────────────────────
-    // Local User Form Submit
-    // ──────────────────────────────────────────────
-    $(document).on("submit", "#localUserForm", function (e) {
-        e.preventDefault();
-        let form = $(this);
-        $.ajax({
-            url: form.attr("action"),
-            type: "POST",
-            data: new FormData(this),
-            processData: false,
-            contentType: false,
-            success: function (data) {
-                if (data.success) {
-                    $(".l-user-add-form").load(location.href + " .l-user-add-form", function () {
-                        initializeComponents();
-                    });
-                    $(".l-table").load(location.href + " .l-table", function () {
-                        initializeComponents();
-                    });
-                    showMsg(data.msg);
-                } else {
-                    form.find(".error-msg, .error").remove();
-                    for (var key in data) {
-                        let field = form.find("[name='" + key + "']");
-                        field.after('<p class="error text-danger small">' + data[key] + '</p>');
-                    }
-                }
-                if (data.email_failed) {
-                    $(".l-email-send").animate({ "opacity": "show", top: "100" }, 500).delay(1300).fadeOut('slow');
-                }
-            },
-        });
-    });
-
-    // ──────────────────────────────────────────────
-    // Edit User (Province)
-    // ──────────────────────────────────────────────
-    $(document).on("click", ".edit-user", function () {
-        let url = $(this).data('url');
-        $.get(url, function (data) {
-            $('.user-add-form').hide();
-            $('.user-edit-form').html(data).show();
-            initializeComponents();
-        });
-    });
-
-    // ──────────────────────────────────────────────
-    // Edit User (Local)
-    // ──────────────────────────────────────────────
-    $(document).on("click", ".l-edit-user", function () {
-        let url = $(this).data('url');
-        $.get(url, function (data) {
-            $('.l-user-add-form').hide();
-            $('.l-user-edit-form').html(data).show();
-            initializeComponents();
-        });
-    });
-
-    // ──────────────────────────────────────────────
-    // Delete User — set form action on modal open
-    // ──────────────────────────────────────────────
-    $(document).on("click", ".d-role", function () {
-        let url = $(this).attr('url');
-        $('.delete-form').attr('action', url);
-    });
-
-    // ──────────────────────────────────────────────
-    // Change Password — set form action & user name
-    // ──────────────────────────────────────────────
-    $(document).on("click", ".change-password-btn", function () {
-        let url = $(this).data('url');
-        let userName = $(this).data('name');
-        $('#adminChangePasswordForm').attr('action', url);
-        $('#adminChangePasswordForm .cp-user-name').text(userName + ' को पासवर्ड परिवर्तन गर्नुहोस्');
-        // Clear previous state
-        $('#adminChangePasswordForm')[0].reset();
-        $('#adminChangePasswordForm .error-msg').text('');
-    });
-
-    // ──────────────────────────────────────────────
-    // Change Password — AJAX submit
-    // ──────────────────────────────────────────────
-    $(document).on("submit", "#adminChangePasswordForm", function (e) {
-        e.preventDefault();
-        let form = $(this);
-        let url = form.attr('action');
-
-        // Clear previous errors
-        form.find('.error-msg').text('');
+        var form = $(this);
 
         $.ajax({
-            url: url,
-            type: "POST",
-            data: form.serialize(),
-            success: function (data) {
-                if (data.success) {
-                    $('#adminChangePasswordModal').modal('hide');
-                    showMsg(data.msg);
+          url: form.attr("action"),
+          type: "POST",
+          data: new FormData(this),
+          processData: false,
+          contentType: false,
+          success: function (data) {
+            if (data.success) {
+              // Reload add-form and table in place
+              $(addFormSelector).load(location.href + " " + addFormSelector, function () {
+                initializeComponents();
+              });
+              $(tableSelector).load(location.href + " " + tableSelector, function () {
+                initializeComponents();
+              });
+
+              var icon = data.email_failed ? "warning" : "success";
+              showMsg(data.msg, icon);
+
+              if (data.email_failed) {
+                $(emailBannerSelector).stop(true, true).fadeIn(400).delay(5000).fadeOut(800);
+              }
+            } else {
+              // Show field-level validation errors
+              form.find(".error-msg, .error").remove();
+              $.each(data, function (key, value) {
+                var field = form.find("[name='" + key + "']");
+                if (field.length) {
+                  field.after('<p class="error text-danger small">' + value + '</p>');
                 } else {
-                    // Show field-level errors
-                    if (data.new_password) {
-                        $('#new-password-error').text(data.new_password);
-                    }
-                    if (data.confirm_password) {
-                        $('#confirm-password-error').text(data.confirm_password);
-                    }
-                    if (data.msg) {
-                        showMsg(data.msg, "error");
-                    }
+                  // fallback — show at the top of the form
+                  form.prepend('<p class="error text-danger small">' + value + '</p>');
                 }
-            },
-            error: function () {
-                showMsg("केही त्रुटि भयो। पुन: प्रयास गर्नुहोस्।", "error");
+              });
             }
+          },
+          error: function () {
+            showMsg("अनुरोध पठाउन सकिएन। पुन: प्रयास गर्नुहोस्।", "error");
+          },
         });
+      });
+    }
+
+    // Province user form
+    handleUserFormSubmit(
+      "#provinceUserForm",
+      ".user-add-form",
+      ".p-table",
+      ".email-send"
+    );
+
+    // Local user form
+    handleUserFormSubmit(
+      "#localUserForm",
+      ".l-user-add-form",
+      ".l-table",
+      ".l-email-send"
+    );
+
+
+    // ─────────────────────────────────────────────────────────────
+    // Edit User — Province
+    // ─────────────────────────────────────────────────────────────
+    $(document).on("click", ".edit-user", function (e) {
+      e.preventDefault();
+      var url = $(this).data("url");
+      $.get(url, function (data) {
+        $(".user-add-form").hide();
+        $(".user-edit-form").html(data).show();
+        initializeComponents();
+      });
     });
-});
+
+    // ─────────────────────────────────────────────────────────────
+    // Edit User — Local Level
+    // ─────────────────────────────────────────────────────────────
+    $(document).on("click", ".l-edit-user", function (e) {
+      e.preventDefault();
+      var url = $(this).data("url");
+      $.get(url, function (data) {
+        $(".l-user-add-form").hide();
+        $(".l-user-edit-form").html(data).show();
+        initializeComponents();
+      });
+    });
+
+
+    // ─────────────────────────────────────────────────────────────
+    // Delete — wire up modal action URL
+    // ─────────────────────────────────────────────────────────────
+    $(document).on("click", ".d-role", function () {
+      var url = $(this).attr("url");
+      $(".delete-form").attr("action", url);
+    });
+
+
+    // ─────────────────────────────────────────────────────────────
+    // Change Password — wire up modal
+    // ─────────────────────────────────────────────────────────────
+    $(document).on("click", ".change-password-btn", function () {
+      var url = $(this).data("url");
+      var userName = $(this).data("name");
+
+      $("#adminChangePasswordForm")
+        .attr("action", url)
+      [0].reset();
+
+      $("#adminChangePasswordForm .cp-user-name")
+        .text(userName + " को पासवर्ड परिवर्तन गर्नुहोस्");
+
+      // Clear any previous error messages
+      $("#adminChangePasswordForm .error-msg").text("");
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // Change Password — AJAX submit
+    // ─────────────────────────────────────────────────────────────
+    $(document).on("submit", "#adminChangePasswordForm", function (e) {
+      e.preventDefault();
+      var form = $(this);
+
+      // Reset errors
+      form.find(".error-msg").text("");
+
+      $.ajax({
+        url: form.attr("action"),
+        type: "POST",
+        data: form.serialize(),
+        success: function (data) {
+          if (data.success) {
+            $("#adminChangePasswordModal").modal("hide");
+            showMsg(data.msg, "success");
+          } else {
+            if (data.new_password) $("#new-password-error").text(data.new_password);
+            if (data.confirm_password) $("#confirm-password-error").text(data.confirm_password);
+            if (data.msg) showMsg(data.msg, "error");
+          }
+        },
+        error: function () {
+          showMsg("केही त्रुटि भयो। पुन: प्रयास गर्नुहोस्।", "error");
+        },
+      });
+    });
+
+  });
 </script>
 {% endblock extra_scripts %}

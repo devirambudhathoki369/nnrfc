@@ -1,5 +1,9 @@
+import logging
+
 from django.conf import settings
 from django.contrib import messages
+
+logger = logging.getLogger(__name__)
 from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -16,8 +20,12 @@ from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import CreateView, ListView
 from django.views.generic.edit import FormView, UpdateView
-from user_mgmt.accounts.forms import (PasswordResetRequestForm, SetNewStaffPasswordForm, UserLoginForm,
-                                      UserSetupForm)
+from user_mgmt.accounts.forms import (
+    PasswordResetRequestForm,
+    SetNewStaffPasswordForm,
+    UserLoginForm,
+    UserSetupForm,
+)
 from user_mgmt.models import Department, Level, LevelType, Role, UserPost
 from user_mgmt.tasks import send_email, send_html_email
 from user_mgmt.utils import get_local_levels_by_province, get_users_by_level
@@ -32,114 +40,226 @@ account_activation_token = PasswordResetTokenGenerator()
 User = get_user_model()
 
 
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _build_invitation_context(request, user, pwd):
+    """Return the template context used for the user-invitation email."""
+    url = Site.objects.get_current().domain
+    return {
+        "email": user.email,
+        "pwd": pwd,
+        "domain": url,
+        "full_name": user.full_name,
+        "login_url": request.build_absolute_uri(reverse("user_mgmt:login")),
+        "logo_img": request.build_absolute_uri(static("email/logo.png")),
+        "protocol": "https",
+    }
+
+
+def _collect_recipients(user):
+    """
+    Return a de-duplicated list of email addresses to notify when a new
+    user account is created.
+
+    Rules
+    -----
+    * personal_email  – always included (primary credential-delivery address).
+    * email (office)  – added only when it is non-empty AND differs from the
+                        personal email, so we never send the same address twice.
+    """
+    recipients = []
+
+    personal = (user.personal_email or "").strip().lower()
+    office   = (user.email or "").strip().lower()
+
+    if personal:
+        recipients.append(personal)
+
+    if office and office != personal:
+        recipients.append(office)
+
+    return recipients
+
+
+# ---------------------------------------------------------------------------
+# User Creation
+# ---------------------------------------------------------------------------
+
 class StaffUserCreateView(SuccessMessageMixin, CreateView):
     model = User
     template_name = "accounts/user_setup.html"
     success_url = reverse_lazy("user_mgmt:user_list")
-    success_message = "Created Successfully. A mail has been sent to user email."
+    success_message = "प्रयोगकर्ता सिर्जना भयो। प्रमाण-पत्र इमेल गरिएको छ।"
     form_class = UserSetupForm
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["roles"] = Role.objects.all()
-        context["users"] = get_users_by_level(self.request.user)
+        context["roles"]       = Role.objects.all()
+        context["users"]       = get_users_by_level(self.request.user)
         context["departments"] = Department.objects.all()
         return context
 
     def form_valid(self, form):
-        pwd = User.objects.make_random_password(length=8)
-        email = form.instance.email
-        url = Site.objects.get_current().domain
+        # 1. Use the password the admin explicitly entered in the form.
+        pwd = self.request.POST.get("password", "").strip()
+        confirm = self.request.POST.get("confirm_password", "").strip()
+
+        if not pwd:
+            return JsonResponse({"password": "पासवर्ड आवश्यक छ।"})
+        if len(pwd) < 8:
+            return JsonResponse({"password": "पासवर्ड कम्तिमा ८ अक्षर हुनुपर्छ।"})
+        if pwd != confirm:
+            return JsonResponse({"confirm_password": "पासवर्डहरू मेल खाएनन्।"})
+
         form.instance.set_password(pwd)
         form.instance.is_first_login = True
-        form.instance.is_active = True
- 
-        # SAVE USER FIRST — before attempting email
-        form.save()
- 
+        form.instance.is_active      = True
+
+        # 2. Persist the user FIRST — never lose the record due to email failure.
+        user = form.save()
+
+        # 3. Build email payload.
         html_template = "email/user_invitation.html"
-        context = {
-            "email": email,
-            "pwd": pwd,
-            "domain": url,
-            "full_name": form.instance.full_name,
-            "login_url": self.request.build_absolute_uri(reverse("user_mgmt:login")),
-            "logo_img": self.request.build_absolute_uri(static("email/logo.png")),
-            "protocol": "https",
-        }
-        msg = render_to_string(html_template, context)
-        try:
-            send_email.delay(msg, [form.instance.personal_email])
-            return JsonResponse({"success": True, "msg": self.success_message})
-        except Exception:
-            # User IS saved — just warn about email failure
+        context       = _build_invitation_context(self.request, user, pwd)
+        msg           = render_to_string(html_template, context)
+        recipients    = _collect_recipients(user)
+
+        # 4. Send synchronously so failures are caught immediately.
+        email_failed = False
+
+        if not recipients:
+            email_failed = True
+        else:
+            try:
+                from django.core.mail import send_mail
+                send_mail(
+                    subject="तपाईंको NNRFC खाता सिर्जना गरियो",
+                    message="",
+                    html_message=msg,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=recipients,
+                    fail_silently=False,
+                )
+            except Exception as exc:
+                email_failed = True
+                logger.warning(
+                    "User created but invitation email failed. "
+                    "User: %s (id=%s) | Recipients: %s | Error: %s | "
+                    "Password (reset ASAP): %s",
+                    user.email, user.pk, recipients, exc, pwd,
+                )
+
+        is_dev = settings.DEBUG and getattr(
+            settings, "EMAIL_BACKEND", ""
+        ) == "django.core.mail.backends.console.EmailBackend"
+
+        if email_failed:
+            if is_dev:
+                return JsonResponse({
+                    "success":      True,
+                    "email_failed": True,
+                    "msg": (
+                        f"प्रयोगकर्ता सिर्जना भयो। "
+                        f"(Dev mode — console backend) | "
+                        f"ईमेल: {', '.join(recipients) if recipients else 'कुनै ईमेल छैन'} | "
+                        f"पासवर्ड: {pwd}"
+                    ),
+                })
+            return JsonResponse({
+                "success":      True,
+                "email_failed": True,
+                "msg": (
+                    "प्रयोगकर्ता सिर्जना भयो तर इमेल पठाउन सकिएन। "
+                    "पासवर्ड सर्भर लगमा सुरक्षित रूपमा रेकर्ड गरिएको छ।"
+                ),
+            })
+
+        if is_dev:
             return JsonResponse({
                 "success": True,
-                "msg": f"प्रयोगकर्ता सिर्जना भयो तर इमेल पठाउन सकिएन। पासवर्ड: {pwd}",
+                "msg": (
+                    f"प्रयोगकर्ता सिर्जना भयो। "
+                    f"(Dev mode — टर्मिनलमा हेर्नुहोस्) | "
+                    f"ईमेल: {', '.join(recipients)} | "
+                    f"पासवर्ड: {pwd}"
+                ),
             })
+
+        return JsonResponse({
+            "success": True,
+            "msg": f"प्रयोगकर्ता सिर्जना भयो। प्रमाण-पत्र {', '.join(recipients)} मा पठाइयो।",
+        })
 
     def form_invalid(self, form):
         return JsonResponse(form.errors)
 
 
+# ---------------------------------------------------------------------------
+# User Update
+# ---------------------------------------------------------------------------
+
 class UserUpdateView(UpdateView):
-    model = User
-    template_name = "accounts/user_edit.html"
-    success_url = reverse_lazy("user_mgmt:user_list")
-    form_class = UserSetupForm
+    model               = User
+    template_name       = "accounts/user_edit.html"
+    success_url         = reverse_lazy("user_mgmt:user_list")
+    form_class          = UserSetupForm
     context_object_name = "user"
-    success_message = "User updated successfully."
+    success_message     = "प्रयोगकर्ता सफलतापूर्वक अपडेट गरियो।"
 
     def get_context_data(self, **kwargs):
-        user = self.request.user
+        user    = self.request.user
         context = super().get_context_data(**kwargs)
-        context["provinces"] = Level.objects.filter(type__type="P")
-        context["roles"] = Role.objects.all()
+        context["provinces"]   = Level.objects.filter(type__type="P")
+        context["roles"]       = Role.objects.all()
         context["departments"] = Department.objects.all()
-        context["posts"] = UserPost.objects.all()
-        user_province = user.level
-        context["l_levels"] = get_local_levels_by_province(user_province, user)
+        context["posts"]       = UserPost.objects.all()
+        context["l_levels"]    = get_local_levels_by_province(user.level, user)
         return context
 
     def form_valid(self, form):
-        user = form.save()
-        if user.roles.all().exists():
-            user.is_staff = True
-        else:
-            user.is_staff = False
+        user           = form.save()
+        user.is_staff  = user.roles.all().exists()
         user.save()
-        messages.success(self.request, "User Updated Successfully.")
+        messages.success(self.request, self.success_message)
         return JsonResponse({"success": True, "msg": self.success_message})
 
     def form_invalid(self, form):
         return JsonResponse(form.errors)
 
 
+# ---------------------------------------------------------------------------
+# User List
+# ---------------------------------------------------------------------------
+
 class UserListView(ListView):
-    model = User
-    template_name = "accounts/user_setup.html"
+    model               = User
+    template_name       = "accounts/user_setup.html"
     context_object_name = "users"
 
     def get_context_data(self, **kwargs):
-        user = self.request.user
+        user    = self.request.user
         context = super().get_context_data(**kwargs)
         context["level_types"] = LevelType.objects.all()
-        context["provinces"] = Level.objects.filter(type__type="P")
-        context["roles"] = Role.objects.all()
+        context["provinces"]   = Level.objects.filter(type__type="P")
+        context["roles"]       = Role.objects.all()
         context["departments"] = Department.objects.all()
-        context["posts"] = UserPost.objects.all()
-        u_province = user.level
-        context["l_levels"] = get_local_levels_by_province(u_province, user)
-        qs = get_users_by_level(user)
-        province_users = qs.filter(level__type__type="P")
-        local_users = qs.filter(level__type__type="L")
-        context["p_users"] = province_users
-        context["l_users"] = local_users
+        context["posts"]       = UserPost.objects.all()
+        context["l_levels"]    = get_local_levels_by_province(user.level, user)
+
+        qs                  = get_users_by_level(user)
+        context["p_users"]  = qs.filter(level__type__type="P")
+        context["l_users"]  = qs.filter(level__type__type="L")
         return context
 
 
+# ---------------------------------------------------------------------------
+# Authentication
+# ---------------------------------------------------------------------------
+
 class UserLoginView(LoginView):
-    template_name = "accounts/login.html"
+    template_name             = "accounts/login.html"
     redirect_authenticated_user = True
 
     def get_success_url(self):
@@ -151,11 +271,11 @@ class UserLoginView(LoginView):
 
 
 class SetNewPasswordView(UserPassesTestMixin, SuccessMessageMixin, FormView):
-    """set new password of staff user after first login successful."""
+    """Force a staff user to set their own password after first login."""
 
-    form_class = SetNewStaffPasswordForm
-    template_name = "accounts/set_new_password.html"
-    success_message = "Password changed successfully."
+    form_class       = SetNewStaffPasswordForm
+    template_name    = "accounts/set_new_password.html"
+    success_message  = "पासवर्ड सफलतापूर्वक परिवर्तन गरियो।"
 
     def test_func(self):
         if self.request.user.is_authenticated:
@@ -163,10 +283,9 @@ class SetNewPasswordView(UserPassesTestMixin, SuccessMessageMixin, FormView):
         raise Http404
 
     def form_valid(self, form):
-        password = form.cleaned_data.get("new_password2")
-        user = self.request.user
-        if user.roles.all().exists():
-            user.is_staff = True
+        password          = form.cleaned_data.get("new_password2")
+        user              = self.request.user
+        user.is_staff     = user.roles.all().exists()
         user.is_first_login = False
         user.set_password(password)
         user.save()
@@ -181,46 +300,103 @@ class SetNewPasswordView(UserPassesTestMixin, SuccessMessageMixin, FormView):
         return reverse("core:survey_list")
 
 
-def get_levels(request, type_id):
-    type = LevelType.objects.filter(id=type_id).first()
-    qs = list(Level.objects.filter(type=type).values("id", "name"))
-    if request.user.is_superuser:
-        levels = qs
-    elif type and type.type == "P":
-        user_roles = request.user.roles.all().values_list("level")
-        levels = list(
-            Level.objects.filter(type=type, id__in=user_roles).values("id", "name")
-        )
-    else:
-        levels = qs
-    return JsonResponse({"levels": levels})
+class UserLogoutView(LogoutView):
+    next_page = reverse_lazy("user_mgmt:login")
 
 
-def get_level_departments(request, level_id):
-    departs = list(Department.objects.filter(level_id=level_id).values("id", "name"))
-    return JsonResponse({"departs": departs})
+# ---------------------------------------------------------------------------
+# Admin: Change a user's password (no current password required)
+# ---------------------------------------------------------------------------
 
+def admin_change_user_password(request, user_id):
+    """
+    Allow an admin to reset any user's password without knowing the current one.
+    Responds with JSON for the AJAX modal on the user-setup page.
+    """
+    if request.method != "POST":
+        return JsonResponse({"success": False, "msg": "Invalid request method."})
+
+    try:
+        target_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({"success": False, "msg": "प्रयोगकर्ता फेला परेन।"})
+
+    new_password     = request.POST.get("new_password", "").strip()
+    confirm_password = request.POST.get("confirm_password", "").strip()
+
+    # --- Validation ---
+    if len(new_password) < 8:
+        return JsonResponse({
+            "success":      False,
+            "new_password": "पासवर्ड कम्तिमा ८ अक्षर हुनुपर्छ।",
+        })
+
+    if new_password != confirm_password:
+        return JsonResponse({
+            "success":          False,
+            "confirm_password": "पासवर्डहरू मेल खाएनन्।",
+        })
+
+    # --- Apply ---
+    target_user.set_password(new_password)
+    target_user.is_first_login = False   # clear forced-change flag if set
+    target_user.save()
+
+    # --- Notify the user by email (both addresses) ---
+    html_template = "email/password_changed.html"
+    ctx = {
+        "full_name": target_user.full_name,
+        "login_url": request.build_absolute_uri(reverse("user_mgmt:login")),
+        "logo_img":  request.build_absolute_uri(static("email/logo.png")),
+    }
+    msg        = render_to_string(html_template, ctx)
+    recipients = _collect_recipients(target_user)
+
+    if recipients:
+        try:
+            from django.core.mail import send_mail
+            send_mail(
+                subject="तपाईंको NNRFC पासवर्ड परिवर्तन गरियो",
+                message="",
+                html_message=msg,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=recipients,
+                fail_silently=True,   # non-fatal — password is already saved
+            )
+        except Exception:
+            pass
+
+    return JsonResponse({"success": True, "msg": "पासवर्ड सफलतापूर्वक परिवर्तन गरियो।"})
+
+
+# ---------------------------------------------------------------------------
+# Delete helpers
+# ---------------------------------------------------------------------------
 
 def delete_user(request, user_id):
     if request.method == "POST":
         User.objects.filter(id=user_id).delete()
-        messages.success(request, "Deleted Successfully.")
+        messages.success(request, "प्रयोगकर्ता सफलतापूर्वक मेटाइयो।")
         return redirect("user_mgmt:user_list")
 
 
 def delete_department(request, department_id):
     if request.method == "POST":
         Department.objects.filter(id=department_id).delete()
-        messages.success(request, "Deleted Successfully.")
+        messages.success(request, "विभाग सफलतापूर्वक मेटाइयो।")
         return redirect("user_mgmt:depart_list")
 
 
+# ---------------------------------------------------------------------------
+# Department CRUD
+# ---------------------------------------------------------------------------
+
 class DepartmentCreateView(SuccessMessageMixin, CreateView):
-    model = Department
-    template_name = "accounts/depart_list.html"
-    fields = ["name", "address", "email"]
-    success_url = reverse_lazy("user_mgmt:depart_list")
-    success_message = "Department Created Successfully."
+    model           = Department
+    template_name   = "accounts/depart_list.html"
+    fields          = ["name", "address", "email"]
+    success_url     = reverse_lazy("user_mgmt:depart_list")
+    success_message = "विभाग सफलतापूर्वक सिर्जना गरियो।"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -229,188 +405,171 @@ class DepartmentCreateView(SuccessMessageMixin, CreateView):
 
 
 class DepartmentUpdateView(SuccessMessageMixin, UpdateView):
-    model = Department
-    template_name = "accounts/depart_update.html"
-    success_url = reverse_lazy("user_mgmt:depart_list")
-    fields = ["name", "address", "email"]
-    success_message = "Department Updated Successfully."
+    model               = Department
+    template_name       = "accounts/depart_update.html"
+    success_url         = reverse_lazy("user_mgmt:depart_list")
+    fields              = ["name", "address", "email"]
+    success_message     = "विभाग सफलतापूर्वक अपडेट गरियो।"
     context_object_name = "depart"
 
 
 class DepartmentListView(ListView):
-    model = Department
-    template_name = "accounts/depart_list.html"
+    model               = Department
+    template_name       = "accounts/depart_list.html"
     context_object_name = "departs"
+
+
+# ---------------------------------------------------------------------------
+# Level / Department AJAX endpoints
+# ---------------------------------------------------------------------------
+
+def get_levels(request, type_id):
+    level_type = LevelType.objects.filter(id=type_id).first()
+    qs         = list(Level.objects.filter(type=level_type).values("id", "name"))
+
+    if request.user.is_superuser:
+        levels = qs
+    elif level_type and level_type.type == "P":
+        user_role_levels = request.user.roles.all().values_list("level")
+        levels = list(
+            Level.objects.filter(type=level_type, id__in=user_role_levels)
+            .values("id", "name")
+        )
+    else:
+        levels = qs
+
+    return JsonResponse({"levels": levels})
+
+
+def get_level_departments(request, level_id):
+    departs = list(
+        Department.objects.filter(level_id=level_id).values("id", "name")
+    )
+    return JsonResponse({"departs": departs})
+
+
+# ---------------------------------------------------------------------------
+# Password reset (public — no login required)
+# ---------------------------------------------------------------------------
+
+class UserPasswordResetRequestView(FormView):
+    model       = User
+    template_name = "accounts/forgot-password.html"
+    success_url = reverse_lazy("user_mgmt:login")
+    form_class  = PasswordResetRequestForm
+
+    def form_valid(self, form):
+        email        = form.cleaned_data["email"]
+        current_user = User.objects.filter(email=email).first()
+
+        if current_user:
+            url    = Site.objects.get_current().domain
+            tpl    = "accounts/password-reset/password_reset_email.html"
+            ctx    = {
+                "email":     current_user.email,
+                "domain":    url,
+                "site_name": "NNRFC",
+                "logo_img":  self.request.build_absolute_uri(static("email/logo.png")),
+                "uid":       urlsafe_base64_encode(force_bytes(current_user.pk)),
+                "user":      current_user,
+                "url":       url,
+                "token":     account_activation_token.make_token(current_user),
+                "protocol":  "https",
+            }
+            msg = render_to_string(tpl, ctx)
+            try:
+                send_html_email(msg, [current_user])
+            except Exception:
+                pass   # silently fail — never expose whether an address exists
+
+        # Always redirect to "done" regardless of whether the user was found
+        # (prevents user-enumeration attacks).
+        return redirect("password_reset_done")
+
+
+# ---------------------------------------------------------------------------
+# Legacy / Deprecated views kept for URL compatibility
+# ---------------------------------------------------------------------------
+
+def change_password(request):
+    """
+    Self-service password change (requires the current password).
+    Kept for URL compatibility — prefer the class-based view for new code.
+    """
+    response_data = {}
+    if request.method == "POST":
+        current_password      = request.POST.get("currentPassword", "")
+        new_password          = request.POST.get("newPassword", "")
+        confirm_new_password  = request.POST.get("confirmNewPassword", "")
+
+        user  = User.objects.get(id=request.user.id)
+        valid = user.check_password(current_password)
+
+        if valid:
+            if new_password and new_password == confirm_new_password:
+                user.set_password(confirm_new_password)
+                user.save()
+                response_data["result"]  = "Success!"
+                response_data["message"] = "Password Changed Successfully."
+            else:
+                response_data["result"]  = "Invalid Passwords!"
+                response_data["message"] = "Passwords do not match."
+        else:
+            response_data["result"]  = "Incorrect Password!"
+            response_data["message"] = "Current password is incorrect."
+
+    return HttpResponse(
+        json.dumps(response_data), content_type="application/json"
+    )
 
 
 def registration_view(request):
     if request.user.is_authenticated:
         return redirect("core/dashboard/home")
-    else:
-        form = UserLoginForm()
-        if request.method == "POST":
-            form = UserLoginForm(request.POST)
-            if form.is_valid():
-                email = form.cleaned_data.get("email")
-                password = form.cleaned_data.get("password")
-                user = User.objects.create(email=email, password=password)
-                login(request, user)
-                # form.save()
-                messages.success(request, "Account was created for " + user)
-                return redirect("login")
-            else:
-                return render(request, "accounts/registration.html", {"form": form})
-        else:
-            return render(request, "accounts/registration.html", {"form": form})
+
+    form = UserLoginForm()
+    if request.method == "POST":
+        form = UserLoginForm(request.POST)
+        if form.is_valid():
+            email    = form.cleaned_data.get("email")
+            password = form.cleaned_data.get("password")
+            user     = User.objects.create(email=email, password=password)
+            login(request, user)
+            messages.success(request, "Account was created for " + user)
+            return redirect("login")
+
+    return render(request, "accounts/registration.html", {"form": form})
 
 
 def authenticate_user(email, password):
     try:
         user = User.objects.get(email=email)
+        return user if user.check_password(password) else None
     except User.DoesNotExist:
         return None
-    else:
-        if user.check_password(password):
-            return user
-
-    return None
 
 
 class LoginUserView(LoginView):
+    """Legacy login view — prefer UserLoginView for new code."""
     template_name = "accounts/login.html"
 
     def get(self, request):
         return render(request, self.template_name)
 
     def post(self, request):
-        email = request.POST["email"]
-        password = request.POST["password"]
+        email    = request.POST.get("email", "")
+        password = request.POST.get("password", "")
 
-        email_error = None
-        password_error = None
-
-        if not email:
-            email_error = "यो क्षेत्र आवश्यक छ।"
-
-        if not password:
-            password_error = "यो क्षेत्र आवश्यक छ।"
+        context = {
+            "email_error":    "यो क्षेत्र आवश्यक छ।" if not email    else None,
+            "password_error": "यो क्षेत्र आवश्यक छ।" if not password else None,
+        }
 
         user = authenticate_user(email, password)
-        context = {"email_error": email_error, "password_error": password_error}
-
         if user is not None:
-            if user.is_staff:
-                login(request, user)
-                messages.success(request, "Login successfully done")
-                return redirect("dashboard:home")
-            elif not user.is_staff:
-                login(request, user)
-                return redirect("core:survey_list")
-            else:
-                context["error_message"] = "user is not staff"
-        else:
-            context["error_message"] = "Please enter correct login credentials"
+            login(request, user)
+            messages.success(request, "सफलतापूर्वक लगइन गरियो।")
+            return redirect("dashboard:home" if user.is_staff else "core:survey_list")
 
+        context["error_message"] = "कृपया सही लगइन प्रमाण-पत्र दिनुहोस्।"
         return render(request, self.template_name, context)
-
-
-class UserLogoutView(LogoutView):
-    next_page = reverse_lazy("user_mgmt:login")
-
-
-# class UserPasswordChangeView(
-#     LoginRequiredMixin, SuccessMessageMixin, PasswordChangeView
-# ):
-#     template_name = "accounts/change_password.html"
-#     form_class = PasswordChangingForm
-#     success_url = reverse_lazy("login")
-#     success_message = "Password was changed successfully."
-
-
-
-def change_password(request):
-    uname = request.user.username
-    response_data = {}
-    if request.method == 'POST':
-        currentPassword = request.POST['currentPassword']
-        newPassword = request.POST['newPassword']
-        confirmNewPassword = request.POST['confirmNewPassword']
-        # user = authenticate(username=uname, password=currentPassword)
-        user = User.objects.get(id=request.user.id)
-        check = user.check_password(currentPassword)
-        if check == True:
-            if newPassword == confirmNewPassword and confirmNewPassword != '':
-                u = User.objects.get(username=uname)
-                u.set_password(confirmNewPassword)
-                u.save()
-                response_data["result"] = "Success!"
-                response_data["message"] = "Password Changed Successfully."
-            else:
-                response_data["result"] = "Invalid Passwords!"
-                response_data["message"] = "Password did not matches."
-        else:
-            response_data["result"] = "Enter Correct Passwords!"
-            response_data["message"] = "Enter Correct Passwords!"
-    return HttpResponse(json.dumps(response_data), content_type='application/json')
-
-
-class UserPasswordResetRequestView(FormView):
-    model = User
-    template_name = "accounts/forgot-password.html"
-    success_url = reverse_lazy("user_mgmt:login")
-    form_class = PasswordResetRequestForm
-
-
-    def form_valid(self, form):
-        current_user_email = form.cleaned_data["email"]
-        current_user = User.objects.filter(email=current_user_email)
-
-        if current_user:
-            url = Site.objects.get_current().domain
-            user = current_user[0]
-            email_template_name = "accounts/password-reset/password_reset_email.html"
-            email_content = {
-                "email": user.email,
-                # 'domain': self.request.headers['Host'],
-                "domain": url,
-                'site_name': 'NNRFC',
-                "logo_img": self.request.build_absolute_uri(static("email/logo.png")),
-                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-                'user': user,
-                'url':url,
-                'token': PasswordResetTokenGenerator.make_token(self=account_activation_token, user=user),
-				"protocol": "https",
-            }
-            msg = render_to_string(email_template_name, email_content)
-            try:
-                send_html_email(msg, current_user)
-            except:
-                print('email sending failed')
-            return redirect('password_reset_done')
-
-        return JsonResponse({"success": True, "msg": self.success_message})
-
-def admin_change_user_password(request, user_id):
-    """Admin changes password for a specific user — no current password required."""
-    if request.method == "POST":
-        try:
-            target_user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return JsonResponse({"success": False, "msg": "प्रयोगकर्ता फेला परेन।"})
-
-        new_password     = request.POST.get("new_password", "").strip()
-        confirm_password = request.POST.get("confirm_password", "").strip()
-
-        if len(new_password) < 8:
-            return JsonResponse({"success": False, "new_password": "पासवर्ड कम्तिमा ८ अक्षर हुनुपर्छ।"})
-
-        if new_password != confirm_password:
-            return JsonResponse({"success": False, "confirm_password": "पासवर्डहरू मेल खाएनन्।"})
-
-        target_user.set_password(new_password)
-        target_user.is_first_login = False  # clear first-login flag if set
-        target_user.save()
-
-        return JsonResponse({"success": True, "msg": "पासवर्ड सफलतापूर्वक परिवर्तन गरियो।"})
-
-    return JsonResponse({"success": False, "msg": "Invalid request."})

@@ -199,7 +199,9 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "simple": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"},
+        "simple": {
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        },
         "django.server": {
             "()": "django.utils.log.ServerFormatter",
             "format": "[{server_time}] {message}",
@@ -213,17 +215,26 @@ LOGGING = {
             "filename": os.path.join(BASE_DIR, "nnrfc.log"),
             "formatter": "simple",
         },
-        "console": {"class": "logging.StreamHandler", "formatter": "django.server"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",   # use "simple" so warnings are readable
+        },
     },
     "loggers": {
+        # Django internals
         "django": {
             "handlers": ["file", "console"],
             "level": "INFO",
-            "propagate": True,
+            "propagate": False,
+        },
+        # Your app — catches logger.warning(...) in views.py, tasks.py, etc.
+        "user_mgmt": {
+            "handlers": ["file", "console"],
+            "level": "WARNING",
+            "propagate": False,
         },
     },
 }
-
 # axes config
 
 AXES_FAILURE_LIMIT = 5
