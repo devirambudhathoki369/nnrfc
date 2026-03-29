@@ -21,11 +21,7 @@
       <div class="col-lg-3 col-md-6 mb-3">
         <div class="card card-body text-center h-100">
           <p class="text-muted small mb-1">कुल सूचकहरु</p>
-          <h5 class="mb-0">
-            प्रदेश {{ province_question_count|default:"0" }}
-            <span class="text-muted px-1">|</span>
-            स्थानीय {{ local_question_count|default:"0" }}
-          </h5>
+          <h2 class="mb-0">{{ count|default:"0" }}</h2>
         </div>
       </div>
       <div class="col-lg-3 col-md-6 mb-3">
@@ -42,7 +38,7 @@
       </div>
       <div class="col-lg-3 col-md-6 mb-3">
         <div class="card card-body text-center h-100">
-          <p class="text-muted small mb-1">चालु आब</p>
+          <p class="text-muted small mb-1">चालु आर्थिक वर्ष</p>
           <h2 class="mb-0 text-primary">{{ fiscal_year.name }}</h2>
         </div>
       </div>
@@ -94,6 +90,37 @@
         {% else %}
         <div class="card card-body text-center text-muted py-4 mb-3">प्रदेश तहको कुनै डाटा भेटिएन।</div>
         {% endif %}
+
+        {# Per-province progress #}
+        {% if p_level_progress %}
+        <div class="card card-body mb-3">
+          <h5 class="mb-3"><span class="text-primary">प्रदेशगत प्रगति</span></h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover mb-0" id="admin_province_level_table">
+              <thead class="thead-light">
+                <tr>
+                  <th style="width:5%;">क्र.स</th>
+                  <th>प्रदेश</th>
+                  <th class="text-center" style="width:12%;">भरेको</th>
+                  <th class="text-center" style="width:12%;">बाँकी</th>
+                  <th class="text-center" style="width:12%;">प्रगति</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in p_level_progress %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>{{ item.level.name }}</td>
+                  <td class="text-center"><span class="badge badge-success">{{ item.filled }}</span></td>
+                  <td class="text-center"><span class="badge badge-danger">{{ item.remaining }}</span></td>
+                  <td class="text-center"><span style="font-size:12px;font-weight:600;">{{ item.percentage }}%</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
       </div>
 
       {# ── Local Tab ── #}
@@ -124,13 +151,44 @@
         {% else %}
         <div class="card card-body text-center text-muted py-4 mb-3">स्थानीय तहको कुनै डाटा भेटिएन।</div>
         {% endif %}
+
+        {# Per-local-level progress #}
+        {% if l_level_progress %}
+        <div class="card card-body mb-3">
+          <h5 class="mb-3"><span class="text-danger">स्थानीय तहगत प्रगति</span></h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover mb-0" id="admin_local_level_table">
+              <thead class="thead-light">
+                <tr>
+                  <th style="width:5%;">क्र.स</th>
+                  <th>कार्यालय</th>
+                  <th class="text-center" style="width:12%;">भरेको</th>
+                  <th class="text-center" style="width:12%;">बाँकी</th>
+                  <th class="text-center" style="width:12%;">प्रगति</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in l_level_progress %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>{{ item.level.name }}</td>
+                  <td class="text-center"><span class="badge badge-success">{{ item.filled }}</span></td>
+                  <td class="text-center"><span class="badge badge-danger">{{ item.remaining }}</span></td>
+                  <td class="text-center"><span style="font-size:12px;font-weight:600;">{{ item.percentage }}%</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
       </div>
     </div>
     {% endif %}
 
     {% if recent_corrections %}
     <div class="card card-body mb-3">
-      <h5>सुधारका लागि प्राप्त भएका अनुरोध</h5>
+      <h5>हालैका सुधार अनुरोध</h5>
       {% for corr in recent_corrections %}
       <div class="d-flex justify-content-between mb-2 pb-2" style="border-bottom:1px solid #eee;">
         <div style="flex:1;"><strong style="font-size:13px;">{{ corr.sub }}</strong><br><small class="text-muted">{{ corr.level }} — {{ corr.created_at|timesince }} अघि</small></div>
@@ -143,6 +201,112 @@
 
     {# ═══════════════ PROVINCE USER ═══════════════ #}
     {% elif user_type == "province" %}
+
+    {# ── Gunaso/Punarbalokan Modal ── #}
+    <div class="modal fade modal-01" id="complaintModalCenter" tabindex="-1" role="dialog" aria-labelledby="complaintModalCenterTitle" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title" id="complaintModalLongTitle">तपाईंको गुनासो/पुनरावलोकन दर्ता गर्नुहोस्</h3>
+            <button class="close" type="button" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <p class="text-dark mb-1">गुनासोको प्रकार?</p>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="simpleComplaintInput" type="radio" name="complaint_type" value="simpleComplaintValue" checked="checked" />
+                <label class="form-check-label" for="simpleComplaintInput">सामान्य गुनासो</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="evaluationComplaintInput" type="radio" name="complaint_type" value="evaluationComplaintValue" />
+                <label class="form-check-label" for="evaluationComplaintInput">मूल्याङ्कन पुनरावलोकनको लागि अनुरोध</label>
+              </div>
+            </div>
+
+            {# Simple Complaint Form #}
+            <form class="form-inline-block" method="POST" action="{% url 'core:register_SimpleComplaintForm' %}" id="simpleComplaintForm" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="form-group">
+                <label for="db_sub">विषय</label>
+                <input type="text" id="db_sub" name="sub" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label for="db_msg">तपाईंको गुनासो</label>
+                <textarea class="form-control" rows="3" id="db_msg" name="msg" placeholder="कृपया गुनासो यहाँ उल्लेख गर्नुहोस..." required></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label d-block">प्रमाण अपलोड गर्नुहोस्</label>
+                <div class="custom-file custom-file-upload">
+                  <input class="custom-file-input" type="file" id="db_document" name="document" />
+                  <label class="custom-file-label" for="db_document"></label>
+                </div>
+              </div>
+              <div class="d-flex mt-2">
+                <button class="btn btn-danger flex-grow-1 mr-3" type="button" data-dismiss="modal">रद्द गर्नुहोस्</button>
+                <button class="btn btn-primary flex-grow-1" type="submit">पेश गर्नुहोस्</button>
+              </div>
+            </form>
+
+            {# Evaluation / Punarbalokan Form #}
+            <form class="form-inline-block" method="POST" action="{% url 'core:register_EvaluationComplaintForm' %}" id="evaluationComplaintForm" enctype="multipart/form-data" style="display:none">
+              {% csrf_token %}
+              <div class="form-group">
+                <label for="db_subject">विषय</label>
+                <input type="text" id="db_subject" name="subject" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label>सूचक</label>
+                <select class="form-control" name="questions" id="db_questions" required>
+                  <option value="">छान्नुहोस्..</option>
+                  {% for question in eval_questions %}
+                  <option value="{{ question.pk }}">{{ question.title }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group mt-2">
+                <label for="db_score_obtained">प्राप्त अंक</label>
+                <input type="number" id="db_score_obtained" name="score_obtained" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label for="db_reason">तपाईंको गुनासो</label>
+                <textarea class="form-control" rows="3" id="db_reason" name="reason" placeholder="कृपया गुनासो यहाँ उल्लेख गर्नुहोस..." required></textarea>
+              </div>
+              <div class="form-group mt-2">
+                <label for="db_expected_score">मूल्याङ्कन पछि अपेक्षित अंक</label>
+                <input type="number" id="db_expected_score" name="expected_score" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label d-block">प्रमाण अपलोड गर्नुहोस्</label>
+                <div class="custom-file custom-file-upload">
+                  <input class="custom-file-input" type="file" id="db_evalCustomFile" name="document" required />
+                  <label class="custom-file-label" for="db_evalCustomFile"></label>
+                </div>
+              </div>
+              <div class="d-flex mt-2">
+                <button class="btn btn-danger flex-grow-1 mr-3" type="button" data-dismiss="modal">रद्द गर्नुहोस्</button>
+                <button class="btn btn-primary flex-grow-1" type="submit">पेश गर्नुहोस्</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Duplicate punarbalokan confirm modal #}
+    <div class="modal fade" id="dbDuplicateEvalConfirm" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-body text-center py-4">
+            <h5 class="mb-3">पुनरावलोकन अनुरोध</h5>
+            <p>तपाईंले पहिले नै यस सूचकको लागि पुनरावलोकन अनुरोध प्रविष्टि गरिसक्नु भएको छ। के फेरि पुनरावलोकन गर्न चाहानुहुन्छ?</p>
+            <div class="d-flex justify-content-center" style="gap:10px;">
+              <button class="btn btn-danger px-4" type="button" id="dbCancelDuplicateEval" data-dismiss="modal">रद्द गर्नुहोस्</button>
+              <button class="btn btn-primary px-4" type="button" id="dbConfirmDuplicateEval">हो, पेश गर्नुहोस्</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="row mb-3">
       <div class="col-lg-4 col-md-4 mb-3">
@@ -159,19 +323,20 @@
       </div>
       <div class="col-lg-4 col-md-4 mb-3">
         <div class="card card-body text-center h-100">
-          <p class="text-muted small mb-1">भर्न बाँकी सूचक</p>
+          <p class="text-muted small mb-1">प्रविष्टि हुन बाँकी</p>
           <h2 class="mb-0 text-danger">{{ my_remaining|default:"0" }}</h2>
         </div>
       </div>
     </div>
 
-    {# कार्य सम्पादन सूचक title + Quick actions #}
+    {# Quick actions #}
     <div class="card card-body mb-3">
       <h5 class="mb-2">{% if user_department_name %}{{ user_department_name }}का {% else %}{% endif %}कार्य सम्पादन सूचकहरु</h5>
       <div class="d-flex flex-wrap" style="gap:10px;">
         {% for s in my_surveys %}
           <a href="{% url 'core:homepage' s.id %}" class="btn btn-primary">{{ s.name }} भर्नुहोस्</a>
         {% endfor %}
+        <button class="btn btn-danger" data-toggle="modal" data-target="#complaintModalCenter">गुनासो / पुनरावलोकन दर्ता गर्नुहोस्</button>
       </div>
     </div>
 
@@ -200,27 +365,10 @@
     </div>
     {% endif %}
 
-    {# Suchak for my department #}
-    {% comment %} {% if my_suchak %}
-    <div class="card card-body mb-3" style="border-left:3px solid #17a2b8;">
-      <h5 class="text-info mb-2">{% if user_department_name %}{{ user_department_name }}का सूचकहरु{% else %}सूचकहरु{% endif %}</h5>
-      <p class="text-muted mb-2" style="font-size:13px;">निम्न सूचकहरुको प्रगति प्रविष्टि गर्नुहोस्</p>
-      <ul class="list-unstyled mb-0">
-        {% for q in my_suchak %}
-        <li class="mb-1" style="font-size:13px;">
-          <span class="badge badge-info mr-1">{% if q.full_marks %}{{ q.full_marks }}{% else %}—{% endif %}</span>
-          {{ q.title|truncatechars:70 }}
-          {% if q.department %}<small class="text-muted ml-1">({{ q.department.name }})</small>{% endif %}
-        </li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endif %} {% endcomment %}
-
     {# Corrections with admin remarks #}
     {% if my_corrections %}
     <div class="card card-body mb-3" style="border-left:3px solid #ffc107;">
-      <h5 class="text-warning mb-2"> सुधार अनुरोध र एडमिन कैफियत</h5>
+      <h5 class="text-warning mb-2">मेरा सुधार अनुरोध र एडमिन कैफियत</h5>
       {% for corr in my_corrections %}
       <div class="mb-2 pb-2" style="border-bottom:1px solid #eee;">
         <div class="d-flex justify-content-between">
@@ -242,7 +390,7 @@
     {# My complaints #}
     {% if my_complaints %}
     <div class="card card-body mb-3">
-      <h5 class="mb-2"> गुनासोहरु</h5>
+      <h5 class="mb-2">मेरा गुनासोहरु</h5>
       {% for comp in my_complaints %}
       <div class="d-flex justify-content-between mb-2">
         <span style="font-size:13px;">{{ comp.sub }}</span>
@@ -254,6 +402,112 @@
 
     {# ═══════════════ LOCAL LEVEL USER ═══════════════ #}
     {% elif user_type == "local" %}
+
+    {# ── Gunaso/Punarbalokan Modal ── #}
+    <div class="modal fade modal-01" id="complaintModalCenter" tabindex="-1" role="dialog" aria-labelledby="complaintModalCenterTitle" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title" id="complaintModalLongTitle">तपाईंको गुनासो/पुनरावलोकन दर्ता गर्नुहोस्</h3>
+            <button class="close" type="button" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <p class="text-dark mb-1">गुनासोको प्रकार?</p>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="simpleComplaintInput" type="radio" name="complaint_type" value="simpleComplaintValue" checked="checked" />
+                <label class="form-check-label" for="simpleComplaintInput">सामान्य गुनासो</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" id="evaluationComplaintInput" type="radio" name="complaint_type" value="evaluationComplaintValue" />
+                <label class="form-check-label" for="evaluationComplaintInput">मूल्याङ्कन पुनरावलोकनको लागि अनुरोध</label>
+              </div>
+            </div>
+
+            {# Simple Complaint Form #}
+            <form class="form-inline-block" method="POST" action="{% url 'core:register_SimpleComplaintForm' %}" id="simpleComplaintForm" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="form-group">
+                <label for="db_sub">विषय</label>
+                <input type="text" id="db_sub" name="sub" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label for="db_msg">तपाईंको गुनासो</label>
+                <textarea class="form-control" rows="3" id="db_msg" name="msg" placeholder="कृपया गुनासो यहाँ उल्लेख गर्नुहोस..." required></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label d-block">प्रमाण अपलोड गर्नुहोस्</label>
+                <div class="custom-file custom-file-upload">
+                  <input class="custom-file-input" type="file" id="db_document" name="document" />
+                  <label class="custom-file-label" for="db_document"></label>
+                </div>
+              </div>
+              <div class="d-flex mt-2">
+                <button class="btn btn-danger flex-grow-1 mr-3" type="button" data-dismiss="modal">रद्द गर्नुहोस्</button>
+                <button class="btn btn-primary flex-grow-1" type="submit">पेश गर्नुहोस्</button>
+              </div>
+            </form>
+
+            {# Evaluation / Punarbalokan Form #}
+            <form class="form-inline-block" method="POST" action="{% url 'core:register_EvaluationComplaintForm' %}" id="evaluationComplaintForm" enctype="multipart/form-data" style="display:none">
+              {% csrf_token %}
+              <div class="form-group">
+                <label for="db_subject">विषय</label>
+                <input type="text" id="db_subject" name="subject" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label>सूचक</label>
+                <select class="form-control" name="questions" id="db_questions" required>
+                  <option value="">छान्नुहोस्..</option>
+                  {% for question in eval_questions %}
+                  <option value="{{ question.pk }}">{{ question.title }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group mt-2">
+                <label for="db_score_obtained">प्राप्त अंक</label>
+                <input type="number" id="db_score_obtained" name="score_obtained" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label for="db_reason">तपाईंको गुनासो</label>
+                <textarea class="form-control" rows="3" id="db_reason" name="reason" placeholder="कृपया गुनासो यहाँ उल्लेख गर्नुहोस..." required></textarea>
+              </div>
+              <div class="form-group mt-2">
+                <label for="db_expected_score">मूल्याङ्कन पछि अपेक्षित अंक</label>
+                <input type="number" id="db_expected_score" name="expected_score" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label d-block">प्रमाण अपलोड गर्नुहोस्</label>
+                <div class="custom-file custom-file-upload">
+                  <input class="custom-file-input" type="file" id="db_evalCustomFile" name="document" required />
+                  <label class="custom-file-label" for="db_evalCustomFile"></label>
+                </div>
+              </div>
+              <div class="d-flex mt-2">
+                <button class="btn btn-danger flex-grow-1 mr-3" type="button" data-dismiss="modal">रद्द गर्नुहोस्</button>
+                <button class="btn btn-primary flex-grow-1" type="submit">पेश गर्नुहोस्</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Duplicate punarbalokan confirm modal #}
+    <div class="modal fade" id="dbDuplicateEvalConfirm" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-body text-center py-4">
+            <h5 class="mb-3">पुनरावलोकन अनुरोध</h5>
+            <p>तपाईंले पहिले नै यस सूचकको लागि पुनरावलोकन अनुरोध प्रविष्टि गरिसक्नु भएको छ। के फेरि पुनरावलोकन गर्न चाहानुहुन्छ?</p>
+            <div class="d-flex justify-content-center" style="gap:10px;">
+              <button class="btn btn-danger px-4" type="button" id="dbCancelDuplicateEval" data-dismiss="modal">रद्द गर्नुहोस्</button>
+              <button class="btn btn-primary px-4" type="button" id="dbConfirmDuplicateEval">हो, पेश गर्नुहोस्</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="row mb-3">
       <div class="col-lg-3 col-md-6 mb-3">
@@ -288,6 +542,7 @@
         {% for s in my_surveys %}
           <a href="{% url 'core:homepage' s.id %}" class="btn btn-primary">{{ s.name }} भर्नुहोस्</a>
         {% endfor %}
+        <button class="btn btn-danger" data-toggle="modal" data-target="#complaintModalCenter">गुनासो / पुनरावलोकन दर्ता गर्नुहोस्</button>
       </div>
     </div>
 
@@ -304,6 +559,7 @@
               <th style="width:18%;">सर्भे</th>
               <th class="text-center" style="width:12%;">पूर्णांक</th>
               <th class="text-center" style="width:12%;">स्थिति</th>
+              <th class="text-center" style="width:8%;">उत्तर</th>
             </tr>
           </thead>
           <tbody>
@@ -320,6 +576,11 @@
                 <span class="badge badge-danger">बाँकी</span>
                 {% endif %}
               </td>
+              <td class="text-center">
+                {% if item.is_completed %}
+                <a href="{% url 'dashboard:level_question_answer' item.question.id user_level.id %}" class="btn btn-sm btn-outline-info" target="_blank">हेर्नुहोस्</a>
+                {% else %}—{% endif %}
+              </td>
             </tr>
             {% endfor %}
           </tbody>
@@ -331,7 +592,7 @@
     {# Corrections with admin remarks #}
     {% if my_corrections %}
     <div class="card card-body mb-3" style="border-left:3px solid #ffc107;">
-      <h5 class="text-warning mb-2"> सुधार अनुरोध र एडमिन कैफियत</h5>
+      <h5 class="text-warning mb-2">मेरा सुधार अनुरोध र एडमिन कैफियत</h5>
       {% for corr in my_corrections %}
       <div class="mb-2 pb-2" style="border-bottom:1px solid #eee;">
         <div class="d-flex justify-content-between">
@@ -353,7 +614,7 @@
     {# My complaints #}
     {% if my_complaints %}
     <div class="card card-body mb-3">
-      <h5 class="mb-2"> गुनासोहरु</h5>
+      <h5 class="mb-2">मेरा गुनासोहरु</h5>
       {% for comp in my_complaints %}
       <div class="d-flex justify-content-between mb-2">
         <span style="font-size:13px;">{{ comp.sub }}</span>
@@ -407,23 +668,144 @@
 {% block extra_scripts %}
 <script>
 $(document).ready(function() {
+
+  {# ── Admin DataTables ── #}
+  {% if user_type == "admin" %}
   if ($.fn.DataTable) {
-    // Initialize DataTable only when tab is shown (fixes rendering issues with hidden tables)
-    $('#admin_province_table').DataTable({
-      "language": {"search": "खोज्नुहोस्:", "lengthMenu": "_MENU_ प्रति पेज"},
-      "pageLength": 25, "order": [[0, "asc"]]
-    });
+    var dtLang = {"search": "खोज्नुहोस्:", "lengthMenu": "_MENU_ प्रति पेज"};
+    $('#admin_province_table').DataTable({"language": dtLang, "pageLength": 25, "order": [[0, "asc"]]});
+    $('#admin_province_level_table').DataTable({"language": dtLang, "pageLength": 10, "order": [[4, "asc"]]});
 
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
       var target = $(e.target).attr("href");
-      if (target === '#localPane' && !$.fn.DataTable.isDataTable('#admin_local_table')) {
-        $('#admin_local_table').DataTable({
-          "language": {"search": "खोज्नुहोस्:", "lengthMenu": "_MENU_ प्रति पेज"},
-          "pageLength": 25, "order": [[0, "asc"]]
-        });
+      if (target === '#localPane') {
+        if (!$.fn.DataTable.isDataTable('#admin_local_table')) {
+          $('#admin_local_table').DataTable({"language": dtLang, "pageLength": 25, "order": [[0, "asc"]]});
+        }
+        if (!$.fn.DataTable.isDataTable('#admin_local_level_table')) {
+          $('#admin_local_level_table').DataTable({"language": dtLang, "pageLength": 10, "order": [[4, "asc"]]});
+        }
       }
     });
   }
+  {% endif %}
+
+  {# ── Gunaso/Punarbalokan (province & local users) ── #}
+  {% if user_type == "province" or user_type == "local" %}
+
+  // Move modals to <body> — avoids CSS transform stacking context issues
+  // (the dashboard main container has transform: translateX which breaks position:fixed)
+  $('#complaintModalCenter').appendTo('body');
+  $('#dbDuplicateEvalConfirm').appendTo('body');
+
+  // File input label update
+  $(".custom-file-input").on("change", function() {
+    var fileName = $(this).val().split("\\").pop();
+    $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+  });
+
+  // Toggle between simple and evaluation forms
+  $(':radio[name="complaint_type"]').change(function() {
+    var val = $(this).filter(':checked').val();
+    if (val === "simpleComplaintValue") {
+      $("#simpleComplaintForm").show();
+      $("#evaluationComplaintForm").hide();
+    } else {
+      $("#simpleComplaintForm").hide();
+      $("#evaluationComplaintForm").show();
+    }
+  });
+
+  // Truncate long question option text
+  $('#db_questions option').each(function() {
+    if (this.text.length > 60) {
+      $(this).text(this.text.substring(0, 60) + '..');
+    }
+  });
+
+  // ── Simple Complaint Submit ──
+  $('#simpleComplaintForm').on('submit', function(e) {
+    e.preventDefault();
+    var formdata = new FormData($('#simpleComplaintForm')[0]);
+    $.ajax({
+      type: "POST",
+      url: '{% url "core:register_SimpleComplaintForm" %}',
+      data: formdata,
+      cache: false,
+      contentType: false,
+      processData: false,
+      success: function(response) {
+        $("#db_sub").val("");
+        $("#db_msg").val("");
+        $("#db_document").val("");
+        $(".custom-file-label").text("");
+        $('#complaintModalCenter').modal('hide');
+        if (response.success === true) {
+          alert("तपाईंको गुनासो सफलतापूर्वक दर्ता भयो।");
+        } else if (response.invalid_file) {
+          alert(response.message);
+        } else {
+          alert(response.message || "त्रुटि भयो।");
+        }
+      }
+    });
+  });
+
+  // ── Evaluation / Punarbalokan Submit ──
+  var dbPendingEvalFormData = null;
+
+  function submitDbEvaluationForm(formdata) {
+    $.ajax({
+      type: "POST",
+      url: '{% url "core:register_EvaluationComplaintForm" %}',
+      data: formdata,
+      cache: false,
+      contentType: false,
+      processData: false,
+      success: function(response) {
+        if (response.success === true) {
+          $("#db_subject").val("");
+          $("#db_questions").val("");
+          $("#db_score_obtained").val("");
+          $("#db_reason").val("");
+          $("#db_expected_score").val("");
+          $("#db_evalCustomFile").val("");
+          $(".custom-file-label").text("");
+          $('#complaintModalCenter').modal('hide');
+          alert("तपाईंको मूल्याङ्कन पुनरावलोकन अनुरोध सफलतापूर्वक दर्ता भयो।");
+        } else if (response.invalid_file) {
+          alert(response.message);
+        } else if (response.duplicate_exists) {
+          dbPendingEvalFormData = formdata;
+          $('#complaintModalCenter').modal('hide');
+          setTimeout(function() { $('#dbDuplicateEvalConfirm').modal('show'); }, 400);
+        } else {
+          alert(response.message || "त्रुटि भयो।");
+        }
+      }
+    });
+  }
+
+  $('#evaluationComplaintForm').on('submit', function(e) {
+    e.preventDefault();
+    var formdata = new FormData($('#evaluationComplaintForm')[0]);
+    formdata.append("check_duplicate", "1");
+    submitDbEvaluationForm(formdata);
+  });
+
+  $('#dbConfirmDuplicateEval').on('click', function() {
+    if (dbPendingEvalFormData) {
+      dbPendingEvalFormData.delete("check_duplicate");
+      dbPendingEvalFormData.append("force_submit", "1");
+      $('#dbDuplicateEvalConfirm').modal('hide');
+      submitDbEvaluationForm(dbPendingEvalFormData);
+      dbPendingEvalFormData = null;
+    }
+  });
+
+  $('#dbCancelDuplicateEval').on('click', function() { dbPendingEvalFormData = null; });
+
+  {% endif %}
 });
 </script>
 {% endblock extra_scripts %}

@@ -82,6 +82,87 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
     template_name = "core/dashboard/dashboard_home.html"
 
     # ─────────────────────────────────────────────────────────────────
+    # Per-level fill progress (admin: see each level's submission status)
+    # ─────────────────────────────────────────────────────────────────
+
+    def _build_per_level_progress(self, fiscal, level_type, province_filter=None):
+        """
+        For each level return how many questions they filled out of total.
+        Uses bulk queries — no N+1 problem.
+        Returns (list of dicts, total_questions)
+        """
+        surveys = Survey.objects.filter(fiscal_year=fiscal, level=level_type)
+        questions = list(
+            Question.objects.filter(survey__in=surveys, parent__isnull=True)
+            .values_list('id', flat=True)
+        )
+        total_questions = len(questions)
+        if not questions:
+            return [], 0
+
+        levels_qs = Level.objects.filter(type__type=level_type).order_by('name')
+        if province_filter:
+            levels_qs = levels_qs.filter(province_level=province_filter)
+        levels = list(levels_qs)
+        if not levels:
+            return [], 0
+
+        child_rows = Question.objects.filter(
+            parent_id__in=questions
+        ).values_list('parent_id', 'id')
+        child_map = {}
+        for parent_id, child_id in child_rows:
+            child_map.setdefault(parent_id, []).append(child_id)
+
+        source_ids = []
+        for q_id in questions:
+            source_ids.extend(child_map.get(q_id, [q_id]))
+
+        opt_rows = Option.objects.filter(
+            question_id__in=source_ids
+        ).values_list('id', 'question_id')
+        src_to_opts = {}
+        all_opt_ids = set()
+        for opt_id, q_id in opt_rows:
+            src_to_opts.setdefault(q_id, set()).add(opt_id)
+            all_opt_ids.add(opt_id)
+
+        q_opt_ids = {}
+        for q_id in questions:
+            srcs = child_map.get(q_id, [q_id])
+            opts = set()
+            for src_id in srcs:
+                opts.update(src_to_opts.get(src_id, set()))
+            q_opt_ids[q_id] = opts
+
+        level_id_set = {lv.id for lv in levels}
+        filled_pairs = set(
+            Answer.objects.filter(
+                option_id__in=all_opt_ids,
+                created_by_level_id__in=level_id_set,
+            ).values_list('option_id', 'created_by_level_id')
+        )
+
+        results = []
+        for lv in levels:
+            filled = 0
+            for q_id in questions:
+                for opt_id in q_opt_ids.get(q_id, set()):
+                    if (opt_id, lv.id) in filled_pairs:
+                        filled += 1
+                        break
+            pct = round((filled / total_questions * 100), 1) if total_questions > 0 else 0
+            results.append({
+                'level': lv,
+                'filled': filled,
+                'remaining': total_questions - filled,
+                'total': total_questions,
+                'percentage': pct,
+            })
+
+        return results, total_questions
+
+    # ─────────────────────────────────────────────────────────────────
     # OPTIMIZED CORE METHOD: Build question status using BULK queries
     # Old: 7 questions × 759 levels = 5,313 DB queries
     # New: ~5 DB queries total regardless of data size
@@ -421,6 +502,13 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
                 .select_related('level', 'user', 'question')
                 .order_by("-created_at")[:5]
             )
+
+            # Per-level fill progress for admin
+            p_level_progress, _ = self._build_per_level_progress(fiscal, "P")
+            l_level_progress, _ = self._build_per_level_progress(fiscal, "L")
+            context["p_level_progress"] = p_level_progress
+            context["l_level_progress"] = l_level_progress
+
             return context
 
         # ════════════════════════════════════════
@@ -470,6 +558,16 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
                     .order_by("survey__name", "sequence_id")
                 )
 
+            # Questions for evaluation complaint (punarbalokan) dropdown
+            context["eval_questions"] = (
+                Question.objects.filter(
+                    survey__fiscal_year=fiscal,
+                    survey__level="P",
+                    parent__isnull=True,
+                )
+                .order_by("survey__name", "sequence_id")
+            )
+
             return context
 
         # ════════════════════════════════════════
@@ -514,6 +612,16 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
             context["count"] = local_total
             context["my_filled"] = local_filled
             context["my_remaining"] = local_total - local_filled
+
+            # Questions for evaluation complaint (punarbalokan) dropdown
+            context["eval_questions"] = (
+                Question.objects.filter(
+                    survey__fiscal_year=fiscal,
+                    survey__level="L",
+                    parent__isnull=True,
+                )
+                .order_by("survey__name", "sequence_id")
+            )
 
             return context
 

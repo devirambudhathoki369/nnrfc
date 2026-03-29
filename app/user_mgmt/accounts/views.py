@@ -265,9 +265,7 @@ class UserLoginView(LoginView):
     def get_success_url(self):
         if self.request.user.is_first_login:
             return reverse("set_password")
-        if self.request.user.is_staff:
-            return reverse("dashboard:dashboard")
-        return reverse("core:survey_list")
+        return reverse("dashboard:dashboard")
 
 
 class SetNewPasswordView(UserPassesTestMixin, SuccessMessageMixin, FormView):
@@ -342,18 +340,16 @@ def admin_change_user_password(request, user_id):
     target_user.is_first_login = False   # clear forced-change flag if set
     target_user.save()
 
-    # --- Notify the user by email (both addresses) ---
-    html_template = "email/password_changed.html"
-    ctx = {
-        "full_name": target_user.full_name,
-        "login_url": request.build_absolute_uri(reverse("user_mgmt:login")),
-        "logo_img":  request.build_absolute_uri(static("email/logo.png")),
-    }
-    msg        = render_to_string(html_template, ctx)
+    # --- Notify the user by email (both addresses, non-fatal) ---
     recipients = _collect_recipients(target_user)
-
     if recipients:
         try:
+            ctx = {
+                "full_name": target_user.full_name,
+                "login_url": request.build_absolute_uri(reverse("user_mgmt:login")),
+                "logo_img":  request.build_absolute_uri(static("email/logo.png")),
+            }
+            msg = render_to_string("email/password_changed.html", ctx)
             from django.core.mail import send_mail
             send_mail(
                 subject="तपाईंको NNRFC पासवर्ड परिवर्तन गरियो",
@@ -361,7 +357,7 @@ def admin_change_user_password(request, user_id):
                 html_message=msg,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=recipients,
-                fail_silently=True,   # non-fatal — password is already saved
+                fail_silently=True,
             )
         except Exception:
             pass
