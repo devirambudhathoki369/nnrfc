@@ -70,7 +70,7 @@
           <div class="table-responsive">
             <table class="table table-bordered table-hover mb-0" id="admin_province_table">
               <thead class="thead-light">
-                <tr><th style="width:5%;">क्र.स</th><th>सूचक</th><th class="text-center" style="width:8%;">पूर्णांक</th><th class="text-center" style="width:12%;">भरेको</th><th class="text-center" style="width:12%;">नभरेको</th><th class="text-center" style="width:12%;">प्रगति</th></tr>
+                <tr><th style="width:5%;">क्र.स</th><th>सूचक</th><th class="text-center" style="width:8%;">पूर्णांक</th><th class="text-center" style="width:12%;">भरेको</th><th class="text-center" style="width:12%;">नभरेको</th><th class="text-center" style="width:12%;">भरेको %</th></tr>
               </thead>
               <tbody>
                 {% for item in p_question_status %}
@@ -94,7 +94,7 @@
         {# Per-province progress #}
         {% if p_level_progress %}
         <div class="card card-body mb-3">
-          <h5 class="mb-3"><span class="text-primary">प्रदेशगत प्रगति</span></h5>
+          <h5 class="mb-3"><span class="text-primary">प्रदेशगत भरेको %</span></h5>
           <div class="table-responsive">
             <table class="table table-bordered table-hover mb-0" id="admin_province_level_table">
               <thead class="thead-light">
@@ -103,7 +103,7 @@
                   <th>प्रदेश</th>
                   <th class="text-center" style="width:12%;">भरेको</th>
                   <th class="text-center" style="width:12%;">बाँकी</th>
-                  <th class="text-center" style="width:12%;">प्रगति</th>
+                  <th class="text-center" style="width:12%;">भरेको %</th>
                 </tr>
               </thead>
               <tbody>
@@ -131,7 +131,7 @@
           <div class="table-responsive">
             <table class="table table-bordered table-hover mb-0" id="admin_local_table">
               <thead class="thead-light">
-                <tr><th style="width:5%;">क्र.स</th><th>सूचक</th><th class="text-center" style="width:8%;">पूर्णांक</th><th class="text-center" style="width:12%;">भरेको</th><th class="text-center" style="width:12%;">नभरेको</th><th class="text-center" style="width:12%;">प्रगति</th></tr>
+                <tr><th style="width:5%;">क्र.स</th><th>सूचक</th><th class="text-center" style="width:8%;">पूर्णांक</th><th class="text-center" style="width:12%;">भरेको</th><th class="text-center" style="width:12%;">नभरेको</th><th class="text-center" style="width:12%;">भरेको %</th></tr>
               </thead>
               <tbody>
                 {% for item in l_question_status %}
@@ -155,7 +155,7 @@
         {# Per-local-level progress #}
         {% if l_level_progress %}
         <div class="card card-body mb-3">
-          <h5 class="mb-3"><span class="text-danger">स्थानीय तहगत प्रगति</span></h5>
+          <h5 class="mb-3"><span class="text-danger">स्थानीय तहगत भरेको %</span></h5>
           <div class="table-responsive">
             <table class="table table-bordered table-hover mb-0" id="admin_local_level_table">
               <thead class="thead-light">
@@ -164,7 +164,7 @@
                   <th>कार्यालय</th>
                   <th class="text-center" style="width:12%;">भरेको</th>
                   <th class="text-center" style="width:12%;">बाँकी</th>
-                  <th class="text-center" style="width:12%;">प्रगति</th>
+                  <th class="text-center" style="width:12%;">भरेको %</th>
                 </tr>
               </thead>
               <tbody>
@@ -340,23 +340,35 @@
       </div>
     </div>
 
-    {% if l_question_status %}
+    {% if province_question_rows %}
     <div class="card card-body mb-3">
-      <h5 class="mb-3">सम्बन्धित प्रदेशका स्थानीय तह{% if province_name %} - {{ province_name }}{% endif %} <small class="text-muted">({{ l_total_levels }})</small></h5>
+      <h5 class="mb-3">{% if user_department_name %}{{ user_department_name }} सम्बन्धित{% else %}प्रदेश तहका{% endif %} सूचकहरु{% if province_name %} - {{ province_name }}{% endif %} <small class="text-muted">({{ count }})</small></h5>
       <div class="table-responsive">
         <table class="table table-bordered table-hover mb-0">
           <thead class="thead-light">
-            <tr><th style="width:5%;">क्र.स</th><th>सूचक</th><th class="text-center" style="width:8%;">पूर्णांक</th><th class="text-center" style="width:12%;">भरेको</th><th class="text-center" style="width:12%;">नभरेको</th><th class="text-center" style="width:12%;">प्रगति</th></tr>
+            <tr><th style="width:5%;">क्र.स</th><th>सूचक</th><th style="width:18%;">सर्भे</th><th class="text-center" style="width:8%;">पूर्णांक</th><th class="text-center" style="width:12%;">भरेको</th><th class="text-center" style="width:12%;">नभरेको</th></tr>
           </thead>
           <tbody>
-            {% for item in l_question_status %}
+            {% for item in province_question_rows %}
             <tr>
               <td>{{ forloop.counter }}</td>
               <td style="font-size:13px;">{{ item.question.title|truncatechars:80 }}</td>
+              <td style="font-size:13px;">{{ item.survey_name }}</td>
               <td class="text-center">{% if item.question.full_marks %}<span class="badge badge-info">{{ item.question.full_marks }}</span>{% else %}—{% endif %}</td>
-              <td class="text-center"><span class="badge badge-success">{{ item.filled_count }}</span></td>
-              <td class="text-center"><span class="badge badge-danger">{{ item.not_filled_count }}</span></td>
-              <td class="text-center">{{ item.percentage }}%</td>
+              <td class="text-center">
+                {% if item.is_completed %}
+                <span class="badge badge-success">1</span>
+                {% else %}
+                <span class="badge badge-success">0</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                {% if item.is_completed %}
+                <span class="badge badge-danger">0</span>
+                {% else %}
+                <span class="badge badge-danger">1</span>
+                {% endif %}
+              </td>
             </tr>
             {% endfor %}
           </tbody>
@@ -629,7 +641,7 @@
     {% elif user_type == "staff" %}
     {% if p_question_status %}
     <div class="card card-body mb-3">
-      <h5>प्रदेश तह — सूचक प्रगति <small class="text-muted">({{ p_total_levels }})</small></h5>
+      <h5>प्रदेश तह — सूचक भरेको % <small class="text-muted">({{ p_total_levels }})</small></h5>
       <div class="table-responsive">
         <table class="table table-bordered mb-0">
           <thead class="thead-light">

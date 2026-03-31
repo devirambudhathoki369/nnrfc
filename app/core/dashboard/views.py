@@ -538,12 +538,14 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
                 level=user_level
             ).order_by("-created_at")[:5]
 
-            # Local levels under this province — bulk optimized
-            l_status, l_total, _ = self._build_question_status_all(
-                fiscal, "L", province_filter=user_level
+            # Province user's own suchak completion, filtered by department
+            province_question_rows, province_total, province_filled = (
+                self._build_level_question_completion(user, fiscal)
             )
-            context["l_question_status"] = l_status
-            context["l_total_levels"] = l_total
+            context["province_question_rows"] = province_question_rows
+            context["count"] = province_total
+            context["my_filled"] = province_filled
+            context["my_remaining"] = province_total - province_filled
 
             # Department-specific suchak
             if user.department:
@@ -558,14 +560,25 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
                     .order_by("survey__name", "sequence_id")
                 )
 
+            # Local levels under this province — bulk optimized
+            l_status, l_total, _ = self._build_question_status_all(
+                fiscal, "L", province_filter=user_level
+            )
+            context["l_question_status"] = l_status
+            context["l_total_levels"] = l_total
+
             # Questions for evaluation complaint (punarbalokan) dropdown
-            context["eval_questions"] = (
-                Question.objects.filter(
-                    survey__fiscal_year=fiscal,
-                    survey__level="P",
-                    parent__isnull=True,
+            province_eval_questions = Question.objects.filter(
+                survey__fiscal_year=fiscal,
+                survey__level="P",
+                parent__isnull=True,
+            )
+            if user.department:
+                province_eval_questions = province_eval_questions.filter(
+                    department=user.department
                 )
-                .order_by("survey__name", "sequence_id")
+            context["eval_questions"] = province_eval_questions.order_by(
+                "survey__name", "sequence_id"
             )
 
             return context

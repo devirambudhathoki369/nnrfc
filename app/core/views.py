@@ -192,6 +192,7 @@ class AnswerCreateView(LoginRequiredMixin, CreateView):
                     "title": option.title,
                     "input_type": OPTION_FIELD_INPUT_TYPE[option.field_type],
                     "option_type": option.option_type,
+                    "is_required": True,
                     "fy_data": [{"id": fy.id, "name": fy.name} for fy in fiscal_years],
                 }
             else:
@@ -201,6 +202,7 @@ class AnswerCreateView(LoginRequiredMixin, CreateView):
                     "input_type": OPTION_FIELD_INPUT_TYPE[option.field_type],
                     "field_indicator": OPTION_FIELD_INDICATOR.get(option.field_type, ""),
                     "option_type": option.option_type,
+                    "is_required": OPTION_FIELD_INPUT_TYPE[option.field_type] not in ["checkbox", "percentage"],
                 }
             options_data.append(option_data)
         return options_data
@@ -219,6 +221,7 @@ class AnswerCreateView(LoginRequiredMixin, CreateView):
         context["question_id"] = question_id
         context["question_title"] = question_obj.title
         context["survey_id"] = survey_id
+        context["is_document_required"] = question_obj.is_document_required
 
         child_options = []
         if child_questions.exists():
