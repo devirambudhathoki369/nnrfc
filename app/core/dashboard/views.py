@@ -745,6 +745,35 @@ class IndexUpdateView(UpdateView):
         return JsonResponse(form.errors)
 
 
+class SurveyUpdateView(UpdateView):
+    model = Survey
+    template_name = "core/dashboard/survey_update.html"
+    fields = ["name", "fiscal_year"]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["f_years"] = FiscalYear.objects.all().order_by("start_date")
+        return context
+
+    def form_valid(self, form):
+        survey = form.save()
+        messages.success(self.request, "Saved Successfully.")
+        return JsonResponse({"success": True, "url": reverse("dashboard:home")})
+
+    def form_invalid(self, form):
+        return JsonResponse(form.errors, status=400)
+
+
+class SurveyDeleteView(DeleteView):
+    model = Survey
+
+    def post(self, request, **kwargs):
+        survey = self.get_object()
+        survey.delete()
+        messages.success(self.request, "Deleted Successfully.")
+        return redirect("dashboard:home")
+
+
 class OptionCreateView(View):
     """view for `save and add another group` button.
     Creates multiple child questions with different option groups

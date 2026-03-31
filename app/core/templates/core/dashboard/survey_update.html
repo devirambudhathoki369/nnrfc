@@ -1,0 +1,35 @@
+<form action="{% url 'dashboard:survey_update' object.pk %}" method="POST" class="survey-update-form">
+  {% csrf_token %}
+
+  <div class="form-group">
+    <label>सूचकको नाम</label>
+    <input
+      class="form-control"
+      type="text"
+      name="name"
+      value="{{ object.name }}"
+      placeholder="टाइप गर्नुहोस्"
+      required
+    />
+  </div>
+
+  <div class="form-group">
+    <label>आर्थिक वर्ष</label>
+    <select name="fiscal_year" class="form-control" required>
+      {% for year in f_years %}
+        <option value="{{ year.pk }}" {% if object.fiscal_year_id == year.pk %}selected{% endif %}>
+          {{ year.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="modal-footer px-0">
+    <button type="button" class="btn btn-light" data-dismiss="modal">
+      रद्द गर्नुहोस्
+    </button>
+    <button type="submit" class="btn btn-primary">
+      सेभ गर्नुहोस्
+    </button>
+  </div>
+</form>

@@ -10,7 +10,9 @@ from core.dashboard.views import (
     IndexUpdateView,
     OptionCreateView,
     SettingsView,
+    SurveyDeleteView,
     SurveyDetailView,
+    SurveyUpdateView,
     assign_department_to_index,
     complaint_detail,
     correction_fix_view,
@@ -70,6 +72,8 @@ urlpatterns = [
     ),
     path("index-delete/<int:pk>/", IndexDeleteView.as_view(), name="index_delete"),
     path("index-update/<int:pk>/", IndexUpdateView.as_view(), name="index_update"),
+    path("survey-update/<int:pk>/", SurveyUpdateView.as_view(), name="survey_update"),
+    path("survey-delete/<int:pk>/", SurveyDeleteView.as_view(), name="survey_delete"),
     path(
         "index-option-create/<int:ques_id>/",
         IndexOptionCreateView.as_view(),
@@ -131,7 +135,7 @@ urlpatterns = [
         survey_filled_questions,
         name="filled_ques",
     ),
-    path(
+    path(   
         "filled-surveys/<int:survey_id>/list/", fill_surveys_list, name="fill_surveys"
     ),
     path("filled_answers/<int:q_id>/<int:level_id>/", view_filled_ans, name="view_ans"),

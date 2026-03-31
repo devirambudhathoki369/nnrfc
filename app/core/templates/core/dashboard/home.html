@@ -13,11 +13,16 @@
 <Fragment>
   <div class="inner">
     <div class="container">
-      <div class="modal mymodal" id="exampleModal2" tabindex="-1" role="dialog">
+      <div
+        class="modal mymodal modal-01"
+        id="deleteModal"
+        tabindex="-1"
+        role="dialog"
+      >
         <div class="modal-dialog" role="document">
           <div class="modal-content">
             <div class="modal-header align-items-center">
-              <h5 class="modal-title">Modal title</h5>
+              <h5 class="modal-title">सूचक मेटाउनुहोस्</h5>
               <button
                 type="button"
                 class="close"
@@ -28,26 +33,48 @@
               </button>
             </div>
             <div class="modal-body">
-              Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-              enim ad minim veniam, quis nostrud exercitation ullamco laboris
-              nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
-              reprehenderit in voluptate velit esse cillum dolore eu fugiat
-              nulla pariatur. Excepteur sint occaecat cupidatat non proident,
-              sunt in culpa qui officia deserunt mollit anim id est laborum.
+              <form action="" method="POST" class="delete-form">
+                {% csrf_token %}
+                के तपाईं यो सूचक मेटाउन निश्चित हुनुहुन्छ?
+                <br /><small>यससँग सम्बन्धित सूचक र विकल्पहरू पनि मेटिनेछन्।</small>
+                <div class="modal-footer px-0 pb-0">
+                  <button
+                    type="button"
+                    class="btn btn-light"
+                    data-dismiss="modal"
+                  >
+                    रद्द गर्नुहोस्
+                  </button>
+                  <button type="submit" class="btn btn-danger">
+                    मेटाउनुहोस्
+                  </button>
+                </div>
+              </form>
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-primary">
-                Do something
-              </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="modal mymodal modal-01"
+        id="updateModal"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header align-items-center">
+              <h5 class="modal-title">सूचक सम्पादन गर्नुहोस्</h5>
               <button
                 type="button"
-                class="btn btn-secondary"
+                class="close"
                 data-dismiss="modal"
+                aria-label="Close"
               >
-                रद्द गर्नुहोस्
+                <span aria-hidden="true">&times;</span>
               </button>
             </div>
+            <div class="modal-body survey-update"></div>
           </div>
         </div>
       </div>
@@ -115,6 +142,18 @@
                   <td>{{i.fiscal_year.name}}</td>
                   <td>
                     <a href="{% url 'dashboard:survey_detail' i.id %}" class="btn btn-link p-0">विवरण हेर्नुहोस्</a>
+                    {% user_can_change request 'survey_setup' as change %}
+                    {% if change %}
+                      <a href="#" url="{% url 'dashboard:survey_update' i.id %}" data-toggle="modal" data-target="#updateModal" title="सम्पादन गर्नुहोस्" class="text-coolGray600 ml-2 update-survey">
+                        <i class="ic-edit"></i>
+                      </a>
+                    {% endif %}
+                    {% user_can_delete request 'survey_setup' as delete %}
+                    {% if delete %}
+                      <a href="#" url="{% url 'dashboard:survey_delete' i.id %}" data-toggle="modal" data-target="#deleteModal" title="मेटाउनुहोस्" class="text-coolGray600 ml-2 delete-survey">
+                        <i class="ic-delete"></i>
+                      </a>
+                    {% endif %}
                   </td>
                 </tr>
                 {% endfor %}
@@ -127,12 +166,6 @@
           id="pills-profile"
           role="tabpanel"
           aria-labelledby="pills-profile-tab"
-        >
-          <div
-          class="tab-pane fade show active"
-          id="pills-home"
-          role="tabpanel"
-          aria-labelledby="pills-home-tab"
         >
           <div class="table-actions">
              {% user_can_add request 'survey_setup' as add %}
@@ -164,13 +197,24 @@
                   <td>{{j.fiscal_year.name}}</td>
                   <td>
                     <a href="{% url 'dashboard:survey_detail' j.id %}" class="btn btn-link p-0">विवरण हेर्नुहोस्</a>
+                    {% user_can_change request 'survey_setup' as change %}
+                    {% if change %}
+                      <a href="#" url="{% url 'dashboard:survey_update' j.id %}" data-toggle="modal" data-target="#updateModal" title="सम्पादन गर्नुहोस्" class="text-coolGray600 ml-2 update-survey">
+                        <i class="ic-edit"></i>
+                      </a>
+                    {% endif %}
+                    {% user_can_delete request 'survey_setup' as delete %}
+                    {% if delete %}
+                      <a href="#" url="{% url 'dashboard:survey_delete' j.id %}" data-toggle="modal" data-target="#deleteModal" title="मेटाउनुहोस्" class="text-coolGray600 ml-2 delete-survey">
+                        <i class="ic-delete"></i>
+                      </a>
+                    {% endif %}
                   </td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
-            
         </div>
       </div>
     </div>
@@ -178,4 +222,39 @@
 </Fragment>
 {% endblock content %}
 
+{% block extra_scripts %}
+<script>
+$(document).on("click", ".delete-survey", function(){
+    var action = $(this).attr("url");
+    $(".delete-form").attr("action", action);
+})
 
+$(document).on("click", ".update-survey", function(){
+    var action = $(this).attr("url");
+    $.ajax({
+      url: action,
+      type: "GET",
+      success: function(data){
+        $(".survey-update").html(data);
+      }
+    })
+})
+
+$("body").on("submit", ".survey-update-form", function(e) {
+    e.preventDefault();
+    var url = $(this).attr("action");
+    $.ajax({
+      url: url,
+      type: "POST",
+      data: new FormData(this),
+      processData: false,
+      contentType: false,
+      success: function(data) {
+        if (data.success) {
+          window.location.href = data.url;
+        }
+      }
+    })
+})
+</script>
+{% endblock extra_scripts %}
