@@ -102,7 +102,7 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
 
         levels_qs = Level.objects.filter(type__type=level_type).order_by('name')
         if province_filter:
-            levels_qs = levels_qs.filter(province_level=province_filter)
+            levels_qs = levels_qs.filter(province_level=province_filter)        
         levels = list(levels_qs)
         if not levels:
             return [], 0
@@ -1187,10 +1187,115 @@ def survey_filled_questions(request, survey_id, level_id):
 def view_filled_ans(request, q_id, level_id):
     question = Question.objects.get(id=q_id)
     child_questions = question.children_questions.all()
+    month_name_map = {
+        1: "वैशाख",
+        2: "ज्येष्ठ",
+        3: "असार",
+        4: "श्रावण",
+        5: "भदौ",
+        6: "असोज",
+        7: "कार्तिक",
+        8: "मंसिर",
+        9: "पौष",
+        10: "माघ",
+        11: "फागुन",
+        12: "चैत्र",
+    }
+    fiscal_month_order = {4: 1, 5: 2, 6: 3, 7: 4, 8: 5, 9: 6, 10: 7, 11: 8, 12: 9, 1: 10, 2: 11, 3: 12}
+
+    def answer_display(answer):
+        if not answer:
+            return ""
+        if answer.fiscal_year:
+            return answer.fiscal_year.name
+        return answer.value
+
+    def build_option_rows(target_question, month_id=None):
+        option_rows = []
+        for option in target_question.options.exclude(field_type="F").order_by("sequence_id"):
+            answer = (
+                Answer.objects.filter(
+                    option=option,
+                    fill_survey__level_id=level_id,
+                    month=month_id,
+                ).order_by("-created_at").first()
+                if month_id is not None
+                else Answer.objects.filter(
+                    option=option,
+                    fill_survey__level_id=level_id,
+                ).order_by("-created_at").first()
+            )
+            option_rows.append({
+                "title": option.title,
+                "value": answer_display(answer),
+            })
+        return option_rows
+
+    def build_documents(target_question, month_id=None):
+        doc_filter = {
+            "answer__option__question": target_question,
+            "answer__fill_survey__level_id": level_id,
+        }
+        if month_id is not None:
+            doc_filter["answer__month"] = month_id
+        return AnswerDocument.objects.filter(**doc_filter).distinct()
+
+    month_sections = []
+    if question.month_requires:
+        relevant_questions = list(child_questions) if child_questions.exists() else [question]
+        month_ids = list(
+            Answer.objects.filter(
+                option__question__in=relevant_questions,
+                fill_survey__level_id=level_id,
+                month__isnull=False,
+            )
+            .values_list("month", flat=True)
+            .distinct()
+        )
+        month_ids = sorted(month_ids, key=lambda m: fiscal_month_order.get(m, 99))
+
+        for month_id in month_ids:
+            if child_questions.exists():
+                child_sections = []
+                for child in child_questions:
+                    child_sections.append({
+                        "title": child.title,
+                        "option_rows": build_option_rows(child, month_id=month_id),
+                        "documents": build_documents(child, month_id=month_id),
+                    })
+                month_sections.append({
+                    "month": month_id,
+                    "month_name": month_name_map.get(month_id, month_id),
+                    "child_sections": child_sections,
+                })
+            else:
+                month_sections.append({
+                    "month": month_id,
+                    "month_name": month_name_map.get(month_id, month_id),
+                    "option_rows": build_option_rows(question, month_id=month_id),
+                    "documents": build_documents(question, month_id=month_id),
+                })
+
+    context = {
+        "q": question,
+        "child_ques": child_questions,
+        "level_id": level_id,
+        "month_sections": month_sections,
+        "option_rows": build_option_rows(question) if not child_questions.exists() else [],
+        "documents": build_documents(question) if not child_questions.exists() else [],
+        "child_sections": [
+            {
+                "title": child.title,
+                "option_rows": build_option_rows(child),
+                "documents": build_documents(child),
+            }
+            for child in child_questions
+        ] if child_questions.exists() else [],
+    }
     return render(
         request,
         "core/dashboard/filled_answers.html",
-        {"q": question, "child_ques": child_questions, "level_id": level_id},
+        context,
     )
 
 

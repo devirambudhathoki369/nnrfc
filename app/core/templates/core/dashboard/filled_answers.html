@@ -1,6 +1,5 @@
 {% extends 'fragments/dashboard/base.html' %}
 {% load static %}
-{% load option_answer %}
 
 {% block title-bar %}
 <div class="header-page">
@@ -24,21 +23,91 @@
               <p>{{ q.title }}</p>
             </div>
 
-            {% for child in child_ques %}
-              {# ===== HAS CHILD QUESTIONS ===== #}
+            {% if month_sections %}
+              {% for month_data in month_sections %}
+              <div class="option-group-new mt-4">
+                <p>{{ month_data.month_name }}</p>
+              </div>
+
+              {% if child_sections %}
+                {% for child in month_data.child_sections %}
+                <div class="option-group-actual">
+                  <div class="option-group-new">
+                    <p>{{ child.title }}</p>
+                  </div>
+                  <div class="card-option-group">
+                    <div id="optionContainer">
+                      {% for option in child.option_rows %}
+                      <div class="item">
+                        <div class="align-center px-3">
+                          <p>{{ option.title }}</p>
+                        </div>
+                        <div class="align-center px-3">
+                          <p>{{ option.value }}</p>
+                        </div>
+                      </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+
+                {% if child.documents %}
+                <p class="mt-3 mb-1 font-bold">Attachments</p>
+                <ul class="list list-bullet text-primary des mb-3">
+                  {% for doc in child.documents %}
+                  <li>
+                    <a href="{{ doc.document.url }}">{{ doc.get_document_name }}</a>
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% endif %}
+                {% endfor %}
+              {% else %}
+                <div class="option-group-actual">
+                  <div class="card-option-group">
+                    <div id="optionContainer">
+                      {% for option in month_data.option_rows %}
+                      <div class="item">
+                        <div class="align-center px-3">
+                          <p>{{ option.title }}</p>
+                        </div>
+                        <div class="align-center px-3">
+                          <p>{{ option.value }}</p>
+                        </div>
+                      </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+
+                {% if month_data.documents %}
+                <p class="mt-3 mb-1 font-bold">Attachments</p>
+                <ul class="list list-bullet text-primary des mb-3">
+                  {% for doc in month_data.documents %}
+                  <li>
+                    <a href="{{ doc.document.url }}">{{ doc.get_document_name }}</a>
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% endif %}
+              {% endif %}
+              {% endfor %}
+
+            {% elif child_sections %}
+              {% for child in child_sections %}
               <div class="option-group-actual">
                 <div class="option-group-new">
                   <p>{{ child.title }}</p>
                 </div>
                 <div class="card-option-group">
                   <div id="optionContainer">
-                    {% for option in child.options.all %}
+                    {% for option in child.option_rows %}
                     <div class="item">
                       <div class="align-center px-3">
                         <p>{{ option.title }}</p>
                       </div>
                       <div class="align-center px-3">
-                        <p>{% get_option_answer option.id level_id %}</p>
+                        <p>{{ option.value }}</p>
                       </div>
                     </div>
                     {% endfor %}
@@ -46,30 +115,29 @@
                 </div>
               </div>
 
-              {% get_answer_documents child.id level_id as documents %}
-              {% if documents %}
+              {% if child.documents %}
               <p class="mt-3 mb-1 font-bold">Attachments</p>
               <ul class="list list-bullet text-primary des mb-3">
-                {% for doc in documents %}
+                {% for doc in child.documents %}
                 <li>
                   <a href="{{ doc.document.url }}">{{ doc.get_document_name }}</a>
                 </li>
                 {% endfor %}
               </ul>
               {% endif %}
+              {% endfor %}
 
-            {% empty %}
-              {# ===== NO CHILD QUESTIONS — show parent options ===== #}
+            {% else %}
               <div class="option-group-actual">
                 <div class="card-option-group">
                   <div id="optionContainer">
-                    {% for option in q.options.all %}
+                    {% for option in option_rows %}
                     <div class="item">
                       <div class="align-center px-3">
                         <p>{{ option.title }}</p>
                       </div>
                       <div class="align-center px-3">
-                        <p>{% get_option_answer option.id level_id %}</p>
+                        <p>{{ option.value }}</p>
                       </div>
                     </div>
                     {% endfor %}
@@ -77,7 +145,6 @@
                 </div>
               </div>
 
-              {% get_answer_documents q.id level_id as documents %}
               {% if documents %}
               <p class="mt-3 mb-1 font-bold">Attachments</p>
               <ul class="list list-bullet text-primary des mb-3">
@@ -88,8 +155,7 @@
                 {% endfor %}
               </ul>
               {% endif %}
-
-            {% endfor %}
+            {% endif %}
 
           </div>
         </div>

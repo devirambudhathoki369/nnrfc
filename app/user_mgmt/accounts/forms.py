@@ -32,6 +32,14 @@ class SetNewStaffPasswordForm(forms.Form):
 
 class UserSetupForm(forms.ModelForm):
     user_role = forms.ModelChoiceField(queryset=Role.objects.all(), required=False)
+    account_type = forms.ChoiceField(
+        choices=(
+            ("dashboard_user", "प्रदेश ड्यासबोर्ड प्रयोगकर्ता"),
+            ("province_ministry_user", "प्रदेश मन्त्रालय प्रयोगकर्ता"),
+        ),
+        required=False,
+    )
+
     class Meta:
         model = User
         fields = [
@@ -49,7 +57,7 @@ class UserSetupForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        phone_validator = RegexValidator('^(\+\d{1,3}[- ]?)?\d{10}$', 
+        phone_validator = RegexValidator(r'^(\+\d{1,3}[- ]?)?\d{10}$', 
             message="Invalid Phone Number. Please enter Phone number as Landline Area Code with 9-10 digit or Mobile number of 10 digit within 0-9 ") 
 
         for field in self.fields:
@@ -57,11 +65,34 @@ class UserSetupForm(forms.ModelForm):
             self.fields[field].widget.attrs.update({'class': 'form-control'})
             self.fields['mobile_num'] = CharField(widget=NumberInput, validators=[phone_validator], required=True, max_length=10)
 
+        instance = kwargs.get("instance")
+        if instance and instance.pk and instance.level and instance.level.type.type == "P":
+            self.fields["account_type"].initial = (
+                "dashboard_user" if instance.roles.exists() else "province_ministry_user"
+            )
+        else:
+            self.fields["account_type"].initial = "dashboard_user"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        level = cleaned_data.get("level")
+        account_type = cleaned_data.get("account_type") or "dashboard_user"
+        role = cleaned_data.get("user_role")
+
+        if level and level.type.type == "P" and account_type == "dashboard_user" and not role:
+            self.add_error("user_role", "ड्यासबोर्ड प्रयोगकर्ताका लागि भूमिका आवश्यक छ।")
+
+        return cleaned_data
+
 
     def save(self, commit=True):
         u = super().save(commit=commit)
         role = self.cleaned_data.get("user_role")
-        if role:
+        account_type = self.cleaned_data.get("account_type") or "dashboard_user"
+
+        if account_type == "province_ministry_user":
+            u.roles.clear()
+        elif role:
             u.roles.set([role])
         else:
             u.roles.clear()

@@ -78,7 +78,7 @@
                         <label class="custom-control-label ml-3" for="check{{ option.id }}"></label>
                       </div>
                     {% elif option.input_type == "fiscal_year" %}
-                      <select class="custom-select survey-fy-select" data-option-id="{{ option.id }}" required>
+                      <select class="custom-select survey-fy-select" data-option-id="{{ option.id }}">
                         {% for fy_datum in option.fy_data %}
                           <option value="{{ fy_datum.id }}">{{ fy_datum.name }}</option>
                         {% endfor %}
@@ -92,7 +92,7 @@
                           type="text" placeholder="Date"
                           data-option-id="{{ option.id }}"
                           data-option-type="{{ option.option_type }}"
-                          name="answer" id="nepali-datepicker{{ option.id }}" autocomplete="off" required />
+                          name="answer" id="nepali-datepicker{{ option.id }}" autocomplete="off" />
                       </div>
                     {% elif option.input_type == "percentage" %}
                       <div class="input-group">
@@ -114,7 +114,7 @@
                           type="{{ option.input_type }}" placeholder="Value"
                           data-option-id="{{ option.id }}"
                           data-option-type="{{ option.option_type }}"
-                          name="answer" autocomplete="off" {% if option.is_required %}required{% endif %} />
+                          name="answer" autocomplete="off" />
                       </div>
                     {% endif %}
                   </td>
@@ -127,7 +127,7 @@
                     <div class="custom-file custom-file-upload mt-3 w-50">
                       <input class="custom-file-input survey-file" type="file"
                         id="customFile{{ question_id }}"
-                        data-file-question-id="{{ question_id }}" {% if is_document_required %}required{% endif %} />
+                        data-file-question-id="{{ question_id }}" />
                       <label class="custom-file-label border-0"
                         for="customFile{{ question_id }}">सम्बन्धित फाइल अपलोड गर्नुहोस्{% if is_document_required %} <span class="text-danger">*</span>{% endif %}</label>
                     </div>
@@ -169,7 +169,7 @@
                         <label class="custom-control-label ml-3" for="check{{ option.id }}">गराएको</label>
                       </div>
                     {% elif option.input_type == "fiscal_year" %}
-                      <select class="custom-select survey-fy-select" data-option-id="{{ option.id }}" required>
+                      <select class="custom-select survey-fy-select" data-option-id="{{ option.id }}">
                         {% for fy_datum in option.fy_data %}
                           <option value="{{ fy_datum.id }}">{{ fy_datum.name }}</option>
                         {% endfor %}
@@ -183,7 +183,7 @@
                           type="text" placeholder="Value"
                           data-option-id="{{ option.id }}"
                           data-option-type="{{ option.option_type }}"
-                          name="answer" id="nepali-datepicker{{ option.id }}" autocomplete="off" required />
+                          name="answer" id="nepali-datepicker{{ option.id }}" autocomplete="off" />
                       </div>
                     {% elif option.input_type == "percentage" %}
                       <div class="input-group">
@@ -205,7 +205,7 @@
                           type="{{ option.input_type }}" placeholder="Value"
                           data-option-id="{{ option.id }}"
                           data-option-type="{{ option.option_type }}"
-                          name="answer" autocomplete="off" {% if option.is_required %}required{% endif %} />
+                          name="answer" autocomplete="off" />
                       </div>
                     {% endif %}
                   </td>
@@ -218,7 +218,7 @@
                     <div class="custom-file custom-file-upload mt-3 w-50">
                       <input class="custom-file-input survey-file" type="file"
                         id="customFile{{ child_question.child_question.id }}"
-                        data-file-question-id="{{ child_question.child_question.id }}" {% if child_question.child_question.is_document_required %}required{% endif %} />
+                        data-file-question-id="{{ child_question.child_question.id }}" />
                       <label class="custom-file-label border-0"
                         for="customFile{{ child_question.child_question.id }}">सम्बन्धित फाइल अपलोड गर्नुहोस्{% if child_question.child_question.is_document_required %} <span class="text-danger">*</span>{% endif %}</label>
                     </div>
@@ -383,18 +383,6 @@ $(document).ready(function() {
     var file_option_ids = [];
     var question_id = {{ question_id }};
     var has_validation_error = false;
-
-    $("input[required], select[required]").each(function() {
-      if (!this.checkValidity()) {
-        has_validation_error = true;
-        return false;
-      }
-    });
-
-    if (has_validation_error) {
-      alert("कृपया सबै आवश्यक फिल्डहरू भर्नुहोस्।");
-      return;
-    }
 
     // Collect text/number inputs
     $(".survey-input").each(function() {

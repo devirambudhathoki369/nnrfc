@@ -119,6 +119,8 @@ class StaffUserCreateView(SuccessMessageMixin, CreateView):
 
         # 2. Persist the user FIRST — never lose the record due to email failure.
         user = form.save()
+        user.is_staff = user.roles.exists()
+        user.save(update_fields=["is_staff"])
 
         # 3. Build email payload.
         html_template = "email/user_invitation.html"

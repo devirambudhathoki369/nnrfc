@@ -133,7 +133,10 @@ def SurveyList(request):
 
     context = {
         "survey_list": survey_list,
-        "questions": Question.objects.all(),
+        "questions": Question.objects.filter(
+            survey__in=survey_list,
+            parent__isnull=True,
+        ).order_by("survey__name", "sequence_id"),
         "fiscal_year": fiscal_year,
     }
     return render(request, "core/survey.html", context)
