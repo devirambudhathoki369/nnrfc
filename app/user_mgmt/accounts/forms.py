@@ -9,6 +9,7 @@ from django.core.validators import RegexValidator
 
 
 User = get_user_model()
+PROVINCE_MINISTRY_ROLE = "province_ministry_user"
 
 
 class UserLoginForm(forms.Form):
@@ -31,14 +32,7 @@ class SetNewStaffPasswordForm(forms.Form):
 
 
 class UserSetupForm(forms.ModelForm):
-    user_role = forms.ModelChoiceField(queryset=Role.objects.all(), required=False)
-    account_type = forms.ChoiceField(
-        choices=(
-            ("dashboard_user", "प्रदेश ड्यासबोर्ड प्रयोगकर्ता"),
-            ("province_ministry_user", "प्रदेश मन्त्रालय प्रयोगकर्ता"),
-        ),
-        required=False,
-    )
+    user_role = forms.ChoiceField(required=False)
 
     class Meta:
         model = User
@@ -66,34 +60,35 @@ class UserSetupForm(forms.ModelForm):
             self.fields['mobile_num'] = CharField(widget=NumberInput, validators=[phone_validator], required=True, max_length=10)
 
         instance = kwargs.get("instance")
+        role_choices = [("", "छान्नुहोस्...")]
+        role_choices.extend((str(role.pk), str(role)) for role in Role.objects.all())
+        role_choices.append((PROVINCE_MINISTRY_ROLE, "प्रदेश मन्त्रालय प्रयोगकर्ता"))
+        self.fields["user_role"].choices = role_choices
+
         if instance and instance.pk and instance.level and instance.level.type.type == "P":
-            self.fields["account_type"].initial = (
-                "dashboard_user" if instance.roles.exists() else "province_ministry_user"
+            self.fields["user_role"].initial = (
+                str(instance.roles.first().pk) if instance.roles.exists() else PROVINCE_MINISTRY_ROLE
             )
-        else:
-            self.fields["account_type"].initial = "dashboard_user"
 
     def clean(self):
         cleaned_data = super().clean()
         level = cleaned_data.get("level")
-        account_type = cleaned_data.get("account_type") or "dashboard_user"
-        role = cleaned_data.get("user_role")
+        role_value = cleaned_data.get("user_role")
 
-        if level and level.type.type == "P" and account_type == "dashboard_user" and not role:
-            self.add_error("user_role", "ड्यासबोर्ड प्रयोगकर्ताका लागि भूमिका आवश्यक छ।")
+        if level and level.type.type == "P" and not role_value:
+            self.add_error("user_role", "प्रयोगकर्ताको भूमिका आवश्यक छ।")
 
         return cleaned_data
 
 
     def save(self, commit=True):
         u = super().save(commit=commit)
-        role = self.cleaned_data.get("user_role")
-        account_type = self.cleaned_data.get("account_type") or "dashboard_user"
+        role_value = self.cleaned_data.get("user_role")
 
-        if account_type == "province_ministry_user":
+        if role_value == PROVINCE_MINISTRY_ROLE:
             u.roles.clear()
-        elif role:
-            u.roles.set([role])
+        elif role_value:
+            u.roles.set([Role.objects.get(pk=role_value)])
         else:
             u.roles.clear()
         return u

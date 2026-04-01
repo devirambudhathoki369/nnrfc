@@ -127,24 +127,18 @@
                       </select>
                     </div>
                     <div class="col-lg-3 col-md-6 form-group">
-                      <label>युजर प्रकार</label>
-                      <select name="account_type" class="form-control province-account-type">
-                        <option value="dashboard_user">प्रदेश ड्यासबोर्ड प्रयोगकर्ता</option>
-                        <option value="province_ministry_user">प्रदेश मन्त्रालय प्रयोगकर्ता</option>
-                      </select>
-                    </div>
-                    <div class="col-lg-3 col-md-6 form-group">
                       <label>कार्यालयको ईमेल</label>
                       <input class="form-control" type="email" name="email" placeholder="office@example.com" />
                     </div>
                     {% if user.is_superuser %}
-                    <div class="col-lg-3 col-md-6 form-group province-role-wrap">
+                    <div class="col-lg-3 col-md-6 form-group">
                       <label>प्रयोगकर्ताको भूमिका</label>
                       <select name="user_role" class="form-control">
                         <option value="">छान्नुहोस्...</option>
                         {% for role in roles %}
                         <option value="{{ role.pk }}">{{ role }}</option>
                         {% endfor %}
+                        <option value="province_ministry_user">प्रदेश मन्त्रालय प्रयोगकर्ता</option>
                       </select>
                     </div>
                     {% endif %}
@@ -476,22 +470,6 @@
     }
     initializeComponents();
 
-    function toggleProvinceRoleField(scope) {
-      var $scope = scope ? $(scope) : $(document);
-      $scope.find(".province-account-type").each(function () {
-        var $select = $(this);
-        var isMinistry = $select.val() === "province_ministry_user";
-        var $wrap = $select.closest("form").find(".province-role-wrap");
-        var $role = $wrap.find("[name='user_role']");
-        $wrap.toggle(!isMinistry);
-        if (isMinistry) {
-          $role.val("");
-        }
-      });
-    }
-    toggleProvinceRoleField();
-
-
     // ─────────────────────────────────────────────────────────────
     // Toast helper
     // ─────────────────────────────────────────────────────────────
@@ -532,7 +510,6 @@
               // Reload add-form and table in place
               $(addFormSelector).load(location.href + " " + addFormSelector, function () {
                 initializeComponents();
-                toggleProvinceRoleField(addFormSelector);
               });
               $(tableSelector).load(location.href + " " + tableSelector, function () {
                 initializeComponents();
@@ -592,7 +569,6 @@
         $(".user-add-form").hide();
         $(".user-edit-form").html(data).show();
         initializeComponents();
-        toggleProvinceRoleField(".user-edit-form");
       });
     });
 
@@ -608,11 +584,6 @@
         initializeComponents();
       });
     });
-
-    $(document).on("change", ".province-account-type", function () {
-      toggleProvinceRoleField($(this).closest("form"));
-    });
-
 
     // ─────────────────────────────────────────────────────────────
     // Delete — wire up modal action URL

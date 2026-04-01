@@ -122,7 +122,7 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
             question_id__in=source_ids
         ).values_list('id', 'question_id')
         src_to_opts = {}
-        all_opt_ids = set()
+        all_opt_ids = set() 
         for opt_id, q_id in opt_rows:
             src_to_opts.setdefault(q_id, set()).add(opt_id)
             all_opt_ids.add(opt_id)
