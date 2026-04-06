@@ -155,7 +155,8 @@ def filled_question_list_by_level(survey, level_id):
         "sequence_id"
     )
     qs = question_qs.filter(
-        options__answers__fill_survey__level_id=level_id,
+        Q(options__answers__fill_survey__level_id=level_id)
+        | Q(children_questions__options__answers__fill_survey__level_id=level_id)
     ).distinct()
     return qs
 
