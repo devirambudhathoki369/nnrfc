@@ -36,6 +36,7 @@ from django.utils.encoding import force_bytes
 from django.contrib.sites.models import Site
 
 account_activation_token = PasswordResetTokenGenerator()
+PUBLIC_LOGIN_URL = "https://plprs.nnrfc.gov.np/dashboard/users/login/"
 
 User = get_user_model()
 
@@ -52,7 +53,7 @@ def _build_invitation_context(request, user, pwd):
         "pwd": pwd,
         "domain": url,
         "full_name": user.full_name,
-        "login_url": request.build_absolute_uri(reverse("user_mgmt:login")),
+        "login_url": PUBLIC_LOGIN_URL,
         "logo_img": request.build_absolute_uri(static("email/logo.png")),
         "protocol": "https",
     }
@@ -348,7 +349,7 @@ def admin_change_user_password(request, user_id):
         try:
             ctx = {
                 "full_name": target_user.full_name,
-                "login_url": request.build_absolute_uri(reverse("user_mgmt:login")),
+                "login_url": PUBLIC_LOGIN_URL,
                 "logo_img":  request.build_absolute_uri(static("email/logo.png")),
             }
             msg = render_to_string("email/password_changed.html", ctx)

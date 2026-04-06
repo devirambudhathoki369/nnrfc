@@ -1213,21 +1213,44 @@ def view_filled_ans(request, q_id, level_id):
     def build_option_rows(target_question, month_id=None):
         option_rows = []
         for option in target_question.options.exclude(field_type="F").order_by("sequence_id"):
-            answer = (
-                Answer.objects.filter(
+            if option.option_type == "Per":
+                numerator_option = target_question.options.filter(option_type="Num").first()
+                denominator_option = target_question.options.filter(option_type="Deno").first()
+
+                numerator_qs = Answer.objects.filter(
+                    option=numerator_option,
+                    fill_survey__level_id=level_id,
+                ) if numerator_option else Answer.objects.none()
+                denominator_qs = Answer.objects.filter(
+                    option=denominator_option,
+                    fill_survey__level_id=level_id,
+                ) if denominator_option else Answer.objects.none()
+
+                if month_id is not None:
+                    numerator_qs = numerator_qs.filter(month=month_id)
+                    denominator_qs = denominator_qs.filter(month=month_id)
+
+                numerator_answer = numerator_qs.order_by("-created_at").first()
+                denominator_answer = denominator_qs.order_by("-created_at").first()
+
+                try:
+                    numerator = float(numerator_answer.value) if numerator_answer and numerator_answer.value not in ("", None) else 0
+                    denominator = float(denominator_answer.value) if denominator_answer and denominator_answer.value not in ("", None) else 0
+                    answer_value = "{:.2f}".format((numerator / denominator) * 100) if denominator else ""
+                except (TypeError, ValueError, ZeroDivisionError):
+                    answer_value = ""
+            else:
+                answer_qs = Answer.objects.filter(
                     option=option,
                     fill_survey__level_id=level_id,
-                    month=month_id,
-                ).order_by("-created_at").first()
-                if month_id is not None
-                else Answer.objects.filter(
-                    option=option,
-                    fill_survey__level_id=level_id,
-                ).order_by("-created_at").first()
-            )
+                )
+                if month_id is not None:
+                    answer_qs = answer_qs.filter(month=month_id)
+                answer_value = answer_display(answer_qs.order_by("-created_at").first())
+
             option_rows.append({
                 "title": option.title,
-                "value": answer_display(answer),
+                "value": answer_value,
             })
         return option_rows
 

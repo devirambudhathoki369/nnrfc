@@ -215,6 +215,12 @@ class AnswerCreateView(LoginRequiredMixin, CreateView):
         question_id = self.kwargs.get("pk")
         question_obj = Question.objects.get(id=question_id)
         survey_id = question_obj.survey.id
+        selected_month = self.request.GET.get("month")
+
+        try:
+            selected_month = int(selected_month) if selected_month else None
+        except (TypeError, ValueError):
+            selected_month = None
 
         child_questions = Question.objects.filter(parent=question_id).order_by("sequence_id")
         has_months = question_obj.month_requires
@@ -225,6 +231,7 @@ class AnswerCreateView(LoginRequiredMixin, CreateView):
         context["question_title"] = question_obj.title
         context["survey_id"] = survey_id
         context["is_document_required"] = question_obj.is_document_required
+        context["selected_month"] = selected_month
 
         child_options = []
         if child_questions.exists():
@@ -618,7 +625,13 @@ def check_level_month_data(request):
                 answers = option.answers.filter(
                     fill_survey=fill_survey.id, month=month_value
                 )
-                if answers.exists() and answers[0].value:
+                if answers.filter(fiscal_year__isnull=False).exists():
+                    data["has_month_value"] = True
+                    return JsonResponse(data)
+                if answers.exclude(value__in=["", None]).exists():
+                    data["has_month_value"] = True
+                    return JsonResponse(data)
+                if AnswerDocument.objects.filter(answer__in=answers).exists():
                     data["has_month_value"] = True
                     return JsonResponse(data)
 

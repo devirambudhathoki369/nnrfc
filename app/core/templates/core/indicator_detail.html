@@ -233,7 +233,7 @@ $(document).ready(function() {
         if (data.has_month_value) {
           window.location.href = "{% url 'core:filled_question_month' question_id 99999 %}".replace('99999', month_value);
         } else {
-          window.location.href = "{% url 'core:create_answer' question_id %}";
+          window.location.href = "{% url 'core:create_answer' question_id %}?month=" + month_value;
         }
       }
     });

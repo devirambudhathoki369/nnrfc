@@ -267,6 +267,7 @@ class Option(AbstractCommonInfo):
     field_type_choices = (
         ("C", _("Character")),
         ("B", _("Checkbox")),
+        ("R", _("Radio")),
         ("D", _("Date")),
         ("De", _("Amount")),
         ("F", _("File")),

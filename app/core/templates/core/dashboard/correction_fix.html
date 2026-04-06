@@ -118,6 +118,30 @@
                           <input type="text" hidden class="{% if option.answer %}{{ option.answer.id }}{% endif %}"
                                  name="ans" value="{% if option.answer %}{{ option.answer.value }}{% endif %}" />
 
+                        {% elif option.field_type == "R" %}
+                          <div class="d-flex align-items-center">
+                            <div class="custom-control custom-radio mr-3">
+                              <input class="custom-control-input correction-radio" type="radio"
+                                     id="radio{{ option.option.id }}_yes"
+                                     name="radio_{{ option.option.id }}"
+                                     data-answer-id="{% if option.answer %}{{ option.answer.id }}{% endif %}"
+                                     value="True"
+                                     {% if option.answer and option.answer.value == "True" %}checked{% endif %} />
+                              <label class="custom-control-label" for="radio{{ option.option.id }}_yes">हो</label>
+                            </div>
+                            <div class="custom-control custom-radio">
+                              <input class="custom-control-input correction-radio" type="radio"
+                                     id="radio{{ option.option.id }}_no"
+                                     name="radio_{{ option.option.id }}"
+                                     data-answer-id="{% if option.answer %}{{ option.answer.id }}{% endif %}"
+                                     value="False"
+                                     {% if option.answer and option.answer.value == "False" %}checked{% endif %} />
+                              <label class="custom-control-label" for="radio{{ option.option.id }}_no">होइन</label>
+                            </div>
+                          </div>
+                          <input type="text" hidden class="{% if option.answer %}{{ option.answer.id }}{% endif %}"
+                                 name="ans" value="{% if option.answer %}{{ option.answer.value }}{% endif %}" />
+
                         {% elif option.field_type == "F" %}
                           <div class="mb-1">
                             {% if option.document and option.document.document %}
@@ -187,6 +211,13 @@
         }
       }
     });
+  });
+
+  $('.correction-radio').on('change', function() {
+    let answerId = $(this).data('answer-id');
+    if (answerId) {
+      $('.c-form').find('.' + answerId).val($(this).val());
+    }
   });
 </script>
 {% endblock extra_scripts %}

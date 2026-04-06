@@ -32,6 +32,7 @@ OPTION_FIELD_INPUT_TYPE = {
     "P": "percentage",
     "D": "date",
     "B": "checkbox",
+    "R": "radio",
     "F": "file",
     "FY": "fiscal_year",
 }

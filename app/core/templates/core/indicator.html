@@ -77,6 +77,31 @@
                           name="answer" id="check{{ option.id }}" autocomplete="off" />
                         <label class="custom-control-label ml-3" for="check{{ option.id }}"></label>
                       </div>
+                    {% elif option.input_type == "radio" %}
+                      <div class="d-flex align-items-center">
+                        <div class="custom-control custom-radio mr-3">
+                          <input class="custom-control-input survey-radio"
+                            type="radio"
+                            data-option-id="{{ option.id }}"
+                            data-option-type="{{ option.option_type }}"
+                            name="radio_{{ option.id }}"
+                            id="radio{{ option.id }}_yes"
+                            value="True"
+                            autocomplete="off" />
+                          <label class="custom-control-label" for="radio{{ option.id }}_yes">हो</label>
+                        </div>
+                        <div class="custom-control custom-radio">
+                          <input class="custom-control-input survey-radio"
+                            type="radio"
+                            data-option-id="{{ option.id }}"
+                            data-option-type="{{ option.option_type }}"
+                            name="radio_{{ option.id }}"
+                            id="radio{{ option.id }}_no"
+                            value="False"
+                            autocomplete="off" />
+                          <label class="custom-control-label" for="radio{{ option.id }}_no">होइन</label>
+                        </div>
+                      </div>
                     {% elif option.input_type == "fiscal_year" %}
                       <select class="custom-select survey-fy-select" data-option-id="{{ option.id }}">
                         {% for fy_datum in option.fy_data %}
@@ -167,6 +192,31 @@
                           data-option-type="{{ option.option_type }}"
                           name="answer" id="check{{ option.id }}" autocomplete="off" />
                         <label class="custom-control-label ml-3" for="check{{ option.id }}">गराएको</label>
+                      </div>
+                    {% elif option.input_type == "radio" %}
+                      <div class="d-flex align-items-center">
+                        <div class="custom-control custom-radio mr-3">
+                          <input class="custom-control-input survey-radio"
+                            type="radio"
+                            data-option-id="{{ option.id }}"
+                            data-option-type="{{ option.option_type }}"
+                            name="radio_{{ option.id }}"
+                            id="radio{{ option.id }}_yes"
+                            value="True"
+                            autocomplete="off" />
+                          <label class="custom-control-label" for="radio{{ option.id }}_yes">हो</label>
+                        </div>
+                        <div class="custom-control custom-radio">
+                          <input class="custom-control-input survey-radio"
+                            type="radio"
+                            data-option-id="{{ option.id }}"
+                            data-option-type="{{ option.option_type }}"
+                            name="radio_{{ option.id }}"
+                            id="radio{{ option.id }}_no"
+                            value="False"
+                            autocomplete="off" />
+                          <label class="custom-control-label" for="radio{{ option.id }}_no">होइन</label>
+                        </div>
                       </div>
                     {% elif option.input_type == "fiscal_year" %}
                       <select class="custom-select survey-fy-select" data-option-id="{{ option.id }}">
@@ -341,6 +391,11 @@ $(document).ready(function() {
   // ========================================
   // Month Selector
   // ========================================
+  var selectedMonth = "{{ selected_month|default_if_none:'' }}";
+  if (selectedMonth && selectedMonth !== "None") {
+    $("#month_selector").val(selectedMonth);
+  }
+
   $("#month_selector").on("change", function(event) {
     event.preventDefault();
     var dataurl = $(this).attr("data-url");
@@ -434,6 +489,14 @@ $(document).ready(function() {
       });
     });
 
+    $(".survey-radio:checked").each(function() {
+      var $item = $(this);
+      answer_list.push({
+        "option_id": $item.attr("data-option-id"),
+        "value": $item.val()
+      });
+    });
+
     // Collect date pickers
     $(".survey-datepicker").each(function() {
       var $item = $(this);
@@ -478,7 +541,11 @@ $(document).ready(function() {
         } else if (data.invalid_data) {
           alert(data.message);
         } else {
-          window.location.href = "{% url 'core:filled_question' question_id %}";
+          if (month_value) {
+            window.location.href = "{% url 'core:filled_question_month' question_id 99999 %}".replace('99999', month_value);
+          } else {
+            window.location.href = "{% url 'core:filled_question' question_id %}";
+          }
         }
       },
       error: function(xhr, status, error) {
