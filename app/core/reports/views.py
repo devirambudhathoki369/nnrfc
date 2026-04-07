@@ -70,6 +70,8 @@ def reports_view(request):
                     level_type = survey_obj.level
                 target_surveys = [survey_obj]
                 survey_label = survey_obj.name or str(survey_obj)
+                if survey_obj.level == "L" and level == "all":
+                    level_type = "L"
                 if (
                     survey_obj.level == "L"
                     and level

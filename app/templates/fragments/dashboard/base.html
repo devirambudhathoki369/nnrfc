@@ -96,6 +96,11 @@
                   class="dropdown-menu dropdown-menu-right"
                   aria-labelledby="dropdownNotificationButton"
                 >
+                  <div class="px-3 py-2 border-bottom text-right">
+                    <a href="{% url 'dashboard:notifications' %}" class="btn btn-sm btn-outline-primary">
+                      View all
+                    </a>
+                  </div>
                   {% for notif in notifications %}
                   <a
                     href="#"

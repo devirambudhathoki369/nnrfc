@@ -4,11 +4,19 @@
 {% block title-bar %}
 <div class="header-page">
   <h1>Filled Answers</h1>
-  <a href="{% url 'dashboard:filled_ques' q.survey_id level_id %}">
-    <button class="btn btn-icon-only">
-      <i class="ic-close-circular-filled text-danger"></i>
-    </button>
-  </a>
+  <div class="d-flex align-items-center" style="gap: 10px;">
+    {% if not q.month_requires %}
+    <a href="{% url 'core:create_answer' q.id %}?level_id={{ level_id }}&next={{ request.get_full_path|urlencode }}"
+       class="btn btn-sm btn-primary">
+      Edit
+    </a>
+    {% endif %}
+    <a href="{% url 'dashboard:filled_ques' q.survey_id level_id %}">
+      <button class="btn btn-icon-only">
+        <i class="ic-close-circular-filled text-danger"></i>
+      </button>
+    </a>
+  </div>
 </div>
 {% endblock title-bar %}
 
@@ -26,7 +34,13 @@
             {% if month_sections %}
               {% for month_data in month_sections %}
               <div class="option-group-new mt-4">
-                <p>{{ month_data.month_name }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <p class="mb-0">{{ month_data.month_name }}</p>
+                  <a href="{% url 'core:create_answer' q.id %}?level_id={{ level_id }}&month={{ month_data.month }}&next={{ request.get_full_path|urlencode }}"
+                     class="btn btn-sm btn-primary">
+                    Edit
+                  </a>
+                </div>
               </div>
 
               {% if month_data.child_sections %}

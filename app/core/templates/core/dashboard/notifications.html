@@ -1,0 +1,59 @@
+{% extends 'fragments/dashboard/base.html' %}
+
+{% block title-bar %}
+<div class="header-page">
+  <h1>सूचनाहरु</h1>
+</div>
+{% endblock title-bar %}
+
+{% block content %}
+<div class="inner">
+  <div class="container-fluid">
+    <div class="card card-body mb-3">
+      <p class="mb-0 text-muted">नपढिएका सूचना: <strong>{{ unread_count }}</strong></p>
+    </div>
+
+    <div class="card card-body">
+      {% if all_notifications %}
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover mb-0">
+          <thead class="thead-light">
+            <tr>
+              <th style="width: 90px;">स्थिति</th>
+              <th>सूचना</th>
+              <th style="width: 180px;">समय</th>
+              <th style="width: 120px;">कार्य</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for notif in all_notifications %}
+            <tr>
+              <td>
+                {% if notif.is_viewed %}
+                <span class="badge badge-light">पढियो</span>
+                {% else %}
+                <span class="badge badge-primary">नयाँ</span>
+                {% endif %}
+              </td>
+              <td>{{ notif.msg }}</td>
+              <td>{{ notif.created_at|timesince }} ago</td>
+              <td>
+                <a href="#"
+                   class="btn btn-sm btn-outline-primary notiff"
+                   url="{{ notif.get_detail_url }}"
+                   notif-id="{{ notif.id }}">
+                  हेर्नुहोस्
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="mb-0 text-muted">कुनै सूचना उपलब्ध छैन।</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}

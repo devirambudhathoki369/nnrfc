@@ -33,6 +33,7 @@ from core.utils import (
     OPTION_FIELD_INDICATOR,
 )
 from user_mgmt.utils import get_index_by_department
+from user_mgmt.models import Level
 
 logger = logging.getLogger(__name__)
 
@@ -216,11 +217,22 @@ class AnswerCreateView(LoginRequiredMixin, CreateView):
         question_obj = Question.objects.get(id=question_id)
         survey_id = question_obj.survey.id
         selected_month = self.request.GET.get("month")
+        target_level_id = self.request.GET.get("level_id")
+        redirect_after_save = self.request.GET.get("next", "")
+        can_edit_other_level = (
+            self.request.user.is_superuser
+            or self.request.user.is_staff
+            or self.request.user.roles.exists()
+        )
 
         try:
             selected_month = int(selected_month) if selected_month else None
         except (TypeError, ValueError):
             selected_month = None
+
+        target_level = self.request.user.level
+        if can_edit_other_level and target_level_id:
+            target_level = get_object_or_404(Level, pk=target_level_id)
 
         child_questions = Question.objects.filter(parent=question_id).order_by("sequence_id")
         has_months = question_obj.month_requires
@@ -232,6 +244,11 @@ class AnswerCreateView(LoginRequiredMixin, CreateView):
         context["survey_id"] = survey_id
         context["is_document_required"] = question_obj.is_document_required
         context["selected_month"] = selected_month
+        context["editing_level"] = target_level
+        context["is_admin_edit"] = can_edit_other_level and str(target_level.id) != str(self.request.user.level_id)
+        context["redirect_after_save"] = (
+            redirect_after_save if redirect_after_save.startswith("/") else ""
+        )
 
         child_options = []
         if child_questions.exists():
@@ -256,6 +273,30 @@ class AnswerCreateView(LoginRequiredMixin, CreateView):
             .order_by("sequence_id")
         )
         context["options"] = self._build_options_data(options)
+
+        existing_answers = {}
+        fill_survey = FillSurvey.objects.filter(
+            survey=survey_id, level_id=target_level
+        ).first()
+        if fill_survey:
+            source_questions = child_questions if child_questions.exists() else [question_obj]
+            existing_qs = Answer.objects.filter(
+                fill_survey=fill_survey,
+                option__question__in=source_questions,
+            ).select_related("fiscal_year")
+
+            if selected_month is None:
+                existing_qs = existing_qs.filter(month__isnull=True)
+            else:
+                existing_qs = existing_qs.filter(month=selected_month)
+
+            for answer in existing_qs:
+                existing_answers[str(answer.option_id)] = {
+                    "value": answer.value,
+                    "fiscal_year_id": answer.fiscal_year_id,
+                }
+
+        context["existing_answers_json"] = json.dumps(existing_answers)
 
         return context
 
@@ -476,13 +517,15 @@ def submit_answer(request):
         file_required = question_obj.is_document_required
         files = request.FILES
         current_user = request.user
-
-        if file_required and len(files) <= 0:
-            return JsonResponse({
-                "success": False,
-                "message": "कृपया फाइल अपलोड गर्नुहोस्। (Please add file before submission)",
-                "file_required_validation": True,
-            })
+        requested_level_id = request.POST.get("level_id")
+        can_edit_other_level = (
+            current_user.is_superuser
+            or current_user.is_staff
+            or current_user.roles.exists()
+        )
+        target_level = current_user.level
+        if can_edit_other_level and requested_level_id:
+            target_level = get_object_or_404(Level, pk=requested_level_id)
 
         survey = question_obj.survey
         answers = json.loads(submitted_answers)
@@ -497,12 +540,39 @@ def submit_answer(request):
 
         try:
             fill_survey = FillSurvey.objects.get(
-                survey=survey, level_id=current_user.level
+                survey=survey, level_id=target_level
             )
         except FillSurvey.DoesNotExist:
             fill_survey = FillSurvey.objects.create(
-                survey=survey, level_id=current_user.level
+                survey=survey, level_id=target_level, created_by=current_user
             )
+
+        child_questions = Question.objects.filter(parent=question_obj.id)
+        source_questions = child_questions if child_questions.exists() else [question_obj]
+
+        def filter_month(queryset):
+            if month_value is None:
+                return queryset.filter(month__isnull=True)
+            return queryset.filter(month=month_value)
+
+        existing_answers_qs = filter_month(
+            Answer.objects.filter(
+                fill_survey=fill_survey,
+                option__question__in=source_questions,
+            )
+        )
+        existing_file_present = AnswerDocument.objects.filter(
+            answer__in=existing_answers_qs.filter(option__field_type="F")
+        ).exists()
+
+        if file_required and len(files) <= 0 and not existing_file_present:
+            return JsonResponse({
+                "success": False,
+                "message": "कृपया फाइल अपलोड गर्नुहोस्। (Please add file before submission)",
+                "file_required_validation": True,
+            })
+
+        existing_answers_qs.exclude(option__field_type="F").delete()
 
         if files:
             for file_key in files:
@@ -523,13 +593,20 @@ def submit_answer(request):
                         )
                         continue
 
+                    filter_month(
+                        Answer.objects.filter(
+                            fill_survey=fill_survey,
+                            option=option_field_file,
+                        )
+                    ).delete()
+
                     answer_file = Answer.objects.create(
                         fill_survey=fill_survey,
                         option=option_field_file,
                         value=file_data.name,
                         month=month_value,
                         created_by=current_user,
-                        created_by_level=current_user.level,
+                        created_by_level=target_level,
                     )
                     AnswerDocument.objects.create(
                         answer=answer_file, document=file_data
@@ -547,7 +624,7 @@ def submit_answer(request):
                     option=option_obj,
                     value=answer["value"],
                     created_by=current_user,
-                    created_by_level=current_user.level,
+                    created_by_level=target_level,
                     month=month_value,
                 )
             except Option.DoesNotExist:
@@ -568,13 +645,17 @@ def submit_answer(request):
                         option=option_obj,
                         fiscal_year=fiscal_year_obj,
                         created_by=current_user,
-                        created_by_level=current_user.level,
+                        created_by_level=target_level,
                         month=month_value,
                     )
                 except (Option.DoesNotExist, FiscalYear.DoesNotExist) as e:
                     logger.error(f"FY answer error: {e}")
 
-        return JsonResponse({"success": True})
+        redirect_url = request.POST.get("redirect_url", "")
+        return JsonResponse({
+            "success": True,
+            "redirect_url": redirect_url if redirect_url.startswith("/") else "",
+        })
 
     except json.JSONDecodeError as e:
         logger.error(f"JSON decode error in submit_answer: {e}")

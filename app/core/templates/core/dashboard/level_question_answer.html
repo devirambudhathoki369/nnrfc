@@ -4,9 +4,13 @@
 {% block title-bar %}
 <div class="header-page">
   <h1>{{ level.name }} — उत्तर विवरण</h1>
-  <a href="{% url 'dashboard:question_fill_detail' question.id 'filled' %}">
-    <button class="btn btn-danger btn-sm">पछाडी जानुहोस</button>
-  </a>
+  <div class="d-flex align-items-center" style="gap: 10px;">
+    <a href="{% url 'core:create_answer' question.id %}?level_id={{ level.id }}&next={{ request.get_full_path|urlencode }}"
+       class="btn btn-primary btn-sm">Edit</a>
+    <a href="{% url 'dashboard:question_fill_detail' question.id 'filled' %}">
+      <button class="btn btn-danger btn-sm">पछाडी जानुहोस</button>
+    </a>
+  </div>
 </div>
 {% endblock title-bar %}
 

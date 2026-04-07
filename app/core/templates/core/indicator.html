@@ -22,6 +22,11 @@
           {% csrf_token %}
 
           <h3 class="mb-3">{{ question_title }}</h3>
+          {% if editing_level %}
+          <p class="text-muted mb-3">
+            डाटा तह: <strong>{{ editing_level.name }}</strong>
+          </p>
+          {% endif %}
 
           {% if has_months %}
           <div class="row">
@@ -293,7 +298,7 @@
             <div class="modal-content">
               <div class="modal-body flex-center-center flex-column text-center">
                 <h2>पुष्टिकरण</h2>
-                <p>के तपाईं पक्का विवरण पेस गर्न चाहानुहुन्छ? यो पेस गरिसके पछि परिवर्तन गर्न सक्नु हुनेछैन।</p>
+                <p>{% if is_admin_edit %}के तपाईं यो विवरण अद्यावधिक गर्न चाहानुहुन्छ?{% else %}के तपाईं पक्का विवरण पेस गर्न चाहानुहुन्छ?{% endif %}</p>
                 <div class="d-flex w-100">
                   <button class="btn btn-danger flex-grow-1 mr-3" type="button"
                     data-dismiss="modal" aria-label="Close">रद्द गर्नुहोस्</button>
@@ -392,6 +397,45 @@ $(document).ready(function() {
   // Month Selector
   // ========================================
   var selectedMonth = "{{ selected_month|default_if_none:'' }}";
+  var existingAnswers = {{ existing_answers_json|safe }};
+  var redirectAfterSave = "{{ redirect_after_save|escapejs }}";
+  var editingLevelId = "{{ editing_level.id|default_if_none:'' }}";
+
+  function applyExistingAnswers() {
+    Object.keys(existingAnswers).forEach(function(optionId) {
+      var answerData = existingAnswers[optionId] || {};
+      var value = answerData.value;
+      var fiscalYearId = answerData.fiscal_year_id;
+
+      var $textInput = $(".survey-input[data-option-id='" + optionId + "']");
+      if ($textInput.length && value !== undefined && value !== null) {
+        $textInput.val(value).trigger("input");
+      }
+
+      var $dateInput = $(".survey-datepicker[data-option-id='" + optionId + "']");
+      if ($dateInput.length && value !== undefined && value !== null) {
+        $dateInput.val(value);
+      }
+
+      var $checkbox = $(".survey-checkbox[data-option-id='" + optionId + "']");
+      if ($checkbox.length) {
+        $checkbox.prop("checked", String(value) === "True");
+      }
+
+      var $radio = $(".survey-radio[data-option-id='" + optionId + "'][value='" + value + "']");
+      if ($radio.length) {
+        $radio.prop("checked", true);
+      }
+
+      var $fy = $(".survey-fy-select[data-option-id='" + optionId + "']");
+      if ($fy.length && fiscalYearId) {
+        $fy.val(String(fiscalYearId));
+      }
+    });
+  }
+
+  applyExistingAnswers();
+
   if (selectedMonth && selectedMonth !== "None") {
     $("#month_selector").val(selectedMonth);
   }
@@ -415,7 +459,15 @@ $(document).ready(function() {
       success: function(data) {
         if (data.has_month_value) {
           // Data already exists — go to filled view
-          window.location.href = "{% url 'core:filled_question_month' question_id 99999 %}".replace('99999', month_value);
+          if (editingLevelId && editingLevelId !== "{{ request.user.level_id|default_if_none:'' }}") {
+            var editUrl = "{% url 'core:create_answer' question_id %}?month=" + month_value + "&level_id=" + editingLevelId;
+            if (redirectAfterSave) {
+              editUrl += "&next=" + encodeURIComponent(redirectAfterSave);
+            }
+            window.location.href = editUrl;
+          } else {
+            window.location.href = "{% url 'core:filled_question_month' question_id 99999 %}".replace('99999', month_value);
+          }
         }
         // No data — stay on this form page to fill
       },
@@ -462,8 +514,8 @@ $(document).ready(function() {
       var $item = $(this);
       var up_file = $item[0].files[0];
       if (up_file) {
-        if (up_file.size > 2097152) {
-          alert("कृपया 2 MB भन्दा सानो फाइल चयन गर्नुहोस्।");
+        if (up_file.size > 5242880) {
+          alert("कृपया 5 MB भन्दा सानो फाइल चयन गर्नुहोस्।");
           has_validation_error = true;
           return false;
         }
@@ -523,6 +575,12 @@ $(document).ready(function() {
     form_data.append("fy_answers", JSON.stringify(fy_answers));
     form_data.append("question_id", question_id);
     form_data.append("month_value", month_value);
+    if (editingLevelId) {
+      form_data.append("level_id", editingLevelId);
+    }
+    if (redirectAfterSave) {
+      form_data.append("redirect_url", redirectAfterSave);
+    }
 
     $.ajax({
       url: dataurl,
@@ -541,6 +599,10 @@ $(document).ready(function() {
         } else if (data.invalid_data) {
           alert(data.message);
         } else {
+          if (data.redirect_url) {
+            window.location.href = data.redirect_url;
+            return;
+          }
           if (month_value) {
             window.location.href = "{% url 'core:filled_question_month' question_id 99999 %}".replace('99999', month_value);
           } else {

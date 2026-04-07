@@ -182,7 +182,7 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_URL = "user_mgmt:login"
-LOGIN_REDIRECT_URL = "dashboard:home"
+LOGIN_REDIRECT_URL = "dashboard:dashboard"
 
 AUTHENTICATION_BACKENDS = [
     # 'axes.backends.AxesBackend',

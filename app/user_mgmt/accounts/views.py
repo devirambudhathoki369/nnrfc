@@ -296,9 +296,7 @@ class SetNewPasswordView(UserPassesTestMixin, SuccessMessageMixin, FormView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        if self.request.user.is_staff:
-            return reverse("dashboard:dashboard")
-        return reverse("core:survey_list")
+        return reverse("dashboard:dashboard")
 
 
 class UserLogoutView(LogoutView):
@@ -568,7 +566,7 @@ class LoginUserView(LoginView):
         if user is not None:
             login(request, user)
             messages.success(request, "सफलतापूर्वक लगइन गरियो।")
-            return redirect("dashboard:home" if user.is_staff else "core:survey_list")
+            return redirect("dashboard:dashboard")
 
         context["error_message"] = "कृपया सही लगइन प्रमाण-पत्र दिनुहोस्।"
         return render(request, self.template_name, context)
