@@ -5,7 +5,7 @@
 <div class="header-page">
   <h1>Filled Answers</h1>
   <div class="d-flex align-items-center" style="gap: 10px;">
-    {% if not q.month_requires %}
+    {% if can_edit_answers %}
     <a href="{% url 'core:create_answer' q.id %}?level_id={{ level_id }}&next={{ request.get_full_path|urlencode }}"
        class="btn btn-sm btn-primary">
       Edit
@@ -36,10 +36,12 @@
               <div class="option-group-new mt-4">
                 <div class="d-flex justify-content-between align-items-center">
                   <p class="mb-0">{{ month_data.month_name }}</p>
+                  {% if can_edit_answers %}
                   <a href="{% url 'core:create_answer' q.id %}?level_id={{ level_id }}&month={{ month_data.month }}&next={{ request.get_full_path|urlencode }}"
                      class="btn btn-sm btn-primary">
                     Edit
                   </a>
+                  {% endif %}
                 </div>
               </div>
 

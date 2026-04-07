@@ -1213,6 +1213,7 @@ def survey_filled_questions(request, survey_id, level_id):
 
 def view_filled_ans(request, q_id, level_id):
     question = Question.objects.get(id=q_id)
+    target_level = get_object_or_404(Level, id=level_id)
     child_questions = question.children_questions.all()
     month_name_map = {
         1: "वैशाख",
@@ -1228,6 +1229,16 @@ def view_filled_ans(request, q_id, level_id):
         11: "फागुन",
         12: "चैत्र",
     }
+    user_level = getattr(request.user, "level", None)
+    can_edit_other_level = (
+        request.user.is_superuser
+        or request.user.is_staff
+        or request.user.roles.exists()
+    )
+    can_edit_answers = (
+        can_edit_other_level
+        or (user_level is not None and user_level.id == target_level.id)
+    )
     fiscal_month_order = {4: 1, 5: 2, 6: 3, 7: 4, 8: 5, 9: 6, 10: 7, 11: 8, 12: 9, 1: 10, 2: 11, 3: 12}
 
     def answer_display(answer):
@@ -1330,6 +1341,8 @@ def view_filled_ans(request, q_id, level_id):
         "q": question,
         "child_ques": child_questions,
         "level_id": level_id,
+        "target_level": target_level,
+        "can_edit_answers": can_edit_answers,
         "month_sections": month_sections,
         "option_rows": build_option_rows(question) if not child_questions.exists() else [],
         "documents": build_documents(question) if not child_questions.exists() else [],
