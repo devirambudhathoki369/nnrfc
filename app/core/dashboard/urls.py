@@ -36,6 +36,7 @@ from core.dashboard.views import (
     DepartmentNameListView,
     DepartmentNameUpdateView,
     UsersPostNameUpdateView,
+    NotificationListView,
     appraisal_review_request,
     appraisal_review_request_detail,
     level_appraisals,
@@ -179,4 +180,5 @@ urlpatterns = [
     path("question-status/", QuestionWiseStatusView.as_view(), name="question_status"),
     path("question-fill-detail/<int:question_id>/<str:status>/", QuestionFillDetailView.as_view(), name="question_fill_detail"),
     path("level-answer/<int:question_id>/<int:level_id>/", LevelQuestionAnswerView.as_view(), name="level_question_answer"),
+    path("notifications/", NotificationListView.as_view(), name="notifications"),
 ]

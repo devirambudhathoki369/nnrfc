@@ -36,6 +36,8 @@ def reports_view(request):
     # ── Effective level for export URLs ──
     effective_level_id = local_level if local_level else level
     level_type = "P"
+    export_level_type = ""
+    export_province_id = ""
     survey_label = ""
     level_label  = ""
 
@@ -68,6 +70,15 @@ def reports_view(request):
                     level_type = survey_obj.level
                 target_surveys = [survey_obj]
                 survey_label = survey_obj.name or str(survey_obj)
+                if (
+                    survey_obj.level == "L"
+                    and level
+                    and level not in ("", "all", "0", 0)
+                    and not local_level
+                ):
+                    export_level_type = "L"
+                    export_province_id = level
+                    level_label = "स्थानीय तहहरु"
             except Survey.DoesNotExist:
                 target_surveys = []
 
@@ -94,6 +105,8 @@ def reports_view(request):
         "survey_label":     survey_label,
         "level_label":      level_label,
         "effective_level_id": effective_level_id,
+        "export_level_type": export_level_type,
+        "export_province_id": export_province_id,
     }
     return render(request, "core/reports/report.html", context)
 
@@ -194,8 +207,12 @@ def export_reports_all_levels(request, q_id, level_type):
     worksheet.set_column("A:H", 20)
 
     options = question.options.exclude(field_type="F").order_by("sequence_id")
-    levels  = Level.objects.filter(type__type__contains=level_type)
+    levels = Level.objects.filter(type__type__contains=level_type)
     is_local = level_type == "L"
+    province_id = request.GET.get("province_id")
+
+    if is_local and province_id:
+        levels = levels.filter(province_level_id=province_id)
 
     if question.month_requires:
         for i in MONTH_ORDER_REPORT:
@@ -207,12 +224,17 @@ def export_reports_all_levels(request, q_id, level_type):
                 ]
                 base = [MONTH_DATA[i], level.name]
                 if is_local:
-                    base = [MONTH_DATA[i], level.name, level.level_code,
-                            level.district.name_np if level.district else ""]
+                    base = [
+                        MONTH_DATA[i],
+                        level.province_level.name if level.province_level else "",
+                        level.name,
+                        level.level_code,
+                        level.district.name_np if level.district else "",
+                    ]
                 data.append(base + month_option_data)
 
         header_data = (
-            ["महिना", "प्रदेश/स्थानीय तहको नाम", "स्थानीय तहको कोड", "जिल्ला"]
+            ["महिना", "प्रदेश", "स्थानीय तहको नाम", "स्थानीय तहको कोड", "जिल्ला"]
             if is_local else ["महिना", "प्रदेश/स्थानीय तह"]
         )
         header_data += [o.title for o in options]
@@ -227,12 +249,16 @@ def export_reports_all_levels(request, q_id, level_type):
             ]
             base = [level.name]
             if is_local:
-                base = [level.name, level.level_code,
-                        level.district.name_np if level.district else ""]
+                base = [
+                    level.province_level.name if level.province_level else "",
+                    level.name,
+                    level.level_code,
+                    level.district.name_np if level.district else "",
+                ]
             data.append(base + level_option_data)
 
         header_data = (
-            ["प्रदेश/स्थानीय तह", "स्थानीय तहको कोड", "जिल्ला"]
+            ["प्रदेश", "स्थानीय तह", "स्थानीय तहको कोड", "जिल्ला"]
             if is_local else ["प्रदेश/स्थानीय तह"]
         )
         header_data += [o.title for o in options]

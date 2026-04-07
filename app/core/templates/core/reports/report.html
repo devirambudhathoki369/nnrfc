@@ -126,6 +126,11 @@
                      class="btn btn-sm btn-outline-primary">
                     Excel डाउनलोड
                   </a>
+                {% elif export_level_type == "L" and export_province_id %}
+                  <a href="{% url 'report:export_report_levels' q.id export_level_type %}?province_id={{ export_province_id }}"
+                     class="btn btn-sm btn-outline-primary">
+                    Excel डाउनलोड
+                  </a>
                 {% elif effective_level_id %}
                   <a href="{% url 'report:export_report' q.id effective_level_id %}"
                      class="btn btn-sm btn-outline-primary">

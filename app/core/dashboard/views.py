@@ -56,6 +56,7 @@ from user_mgmt.models import Department, LevelType, Level, UserPost
 
 from django.views import generic
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.urls import reverse
@@ -121,7 +122,7 @@ class DashBoardHome(LoginRequiredMixin, TemplateView):
         opt_rows = Option.objects.filter(
             question_id__in=source_ids
         ).values_list('id', 'question_id')
-        src_to_opts = {}
+        src_to_opts = {}    
         all_opt_ids = set() 
         for opt_id, q_id in opt_rows:
             src_to_opts.setdefault(q_id, set()).add(opt_id)
@@ -1157,6 +1158,32 @@ def update_notification_status(request):
         data = json.loads(request.body.decode("utf-8"))
         Notification.objects.filter(id=data.get("notif_id")).update(is_viewed=True)
         return JsonResponse({"success": True})
+
+
+class NotificationListView(LoginRequiredMixin, TemplateView):
+    template_name = "core/dashboard/notifications.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        notifications = Notification.objects.all().select_related(
+            "user", "level", "question", "correction"
+        )
+
+        if user.is_superuser or user.is_staff or user.roles.exists():
+            if getattr(user, "level", None):
+                child_levels = user.level.child_level.all()
+                notifications = notifications.filter(
+                    correction_checked=False
+                ).filter(Q(level=user.level) | Q(level__in=child_levels))
+            else:
+                notifications = notifications.filter(correction_checked=False)
+        else:
+            notifications = notifications.filter(correction_checked=True, user=user)
+
+        context["all_notifications"] = notifications.order_by("-created_at")
+        context["unread_count"] = notifications.filter(is_viewed=False).count()
+        return context
 
 
 def survey_list(request):
